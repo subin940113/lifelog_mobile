@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../record/journal_palette.dart';
+import 'package:lifelog_mobile/theme/palette.dart';
 
 class SettingsRow extends StatelessWidget {
   final String title;
   final VoidCallback onTap;
-  final JournalPalette p;
+  final Palette p;
   final Widget? trailing;
   final String? trailingText;
   final bool showChevron;

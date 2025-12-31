@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../theme/theme_provider.dart';
-import '../record/journal_palette.dart';
+import 'package:lifelog_mobile/theme/palette.dart';
 
 import 'settings_routes.dart';
 import 'theme_settings_page.dart';
@@ -26,7 +26,7 @@ class SettingsHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = JournalPalette.from(Theme.of(context).colorScheme);
+    final p = Palette.from(Theme.of(context).colorScheme);
     final themeMode = context.watch<ThemeProvider>().mode;
 
     return Scaffold(
@@ -156,7 +156,7 @@ class SettingsHomePage extends StatelessWidget {
 
 class _SectionLabel extends StatelessWidget {
   final String text;
-  final JournalPalette p;
+  final Palette p;
   const _SectionLabel({required this.text, required this.p});
 
   @override
@@ -181,7 +181,7 @@ class _PlaceholderSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = JournalPalette.from(Theme.of(context).colorScheme);
+    final p = Palette.from(Theme.of(context).colorScheme);
 
     return Scaffold(
       backgroundColor: p.bg,

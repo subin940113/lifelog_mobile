@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
-import '../record/journal_palette.dart';
+import 'package:lifelog_mobile/theme/palette.dart';
 import 'widgets/settings_page_header.dart';
 
 void showLanguageSheet(
   BuildContext context, {
   required Color bg,
-  required JournalPalette p,
+  required Palette p,
   required List<LocaleName> locales,
   required String? initialLocaleId,
   required bool isListening,
@@ -38,7 +38,7 @@ typedef OnApplySettings = void Function(String? localeId);
 
 class LanguageSettingsPage extends StatefulWidget {
   final Color bg;
-  final JournalPalette p;
+  final Palette p;
   final List<LocaleName> locales;
   final String? initialLocaleId;
   final bool isListening;

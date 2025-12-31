@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../record/journal_palette.dart';
+import 'package:lifelog_mobile/theme/palette.dart';
 import 'widgets/settings_page_header.dart';
 
 String themeLabel(ThemeMode mode) {
@@ -15,7 +15,7 @@ String themeLabel(ThemeMode mode) {
 
 void showThemeSheet(
   BuildContext context,
-  JournalPalette p, {
+  Palette p, {
   required ThemeMode value,
   required ValueChanged<ThemeMode> onChanged,
 }) {
@@ -40,7 +40,7 @@ void showThemeSheet(
 
 class ThemeSettingsPage extends StatefulWidget {
   final Color bg;
-  final JournalPalette p;
+  final Palette p;
   final ThemeMode value;
   final ValueChanged<ThemeMode> onChanged;
 
@@ -75,7 +75,7 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final p = JournalPalette.from(Theme.of(context).colorScheme);
+    final p = Palette.from(Theme.of(context).colorScheme);
     final modes = _buildDisplayModes();
 
     return Scaffold(

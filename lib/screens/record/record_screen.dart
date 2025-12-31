@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import 'package:lifelog_mobile/theme/theme_provider.dart';
-import 'package:lifelog_mobile/screens/record/journal_palette.dart';
+import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/screens/record/record_widgets.dart';
 import 'package:lifelog_mobile/screens/settings/settings_routes.dart';
 import 'package:lifelog_mobile/screens/settings/settings_home_page.dart';
@@ -82,7 +82,7 @@ class _RecordScreenState extends State<RecordScreen> {
 
   void _openSettings(BuildContext context) {
     final themeProvider = context.read<ThemeProvider>();
-    final p = JournalPalette.from(Theme.of(context).colorScheme);
+    final p = Palette.from(Theme.of(context).colorScheme);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? p.bg : const Color(0xFFFAFAFA);
 
@@ -118,7 +118,7 @@ class _RecordScreenState extends State<RecordScreen> {
   void _showToast(String message) {
     if (!mounted) return;
 
-    final palette = JournalPalette.from(Theme.of(context).colorScheme);
+    final palette = Palette.from(Theme.of(context).colorScheme);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Ultra-minimal: text only (no box)
@@ -418,7 +418,7 @@ class _RecordScreenState extends State<RecordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final p = JournalPalette.from(Theme.of(context).colorScheme);
+    final p = Palette.from(Theme.of(context).colorScheme);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? p.bg : const Color(0xFFFAFAFA);
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../record/journal_palette.dart';
+import 'package:lifelog_mobile/theme/palette.dart';
 
 class AccountHeader extends StatelessWidget {
-  final JournalPalette p;
+  final Palette p;
   const AccountHeader({super.key, required this.p});
 
   @override

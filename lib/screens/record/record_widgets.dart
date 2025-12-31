@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'journal_palette.dart';
+import 'package:lifelog_mobile/theme/palette.dart';
 
 
 /// Minimal, text-only segmented pill for mode switching.
@@ -11,7 +11,7 @@ class ModePill extends StatelessWidget {
   final bool active;
   final bool enabled;
   final VoidCallback onTap;
-  final JournalPalette p;
+  final Palette p;
   final double height;
   final EdgeInsets padding;
   final BorderRadius borderRadius;
@@ -91,7 +91,7 @@ class HoldToTalkPill extends StatefulWidget {
   final VoidCallback onHoldStart;
   final VoidCallback onHoldEnd;
   final VoidCallback onTapHint;
-  final JournalPalette p;
+  final Palette p;
   final double height;
   final EdgeInsets padding;
   final BorderRadius borderRadius;
@@ -259,7 +259,7 @@ class RecordingDot extends StatelessWidget {
 class DoneFab extends StatelessWidget {
   final bool enabled;
   final VoidCallback onPressed;
-  final JournalPalette p;
+  final Palette p;
 
   const DoneFab({
     super.key,
