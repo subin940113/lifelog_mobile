@@ -1,14 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
-import 'package:lifelog_mobile/theme/theme_provider.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/screens/record/record_widgets.dart';
-import 'package:lifelog_mobile/screens/settings/settings_routes.dart';
-import 'package:lifelog_mobile/screens/settings/settings_home_page.dart';
 
 class RecordScreen extends StatefulWidget {
   final VoidCallback? onLogout;
@@ -27,7 +23,6 @@ class _RecordScreenState extends State<RecordScreen> {
   final GlobalKey _doneFabKey = GlobalKey();
 
   bool _sttAvailable = false;
-  List<LocaleName> _locales = [];
   String? _selectedLocaleId;
 
   bool _isListening = false;
@@ -84,28 +79,6 @@ class _RecordScreenState extends State<RecordScreen> {
     super.dispose();
   }
 
-  void _openSettings(BuildContext context) {
-    final themeProvider = context.read<ThemeProvider>();
-
-    pushSettingsPage<void>(
-      context,
-      SettingsHomePage(
-        onChangeTheme: (m) => themeProvider.setMode(m),
-
-        // ✅ 추가: 기록 화면에서 설정 열 때도 로그아웃이 보이게
-        onLogout: widget.onLogout,
-
-        languageLocales: _locales,
-        languageInitialLocaleId: _selectedLocaleId,
-        languageIsListening: _isListening,
-        onApplyLanguage: (localeId) {
-          if (localeId == null) return;
-          setState(() => _selectedLocaleId = localeId);
-        },
-      ),
-      fromLeft: true,
-    );
-  }
 
   void _setStickyNotice(String? message) {
     if (!mounted) return;
@@ -245,7 +218,6 @@ class _RecordScreenState extends State<RecordScreen> {
 
       setState(() {
         _sttAvailable = true;
-        _locales = locales;
         _selectedLocaleId = preferred;
       });
     } catch (_) {
@@ -444,26 +416,34 @@ class _RecordScreenState extends State<RecordScreen> {
         onPressed: _onDone,
         p: p,
       ),
-      appBar: AppBar(
-        backgroundColor: bg,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        toolbarHeight: 56,
-        title: null,
-        leading: IconButton(
-          icon: const Icon(Icons.menu_rounded),
-          color: p.ink,
-          tooltip: '메뉴',
-          onPressed: () => _openSettings(context),
-        ),
-      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 2, 20, 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Back control, aligned with content
+              SizedBox(
+                height: 56,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Transform.translate(
+                    offset: const Offset(-14, 0),
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).maybePop(),
+                      borderRadius: BorderRadius.circular(18),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Icon(
+                          Icons.chevron_left_rounded,
+                          color: p.ink,
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               SizedBox(
                 height: 44,
                 child: Row(

@@ -37,7 +37,7 @@ class SettingsPageHeader extends StatelessWidget {
               ),
             ),
             Positioned(
-              left: -16,
+              left: -14,
               child: InkWell(
                 onTap: () => Navigator.of(context).maybePop(),
                 borderRadius: BorderRadius.circular(18),

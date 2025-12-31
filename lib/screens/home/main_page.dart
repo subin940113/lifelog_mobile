@@ -23,6 +23,16 @@ class MainPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: RecordFab(
+        enabled: true,
+        p: p,
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => RecordScreen(onLogout: onLogout)),
+          );
+        },
+      ),
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
@@ -65,18 +75,68 @@ class MainPage extends StatelessWidget {
                     ),
               ),
               const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-MaterialPageRoute(builder: (_) => RecordScreen(onLogout: onLogout)),                    );
-                  },
-                  child: const Text('기록하기'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class RecordFab extends StatelessWidget {
+  final bool enabled;
+  final VoidCallback onPressed;
+  final Palette p;
+
+  const RecordFab({
+    super.key,
+    required this.enabled,
+    required this.onPressed,
+    required this.p,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const fg = Color(0xFFFFFFFF);
+
+    // Same visual tone as DoneFab (record page)
+    final enabledBg = Color.lerp(p.accent, Colors.white, 0.18)!;
+    final disabledBg = enabledBg.withOpacity(0.38);
+
+    return SafeArea(
+      minimum: const EdgeInsets.only(bottom: 24),
+      child: Transform.translate(
+        offset: const Offset(0, -10),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOut,
+          opacity: enabled ? 1.0 : 0.32,
+          child: IgnorePointer(
+            ignoring: !enabled,
+            child: Material(
+              color: Colors.transparent,
+              shape: const CircleBorder(),
+              child: InkResponse(
+                onTap: onPressed,
+                radius: 40,
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: enabled ? enabledBg : disabledBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.edit_rounded,
+                    color: fg,
+                    size: 26,
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
