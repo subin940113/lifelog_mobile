@@ -114,7 +114,7 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                               style: Theme.of(context).textTheme.bodyLarge
                                   ?.copyWith(
                                     color: p.ink,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w500,
                                   ),
                             ),
                           ),

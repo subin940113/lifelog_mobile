@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import '../../theme/theme_provider.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 
@@ -26,6 +28,11 @@ class SettingsHomePage extends StatelessWidget {
 
   final ValueChanged<ThemeMode> onChangeTheme;
   final VoidCallback? onLogout;
+  /// Logged-in user's display name shown in the account header.
+  /// If null, it will be loaded from secure storage.
+  final String? accountName;
+
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   const SettingsHomePage({
     super.key,
@@ -36,6 +43,7 @@ class SettingsHomePage extends StatelessWidget {
     this.onApplyLanguage,
     required this.onChangeTheme,
     this.onLogout,
+    this.accountName,
   });
 
   @override
@@ -134,7 +142,21 @@ class SettingsHomePage extends StatelessWidget {
                     onTap: openAccount,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: AccountHeader(p: p),
+                      child: FutureBuilder<String?>(
+                        future: accountName != null
+                            ? Future.value(accountName)
+                            : _secureStorage.read(key: 'accountName'),
+                        builder: (context, snapshot) {
+                          final name = (snapshot.data != null && snapshot.data!.trim().isNotEmpty)
+                              ? snapshot.data!.trim()
+                              : '계정';
+
+                          return AccountHeader(
+                            p: p,
+                            accountName: name,
+                          );
+                        },
+                      ),
                     ),
                   ),
 

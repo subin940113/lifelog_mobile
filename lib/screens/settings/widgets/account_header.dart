@@ -3,7 +3,12 @@ import 'package:lifelog_mobile/theme/palette.dart';
 
 class AccountHeader extends StatelessWidget {
   final Palette p;
-  const AccountHeader({super.key, required this.p});
+  final String accountName;
+  const AccountHeader({
+    super.key,
+    required this.p,
+    required this.accountName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,13 +22,12 @@ class AccountHeader extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 44,
+            width: 4,
             height: 44,
             decoration: BoxDecoration(
-              color: p.muted.withOpacity(0.14),
-              shape: BoxShape.circle,
+              color: p.accent,
+              borderRadius: BorderRadius.circular(2),
             ),
-            child: Icon(Icons.person_outline_rounded, color: p.muted),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -31,21 +35,21 @@ class AccountHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '계정',
+                  accountName,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: p.ink,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                  ),
+                        color: p.ink,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                      ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '로그인/계정 생성 기능을 추후 추가할 예정입니다.',
+                  '계정',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: p.muted,
-                    height: 1.35,
-                    fontSize: 14,
-                  ),
+                        color: p.muted,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.2,
+                      ),
                 ),
               ],
             ),

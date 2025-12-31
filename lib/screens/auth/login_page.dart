@@ -8,7 +8,20 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:lifelog_mobile/theme/palette.dart';
 
+
 import 'package:lifelog_mobile/widgets/brand_logo.dart';
+
+class _AuthResult {
+  final String accessToken;
+  final String displayName;
+  final bool isNewUser;
+
+  const _AuthResult({
+    required this.accessToken,
+    required this.displayName,
+    required this.isNewUser,
+  });
+}
 
 class LoginPage extends StatefulWidget {
   final Color? bg;
@@ -57,10 +70,16 @@ class _LoginPageState extends State<LoginPage> {
         throw Exception('Google idToken을 가져오지 못했습니다.');
       }
 
-      final accessToken = await _exchangeGoogleIdTokenForAccessToken(idToken);
+      final authResult = await _exchangeGoogleIdTokenForAuthResult(idToken);
 
       // Persist for API calls
-      await _secureStorage.write(key: 'accessToken', value: accessToken);
+      await _secureStorage.write(key: 'accessToken', value: authResult.accessToken);
+
+      // Persist minimal identity for Settings header
+      await _secureStorage.write(key: 'accountName', value: authResult.displayName);
+
+      // Persist onboarding hint
+      await _secureStorage.write(key: 'isNewUser', value: authResult.isNewUser.toString());
 
       if (!mounted) return;
       setState(() => _loading = false);
@@ -74,7 +93,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<String> _exchangeGoogleIdTokenForAccessToken(String idToken) async {
+  Future<_AuthResult> _exchangeGoogleIdTokenForAuthResult(String idToken) async {
     final uri = Uri.parse('$_serverBaseUrl/api/auth/oauth/google');
 
     final res = await http.post(
@@ -90,12 +109,25 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     final map = jsonDecode(res.body) as Map<String, dynamic>;
-    final token = map['accessToken'] as String?;
-    if (token == null || token.isEmpty) {
+
+    final accessToken = map['accessToken'] as String?;
+    final displayName = map['displayName'] as String?;
+    final isNewUser = map['isNewUser'] as bool?;
+
+    if (accessToken == null || accessToken.isEmpty) {
       throw Exception('서버 응답에 accessToken이 없습니다: ${res.body}');
     }
 
-    return token;
+    // displayName may be empty depending on server/user profile; keep a safe fallback.
+    final safeName = (displayName != null && displayName.trim().isNotEmpty)
+        ? displayName.trim()
+        : '계정';
+
+    return _AuthResult(
+      accessToken: accessToken,
+      displayName: safeName,
+      isNewUser: isNewUser ?? false,
+    );
   }
 
   @override
@@ -133,7 +165,7 @@ class _LoginPageState extends State<LoginPage> {
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
                                 color: p.muted,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w500,
                                 height: 1.35,
                               ),
                         ),

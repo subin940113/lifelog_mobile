@@ -60,7 +60,7 @@ class MainPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '오늘의 기록',
+                '메인 페이지',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: p.ink,
                       fontWeight: FontWeight.w800,
@@ -68,7 +68,7 @@ class MainPage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '짧게라도 괜찮아요. 오늘 있었던 일을 적어보세요.',
+                '무슨 내용을 넣어야 할지 고민중.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: p.muted,
                       fontWeight: FontWeight.w600,

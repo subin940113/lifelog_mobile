@@ -150,7 +150,7 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
                               style: Theme.of(context).textTheme.bodyLarge
                                   ?.copyWith(
                                     color: p.ink,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w500,
                                   ),
                             ),
                           ),

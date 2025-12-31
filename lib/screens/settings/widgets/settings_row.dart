@@ -28,7 +28,7 @@ class SettingsRow extends StatelessWidget {
                 trailingText!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: p.muted,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               )
             : (showChevron
@@ -53,7 +53,7 @@ class SettingsRow extends StatelessWidget {
                 title,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: p.ink,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w500,
                   fontSize: 16,
                 ),
               ),
