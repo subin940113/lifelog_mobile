@@ -85,7 +85,8 @@ class SettingsHomePage extends StatelessWidget {
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         splashRadius: 0,
                         thumbColor: MaterialStateProperty.resolveWith((states) {
-                          if (states.contains(MaterialState.selected)) return p.bg;
+                          if (states.contains(MaterialState.selected))
+                            return p.bg;
                           return p.muted.withOpacity(0.45);
                         }),
                         trackColor: MaterialStateProperty.resolveWith((states) {
@@ -94,7 +95,9 @@ class SettingsHomePage extends StatelessWidget {
                           }
                           return p.muted.withOpacity(0.18);
                         }),
-                        trackOutlineColor: MaterialStateProperty.resolveWith((states) {
+                        trackOutlineColor: MaterialStateProperty.resolveWith((
+                          states,
+                        ) {
                           if (states.contains(MaterialState.selected)) {
                             return p.ink.withOpacity(0.35);
                           }
@@ -109,7 +112,8 @@ class SettingsHomePage extends StatelessWidget {
                           child: Switch(
                             value: false,
                             onChanged: (_) {},
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
                           ),
                         ),
                       ),
@@ -132,7 +136,9 @@ class SettingsHomePage extends StatelessWidget {
                     title: '이용 약관 및 개인정보 처리방침',
                     onTap: () => pushSettingsPage(
                       context,
-                      const _PlaceholderSettingsPage(title: '이용 약관 및 개인정보 처리방침'),
+                      const _PlaceholderSettingsPage(
+                        title: '이용 약관 및 개인정보 처리방침',
+                      ),
                     ),
                     p: p,
                   ),
@@ -166,10 +172,10 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: p.muted,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
+          color: p.muted,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
+        ),
       ),
     );
   }
@@ -199,9 +205,9 @@ class _PlaceholderSettingsPage extends StatelessWidget {
                 child: Text(
                   '준비 중',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: p.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

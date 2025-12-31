@@ -9,12 +9,7 @@ class LoginPage extends StatefulWidget {
   final Palette? p;
   final VoidCallback onLoggedIn;
 
-  const LoginPage({
-    super.key,
-    this.bg,
-    this.p,
-    required this.onLoggedIn,
-  });
+  const LoginPage({super.key, this.bg, this.p, required this.onLoggedIn});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -63,7 +58,8 @@ class _LoginPageState extends State<LoginPage> {
                         Text(
                           '나도 몰랐던 나의 패턴을 발견하다.',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: p.muted,
                                 fontWeight: FontWeight.w600,
                                 height: 1.35,
@@ -103,10 +99,10 @@ class _LoginPageState extends State<LoginPage> {
                   '© ${DateTime.now().year} lifelog. All rights reserved.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: p.muted.withOpacity(0.80),
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.1,
-                      ),
+                    color: p.muted.withOpacity(0.80),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.1,
+                  ),
                 ),
               ),
             ],
@@ -169,10 +165,10 @@ class _AuthTextState extends State<_AuthText> {
           child: Text(
             widget.label,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.1,
-                ),
+              color: color,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.1,
+            ),
           ),
         ),
       ),

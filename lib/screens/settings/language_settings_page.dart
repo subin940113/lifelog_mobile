@@ -87,15 +87,13 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
 
     final allLocales = widget.locales;
 
-    final filteredLocales = allLocales
-        .where((l) {
-          final id = (l.localeId ?? '').toLowerCase();
-          if (id.isEmpty) return false;
-          // localeId can be like `en_US` or `en-US` depending on platform.
-          final prefix = id.split(RegExp(r'[_-]')).first;
-          return allowedPrefixes.contains(prefix);
-        })
-        .toList();
+    final filteredLocales = allLocales.where((l) {
+      final id = (l.localeId ?? '').toLowerCase();
+      if (id.isEmpty) return false;
+      // localeId can be like `en_US` or `en-US` depending on platform.
+      final prefix = id.split(RegExp(r'[_-]')).first;
+      return allowedPrefixes.contains(prefix);
+    }).toList();
 
     // If filtering produces an empty list (device returns unexpected localeId formats),
     // fall back to the original list so the screen never becomes blank.
@@ -149,7 +147,8 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
                           Expanded(
                             child: Text(
                               l.name,
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
                                     color: p.ink,
                                     fontWeight: FontWeight.w600,
                                   ),

@@ -23,15 +23,7 @@ class _AppShellState extends State<AppShell> {
     final bg = p.bg;
 
     return _loggedIn
-        ? MainPage(
-            bg: bg,
-            p: p,
-            onLogout: _onLogout,
-          )
-        : LoginPage(
-            bg: bg,
-            p: p,
-            onLoggedIn: _onLoggedIn,
-          );
+        ? MainPage(bg: bg, p: p, onLogout: _onLogout)
+        : LoginPage(bg: bg, p: p, onLoggedIn: _onLoggedIn);
   }
 }

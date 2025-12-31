@@ -35,7 +35,8 @@ class _TypingLogo extends StatefulWidget {
   State<_TypingLogo> createState() => _TypingLogoState();
 }
 
-class _TypingLogoState extends State<_TypingLogo> with TickerProviderStateMixin {
+class _TypingLogoState extends State<_TypingLogo>
+    with TickerProviderStateMixin {
   static const int _msPerChar = 220;
   static const Duration _loopPause = Duration(milliseconds: 650);
   static const String _text = 'lifelog';

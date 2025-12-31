@@ -21,18 +21,19 @@ class SettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final right = trailing ??
+    final right =
+        trailing ??
         (trailingText != null
             ? Text(
                 trailingText!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: p.muted,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: p.muted,
+                  fontWeight: FontWeight.w600,
+                ),
               )
             : (showChevron
-                ? Icon(Icons.chevron_right_rounded, color: p.muted)
-                : const SizedBox.shrink()));
+                  ? Icon(Icons.chevron_right_rounded, color: p.muted)
+                  : const SizedBox.shrink()));
 
     return InkWell(
       onTap: onTap,
@@ -51,10 +52,10 @@ class SettingsRow extends StatelessWidget {
               child: Text(
                 title,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: p.ink,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
+                  color: p.ink,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
               ),
             ),
             right,

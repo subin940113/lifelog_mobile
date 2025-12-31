@@ -30,9 +30,9 @@ class MainPage extends StatelessWidget {
                   Text(
                     'Home',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: p.ink,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      color: p.ink,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const Spacer(),
                   TextButton(
@@ -61,17 +61,17 @@ class MainPage extends StatelessWidget {
                     Text(
                       '오늘',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: p.ink,
-                            fontWeight: FontWeight.w800,
-                          ),
+                        color: p.ink,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '빠르게 기록을 시작해.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.muted,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: p.muted,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -84,9 +84,7 @@ class MainPage extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const RecordScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const RecordScreen()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -108,9 +106,9 @@ class MainPage extends StatelessWidget {
               Text(
                 'v0 (minimal shell)',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: p.muted.withOpacity(0.75),
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: p.muted.withOpacity(0.75),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),

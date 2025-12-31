@@ -33,19 +33,19 @@ class AccountHeader extends StatelessWidget {
                 Text(
                   '계정',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: p.ink,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
-                      ),
+                    color: p.ink,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '로그인/계정 생성 기능을 추후 추가할 예정입니다.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.muted,
-                        height: 1.35,
-                        fontSize: 14,
-                      ),
+                    color: p.muted,
+                    height: 1.35,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),

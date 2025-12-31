@@ -21,12 +21,8 @@ void showThemeSheet(
 }) {
   Navigator.of(context).push(
     PageRouteBuilder(
-      pageBuilder: (_, __, ___) => ThemeSettingsPage(
-        bg: p.bg,
-        p: p,
-        value: value,
-        onChanged: onChanged,
-      ),
+      pageBuilder: (_, __, ___) =>
+          ThemeSettingsPage(bg: p.bg, p: p, value: value, onChanged: onChanged),
       transitionsBuilder: (_, animation, __, child) {
         final offset = Tween<Offset>(
           begin: const Offset(1, 0),
@@ -66,11 +62,7 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
   }
 
   List<ThemeMode> _buildDisplayModes() {
-    return const <ThemeMode>[
-      ThemeMode.system,
-      ThemeMode.light,
-      ThemeMode.dark,
-    ];
+    return const <ThemeMode>[ThemeMode.system, ThemeMode.light, ThemeMode.dark];
   }
 
   @override
@@ -119,9 +111,7 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                           Expanded(
                             child: Text(
                               themeLabel(mode),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyLarge
+                              style: Theme.of(context).textTheme.bodyLarge
                                   ?.copyWith(
                                     color: p.ink,
                                     fontWeight: FontWeight.w600,

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import 'package:lifelog_mobile/theme/palette.dart';
 
-
 /// Minimal, text-only segmented pill for mode switching.
 class ModePill extends StatelessWidget {
   final String label;
@@ -57,10 +56,10 @@ class ModePill extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: fg,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
+                  color: fg,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
               ),
             ),
             if (showUnderline && active)
@@ -194,10 +193,10 @@ class _HoldToTalkPillState extends State<HoldToTalkPill> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: fg,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
+                    color: fg,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
                 ),
               ),
               if (widget.showUnderline && widget.active)
@@ -236,20 +235,14 @@ class RecordingDot extends StatelessWidget {
         final scale = 0.92 + (t * 0.06);
         return Opacity(
           opacity: opacity,
-          child: Transform.scale(
-            scale: scale,
-            child: child,
-          ),
+          child: Transform.scale(scale: scale, child: child),
         );
       },
       onEnd: () {},
       child: Container(
         width: 7,
         height: 7,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       ),
     );
   }
@@ -303,13 +296,13 @@ class DoneFab extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: const Text(
-  '✓',
-  style: TextStyle(
-    color: Color(0xFFFFFFFF),
-    fontSize: 28,
-    fontWeight: FontWeight.w600,
-  ),
-),
+                    '✓',
+                    style: TextStyle(
+                      color: Color(0xFFFFFFFF),
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ),

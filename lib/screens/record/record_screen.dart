@@ -153,7 +153,10 @@ class _RecordScreenState extends State<RecordScreen> {
         bottomPadding += media.viewInsets.bottom;
 
         // 너무 위로 올라가서 어색해지는 것 방지(상한)
-        bottomPadding = bottomPadding.clamp(media.padding.bottom + 18, screenH * 0.75);
+        bottomPadding = bottomPadding.clamp(
+          media.padding.bottom + 18,
+          screenH * 0.75,
+        );
       }
     }
 
@@ -169,16 +172,17 @@ class _RecordScreenState extends State<RecordScreen> {
                   tween: Tween(begin: 0.0, end: 1.0),
                   duration: const Duration(milliseconds: 140),
                   curve: Curves.easeOut,
-                  builder: (context, t, child) => Opacity(opacity: t, child: child),
+                  builder: (context, t, child) =>
+                      Opacity(opacity: t, child: child),
                   child: Text(
                     message,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: fg,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          letterSpacing: 0.2,
-                        ),
+                      color: fg,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      letterSpacing: 0.2,
+                    ),
                   ),
                 ),
               ),
@@ -202,7 +206,8 @@ class _RecordScreenState extends State<RecordScreen> {
       final available = await _speech.initialize(
         onStatus: (s) {
           if (!mounted) return;
-          if ((s == 'notListening' || s == 'done') && _isListening) _stopListening();
+          if ((s == 'notListening' || s == 'done') && _isListening)
+            _stopListening();
         },
         onError: (e) {
           if (!mounted) return;
@@ -232,7 +237,8 @@ class _RecordScreenState extends State<RecordScreen> {
       String? preferred;
       if (locales.any((l) => l.localeId == 'ko_KR')) {
         preferred = 'ko_KR';
-      } else if (systemLocale != null && locales.any((l) => l.localeId == systemLocale.localeId)) {
+      } else if (systemLocale != null &&
+          locales.any((l) => l.localeId == systemLocale.localeId)) {
         preferred = systemLocale.localeId;
       } else if (locales.isNotEmpty) {
         preferred = locales.first.localeId;
@@ -311,7 +317,7 @@ class _RecordScreenState extends State<RecordScreen> {
       _showToast('인식 언어가 설정되지 않았습니다. 설정에서 선택하세요.');
       return;
     }
-    
+
     _setStickyNotice(null);
     _editorFocus.unfocus();
 
@@ -465,7 +471,9 @@ class _RecordScreenState extends State<RecordScreen> {
                   children: [
                     Expanded(
                       child: HoldToTalkPill(
-                        label: _isListening ? '말하는 중 • ${_formatElapsed(_elapsed)}' : '말하기',
+                        label: _isListening
+                            ? '말하는 중 • ${_formatElapsed(_elapsed)}'
+                            : '말하기',
                         active: _isListening,
                         enabled: _sttAvailable,
                         height: 40,
@@ -511,10 +519,10 @@ class _RecordScreenState extends State<RecordScreen> {
                     _stickyNotice!,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: p.muted,
-                          fontWeight: FontWeight.w600,
-                          height: 1.25,
-                        ),
+                      color: p.muted,
+                      fontWeight: FontWeight.w600,
+                      height: 1.25,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20), // 제목과 충분히 분리
@@ -526,11 +534,11 @@ class _RecordScreenState extends State<RecordScreen> {
                   Text(
                     '오늘의 기록',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: p.ink,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 24,
-                          letterSpacing: -0.2,
-                        ),
+                      color: p.ink,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 24,
+                      letterSpacing: -0.2,
+                    ),
                   ),
                   if (_isListening) ...[
                     const SizedBox(width: 8),
@@ -542,10 +550,10 @@ class _RecordScreenState extends State<RecordScreen> {
               Text(
                 _isListening ? '말하면 바로 여기에 적혀요' : '짧게라도 괜찮아요. 오늘 있었던 일을 적어보세요.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: p.muted,
-                      height: 1.45,
-                      fontSize: 16,
-                    ),
+                  color: p.muted,
+                  height: 1.45,
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -558,18 +566,15 @@ class _RecordScreenState extends State<RecordScreen> {
                     maxLines: null,
                     expands: true,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: p.ink,
-                          height: 1.6,
-                          fontSize: 20,
-                        ),
+                      color: p.ink,
+                      height: 1.6,
+                      fontSize: 20,
+                    ),
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: '예) 아침에 일찍 일어나 산책을 했다. 커피를 마시며 하루를 정리했다…',
-                      hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: p.muted,
-                            height: 1.6,
-                            fontSize: 20,
-                          ),
+                      hintStyle: Theme.of(context).textTheme.bodyLarge
+                          ?.copyWith(color: p.muted, height: 1.6, fontSize: 20),
                     ),
                   ),
                 ),
