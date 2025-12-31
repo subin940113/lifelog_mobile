@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'dart:convert';
+
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:lifelog_mobile/theme/palette.dart';
 
 import 'package:lifelog_mobile/widgets/brand_logo.dart';
@@ -17,13 +23,79 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _loading = false;
+  String? _error;
 
-  Future<void> _fakeOauthLogin() async {
-    setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 220));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    widget.onLoggedIn();
+  static const _serverBaseUrl = String.fromEnvironment(
+    'LIFELOG_API_BASE_URL',
+    defaultValue: 'http://localhost:8080',
+  );
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: <String>['email'],
+  );
+
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+  Future<void> _loginWithGoogle() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        // User canceled
+        if (!mounted) return;
+        setState(() => _loading = false);
+        return;
+      }
+
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw Exception('Google idToken을 가져오지 못했습니다.');
+      }
+
+      final accessToken = await _exchangeGoogleIdTokenForAccessToken(idToken);
+
+      // Persist for API calls
+      await _secureStorage.write(key: 'accessToken', value: accessToken);
+
+      if (!mounted) return;
+      setState(() => _loading = false);
+      widget.onLoggedIn();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = '로그인에 실패했습니다.\n${e.toString()}';
+      });
+    }
+  }
+
+  Future<String> _exchangeGoogleIdTokenForAccessToken(String idToken) async {
+    final uri = Uri.parse('$_serverBaseUrl/api/auth/oauth/google');
+
+    final res = await http.post(
+      uri,
+      headers: const {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'idToken': idToken}),
+    );
+
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception('서버 로그인 실패 (${res.statusCode}): ${res.body}');
+    }
+
+    final map = jsonDecode(res.body) as Map<String, dynamic>;
+    final token = map['accessToken'] as String?;
+    if (token == null || token.isEmpty) {
+      throw Exception('서버 응답에 accessToken이 없습니다: ${res.body}');
+    }
+
+    return token;
   }
 
   @override
@@ -67,13 +139,25 @@ class _LoginPageState extends State<LoginPage> {
                         ),
 
                         const SizedBox(height: 34),
+                        if (_error != null) ...[
+                          Text(
+                            _error!,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: p.muted,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.35,
+                                ),
+                          ),
+                          const SizedBox(height: 18),
+                        ],
 
                         // Google only — pure text action
                         _AuthText(
                           p: p,
                           label: 'Google로 시작하기',
                           enabled: !_loading,
-                          onTap: _fakeOauthLogin,
+                          onTap: _loginWithGoogle,
                         ),
 
                         if (_loading) ...[

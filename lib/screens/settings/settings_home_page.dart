@@ -7,27 +7,112 @@ import 'package:lifelog_mobile/theme/palette.dart';
 import 'settings_routes.dart';
 import 'theme_settings_page.dart';
 
+import 'account_settings_page.dart';
+
 import 'widgets/account_header.dart';
 import 'widgets/settings_page_header.dart';
 import 'widgets/settings_row.dart';
 
+import 'package:speech_to_text/speech_to_text.dart';
+import 'language_settings_page.dart';
+
 class SettingsHomePage extends StatelessWidget {
-  // ⚠️ 언어는 여기서 직접 push하지 않고 콜백 유지
-  // 단, 이 콜백 내부에서 showLanguageSheet(...)를 쓰도록 바꾸면 언어도 오른쪽 전환됨
-  final VoidCallback onOpenLanguage;
+  final VoidCallback? onOpenLanguage;
+
+  final List<LocaleName>? languageLocales;
+  final String? languageInitialLocaleId;
+  final bool? languageIsListening;
+  final ValueChanged<String?>? onApplyLanguage;
 
   final ValueChanged<ThemeMode> onChangeTheme;
+  final VoidCallback? onLogout;
 
   const SettingsHomePage({
     super.key,
-    required this.onOpenLanguage,
+    this.onOpenLanguage,
+    this.languageLocales,
+    this.languageInitialLocaleId,
+    this.languageIsListening,
+    this.onApplyLanguage,
     required this.onChangeTheme,
+    this.onLogout,
   });
 
   @override
   Widget build(BuildContext context) {
     final p = Palette.from(Theme.of(context).colorScheme);
     final themeMode = context.watch<ThemeProvider>().mode;
+
+    Future<void> _openLanguageDefault() async {
+      final provided = languageLocales;
+      if (provided != null && provided.isNotEmpty) {
+        showLanguageSheet(
+          context,
+          bg: p.bg,
+          p: p,
+          locales: provided,
+          initialLocaleId: languageInitialLocaleId,
+          isListening: languageIsListening ?? false,
+          onApply: (localeId) {
+            final cb = onApplyLanguage;
+            if (cb != null) cb(localeId);
+          },
+        );
+        return;
+      }
+
+      final stt = SpeechToText();
+      try {
+        await stt.initialize();
+        final locales = await stt.locales();
+        final system = await stt.systemLocale();
+
+        showLanguageSheet(
+          context,
+          bg: p.bg,
+          p: p,
+          locales: locales,
+          initialLocaleId: system?.localeId,
+          isListening: false,
+          onApply: (localeId) {
+            final cb = onApplyLanguage;
+            if (cb != null) cb(localeId);
+          },
+        );
+      } catch (_) {
+        showLanguageSheet(
+          context,
+          bg: p.bg,
+          p: p,
+          locales: const <LocaleName>[],
+          initialLocaleId: null,
+          isListening: false,
+          onApply: (localeId) {
+            final cb = onApplyLanguage;
+            if (cb != null) cb(localeId);
+          },
+        );
+      }
+    }
+
+    void openLanguage() {
+      final override = onOpenLanguage;
+      if (override != null) {
+        override();
+        return;
+      }
+      _openLanguageDefault();
+    }
+
+    void openAccount() {
+      pushSettingsPage<void>(
+        context,
+        AccountSettingsPage(
+          p: p,
+          onLogout: onLogout,
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: p.bg,
@@ -43,7 +128,16 @@ class SettingsHomePage extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
                 children: [
-                  AccountHeader(p: p),
+                  // ✅ 탭 하이라이트/리플 없이 즉시 전환
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: openAccount,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: AccountHeader(p: p),
+                    ),
+                  ),
+
                   const SizedBox(height: 18),
 
                   _SectionLabel(text: '설정', p: p),
@@ -59,11 +153,8 @@ class SettingsHomePage extends StatelessWidget {
                     trailingText: themeLabel(themeMode),
                   ),
 
-                  // ✅ 언어도 오른쪽 전환으로 통일하려면
-                  // onOpenLanguage 콜백이 showLanguageSheet(...)를 사용하도록 구현되어야 함
-                  SettingsRow(title: '언어', onTap: onOpenLanguage, p: p),
+                  SettingsRow(title: '언어', onTap: openLanguage, p: p),
 
-                  // ✅ 나머지 메뉴는 전부 오른쪽 전환으로 통일
                   SettingsRow(
                     title: '알림',
                     onTap: () => pushSettingsPage(
@@ -80,44 +171,6 @@ class SettingsHomePage extends StatelessWidget {
                       const _PlaceholderSettingsPage(title: 'PIN 잠금'),
                     ),
                     p: p,
-                    trailing: SwitchTheme(
-                      data: SwitchThemeData(
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        splashRadius: 0,
-                        thumbColor: MaterialStateProperty.resolveWith((states) {
-                          if (states.contains(MaterialState.selected))
-                            return p.bg;
-                          return p.muted.withOpacity(0.45);
-                        }),
-                        trackColor: MaterialStateProperty.resolveWith((states) {
-                          if (states.contains(MaterialState.selected)) {
-                            return p.ink.withOpacity(0.55);
-                          }
-                          return p.muted.withOpacity(0.18);
-                        }),
-                        trackOutlineColor: MaterialStateProperty.resolveWith((
-                          states,
-                        ) {
-                          if (states.contains(MaterialState.selected)) {
-                            return p.ink.withOpacity(0.35);
-                          }
-                          return p.muted.withOpacity(0.28);
-                        }),
-                      ),
-                      child: SizedBox(
-                        width: 46,
-                        height: 28,
-                        child: FittedBox(
-                          fit: BoxFit.contain,
-                          child: Switch(
-                            value: false,
-                            onChanged: (_) {},
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ),
-                        ),
-                      ),
-                    ),
                     showChevron: false,
                   ),
 
@@ -132,6 +185,7 @@ class SettingsHomePage extends StatelessWidget {
                     ),
                     p: p,
                   ),
+
                   SettingsRow(
                     title: '이용 약관 및 개인정보 처리방침',
                     onTap: () => pushSettingsPage(
@@ -172,10 +226,10 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: p.muted,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.2,
-        ),
+              color: p.muted,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+            ),
       ),
     );
   }
@@ -205,9 +259,9 @@ class _PlaceholderSettingsPage extends StatelessWidget {
                 child: Text(
                   '준비 중',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: p.muted,
-                    fontWeight: FontWeight.w600,
-                  ),
+                        color: p.muted,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ),
             ),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
-Route<T> buildSettingsRoute<T>(Widget page) {
+Route<T> buildSettingsRoute<T>(
+  Widget page, {
+  bool fromLeft = false,
+}) {
   return PageRouteBuilder<T>(
     pageBuilder: (_, __, ___) => page,
     transitionsBuilder: (_, animation, __, child) {
@@ -10,16 +13,25 @@ Route<T> buildSettingsRoute<T>(Widget page) {
         reverseCurve: Curves.easeInCubic,
       );
 
-      final offset = Tween<Offset>(
-        begin: const Offset(1, 0), // ✅ 오른쪽에서 등장
-        end: Offset.zero,
-      ).animate(curved);
+      final begin = fromLeft ? const Offset(-1, 0) : const Offset(1, 0);
 
-      return SlideTransition(position: offset, child: child);
+      return SlideTransition(
+        position: Tween<Offset>(
+          begin: begin,
+          end: Offset.zero,
+        ).animate(curved),
+        child: child,
+      );
     },
   );
 }
 
-Future<T?> pushSettingsPage<T>(BuildContext context, Widget page) {
-  return Navigator.of(context).push<T>(buildSettingsRoute<T>(page));
+Future<T?> pushSettingsPage<T>(
+  BuildContext context,
+  Widget page, {
+  bool fromLeft = false,
+}) {
+  return Navigator.of(context).push<T>(
+    buildSettingsRoute<T>(page, fromLeft: fromLeft),
+  );
 }

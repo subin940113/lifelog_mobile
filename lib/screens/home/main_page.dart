@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../record/record_screen.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
+import '../record/record_screen.dart';
+import '../settings/settings_home_page.dart';
+import '../settings/settings_routes.dart';
+import 'package:provider/provider.dart';
+import 'package:lifelog_mobile/theme/theme_provider.dart';
 
 class MainPage extends StatelessWidget {
   final Color bg;
@@ -19,95 +23,57 @@ class MainPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bg,
+      appBar: AppBar(
+        backgroundColor: bg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.menu, color: p.ink),
+          tooltip: '설정',
+          onPressed: () {
+            pushSettingsPage<void>(
+  context,
+  SettingsHomePage(
+    onChangeTheme: (m) => context.read<ThemeProvider>().setMode(m),
+    onLogout: onLogout,
+  ),
+  fromLeft: true,
+);
+          },
+        ),
+      ),
       body: SafeArea(
+        top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Text(
-                    'Home',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              Text(
+                '오늘의 기록',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: p.ink,
                       fontWeight: FontWeight.w800,
                     ),
-                  ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: onLogout,
-                    style: TextButton.styleFrom(foregroundColor: p.muted),
-                    child: const Text(
-                      '로그아웃',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '짧게라도 괜찮아요. 오늘 있었던 일을 적어보세요.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: p.muted,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ),
-                ],
               ),
               const SizedBox(height: 14),
-
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: p.card.withOpacity(0.35),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: p.muted.withOpacity(0.10)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '오늘',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: p.ink,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '빠르게 기록을 시작해.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const RecordScreen()),
-                    );
+MaterialPageRoute(builder: (_) => RecordScreen(onLogout: onLogout)),                    );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: p.ink,
-                    foregroundColor: bg,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: const Text(
-                    '기록하기',
-                    style: TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
-              ),
-
-              const Spacer(),
-              Text(
-                'v0 (minimal shell)',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: p.muted.withOpacity(0.75),
-                  fontWeight: FontWeight.w700,
+                  child: const Text('기록하기'),
                 ),
               ),
             ],

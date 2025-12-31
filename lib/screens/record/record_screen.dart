@@ -9,10 +9,14 @@ import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/screens/record/record_widgets.dart';
 import 'package:lifelog_mobile/screens/settings/settings_routes.dart';
 import 'package:lifelog_mobile/screens/settings/settings_home_page.dart';
-import 'package:lifelog_mobile/screens/settings/language_settings_page.dart';
 
 class RecordScreen extends StatefulWidget {
-  const RecordScreen({super.key});
+  final VoidCallback? onLogout;
+
+  const RecordScreen({
+    super.key,
+    this.onLogout,
+  });
 
   @override
   State<RecordScreen> createState() => _RecordScreenState();
@@ -82,30 +86,24 @@ class _RecordScreenState extends State<RecordScreen> {
 
   void _openSettings(BuildContext context) {
     final themeProvider = context.read<ThemeProvider>();
-    final p = Palette.from(Theme.of(context).colorScheme);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? p.bg : const Color(0xFFFAFAFA);
 
     pushSettingsPage<void>(
       context,
       SettingsHomePage(
         onChangeTheme: (m) => themeProvider.setMode(m),
-        onOpenLanguage: () {
-          pushSettingsPage<void>(
-            context,
-            LanguageSettingsPage(
-              bg: bg,
-              p: p,
-              locales: _locales,
-              initialLocaleId: _selectedLocaleId,
-              isListening: _isListening,
-              onApply: (localeId) {
-                setState(() => _selectedLocaleId = localeId);
-              },
-            ),
-          );
+
+        // ✅ 추가: 기록 화면에서 설정 열 때도 로그아웃이 보이게
+        onLogout: widget.onLogout,
+
+        languageLocales: _locales,
+        languageInitialLocaleId: _selectedLocaleId,
+        languageIsListening: _isListening,
+        onApplyLanguage: (localeId) {
+          if (localeId == null) return;
+          setState(() => _selectedLocaleId = localeId);
         },
       ),
+      fromLeft: true,
     );
   }
 
@@ -178,11 +176,11 @@ class _RecordScreenState extends State<RecordScreen> {
                     message,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: fg,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                      letterSpacing: 0.2,
-                    ),
+                          color: fg,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          letterSpacing: 0.2,
+                        ),
                   ),
                 ),
               ),
@@ -206,8 +204,9 @@ class _RecordScreenState extends State<RecordScreen> {
       final available = await _speech.initialize(
         onStatus: (s) {
           if (!mounted) return;
-          if ((s == 'notListening' || s == 'done') && _isListening)
+          if ((s == 'notListening' || s == 'done') && _isListening) {
             _stopListening();
+          }
         },
         onError: (e) {
           if (!mounted) return;
