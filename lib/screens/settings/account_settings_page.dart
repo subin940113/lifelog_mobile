@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
+import 'package:lifelog_mobile/api/auth_api_client.dart';
 
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'widgets/settings_page_header.dart';
+import 'package:lifelog_mobile/config/api_config.dart';
 
 
 class AccountSettingsPage extends StatefulWidget {
@@ -25,13 +25,6 @@ class AccountSettingsPage extends StatefulWidget {
 class _AccountSettingsPageState extends State<AccountSettingsPage> {
   static const _storage = FlutterSecureStorage();
 
-  // Use a compile-time env var if provided; otherwise default to localhost.
-  // You can pass `--dart-define=API_BASE_URL=http://<host>:8080` at build/run time.
-  static const String _apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:8080',
-  );
-
   late Future<_UserMe> _meFuture;
 
   Palette get p => widget.p;
@@ -43,26 +36,13 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   }
 
   Future<_UserMe> _fetchMe() async {
-    final accessToken = await _storage.read(key: 'accessToken');
-    if (accessToken == null || accessToken.isEmpty) {
-      throw Exception('accessToken이 없습니다. 다시 로그인해주세요.');
-    }
-
-    final uri = Uri.parse('$_apiBaseUrl/api/users/me');
-    final res = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $accessToken',
-        'Accept': 'application/json',
-      },
+    final client = AuthApiClient(
+      baseUrl: ApiConfig.baseUrl,
+      storage: _storage,
     );
 
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw Exception('계정 정보를 불러오지 못했습니다. (${res.statusCode})');
-    }
-
-    final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-    return _UserMe.fromJson(decoded);
+    final map = await client.getJson('/api/users/me');
+    return _UserMe.fromJson(map);
   }
 
   String _fmtInstant(InstantLike instant) {
@@ -81,21 +61,16 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   }) async {
     final result = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: p.bg,
       elevation: 0,
       isScrollControlled: false,
-      barrierColor: Colors.black.withOpacity(0.28),
+      barrierColor: Colors.black.withOpacity(0.18),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       builder: (sheetContext) {
         return SafeArea(
           top: false,
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-            decoration: BoxDecoration(
-              color: p.bg,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: p.outline.withOpacity(0.9)),
-            ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -103,50 +78,22 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                   message,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.ink,
-                        fontWeight: FontWeight.w700,
-                        height: 1.35,
+                        color: p.ink.withOpacity(0.85),
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
                       ),
                 ),
                 const SizedBox(height: 12),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(sheetContext).pop(true),
-                    style: ElevatedButton.styleFrom(
-                      elevation: 0,
-                      backgroundColor: actionColor,
-                      foregroundColor: p.bg,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      actionText,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
+                _BottomSheetAction(
+                  label: actionText,
+                  color: actionColor,
+                  onTap: () => Navigator.of(sheetContext).pop(true),
                 ),
-                const SizedBox(height: 8),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: TextButton(
-                    onPressed: () => Navigator.of(sheetContext).pop(false),
-                    style: TextButton.styleFrom(
-                      foregroundColor: p.muted,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      '취소',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
+                const SizedBox(height: 6),
+                _BottomSheetAction(
+                  label: '취소',
+                  color: p.muted,
+                  onTap: () => Navigator.of(sheetContext).pop(false),
                 ),
               ],
             ),
@@ -168,8 +115,31 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
 
     if (!ok) return;
 
+    // Best-effort server logout (revoke refresh token). Even if it fails,
+    // we still clear local tokens to reflect immediate logout UX.
+    try {
+      final refreshToken = await _storage.read(key: 'refreshToken');
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        final client = AuthApiClient(
+          baseUrl: ApiConfig.baseUrl,
+          storage: _storage,
+        );
+        await client.logout(refreshToken: refreshToken, allDevices: false);
+      }
+    } catch (_) {
+      // Ignore server/network errors; local logout should still proceed.
+    }
+
+    // Clear local session
+    await _storage.delete(key: 'accessToken');
+    await _storage.delete(key: 'refreshToken');
+    await _storage.delete(key: 'accountName');
+    await _storage.delete(key: 'isNewUser');
+
     // ✅ 화면이 “로그아웃 됐다”는 걸 즉시 보이게: Settings/Account 스택부터 닫기
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    if (context.mounted) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
 
     final cb = widget.onLogout;
     if (cb != null) cb();
@@ -193,92 +163,95 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     return Scaffold(
       backgroundColor: p.bg,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            SettingsPageHeader(
-              title: '계정',
-              titleColor: p.ink,
-              iconColor: p.ink,
+            Column(
+              children: [
+                SettingsPageHeader(
+                  title: '계정',
+                  titleColor: p.ink,
+                  iconColor: p.ink,
+                ),
+                Expanded(
+                  child: FutureBuilder<_UserMe>(
+                    future: _meFuture,
+                    builder: (context, snapshot) {
+                      final loading = snapshot.connectionState == ConnectionState.waiting;
+
+                      // Defaults (em dash) – replaced when API data is available
+                      var displayName = '—';
+                      var joinedAt = '—';
+                      var lastLoginAt = '—';
+
+                      if (snapshot.hasData) {
+                        final me = snapshot.data!;
+
+                        // API: createdAt, lastLoginAt
+                        joinedAt = _fmtInstant(InstantLike(me.createdAt));
+                        lastLoginAt = _fmtInstant(InstantLike(me.lastLoginAt));
+
+                        displayName = me.displayName?.isNotEmpty == true ? me.displayName! : '—';
+                      }
+
+                      return ListView(
+                        padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+                        children: [
+                          _InfoRow(label: '계정명', value: displayName, p: p),
+                          _InfoRow(label: '가입', value: joinedAt, p: p),
+                          _InfoRow(label: '최근 로그인', value: lastLoginAt, p: p),
+
+                          if (snapshot.hasError) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              '계정 정보를 불러오지 못했어요.',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: p.muted,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ] else if (loading) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              '불러오는 중…',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: p.muted,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ],
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: FutureBuilder<_UserMe>(
-                future: _meFuture,
-                builder: (context, snapshot) {
-                  final loading = snapshot.connectionState == ConnectionState.waiting;
-
-                  // Defaults (em dash) – replaced when API data is available
-                  var displayName = '—';
-                  var joinedAt = '—';
-                  var lastLoginAt = '—';
-
-                  if (snapshot.hasData) {
-                    final me = snapshot.data!;
-
-                    // API: createdAt, lastLoginAt
-                    joinedAt = _fmtInstant(InstantLike(me.createdAt));
-                    lastLoginAt = _fmtInstant(InstantLike(me.lastLoginAt));
-
-                    displayName = me.displayName?.isNotEmpty == true ? me.displayName! : '—';
-
-                    // Not provided by /api/users/me (per current contract)
-                    // Keep as '—' until backend adds them.
-                    // email = me.email ?? '—';
-                    // provider = me.provider ?? '—';
-
-                    // If you want to show displayName somewhere later, it is available:
-                    // me.displayName
-                  }
-
-                  return ListView(
-                    padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
-                    children: [
-                      _SectionLabel(text: '기본 정보', p: p),
-                      const SizedBox(height: 6),
-                      _InfoRow(label: '계정명', value: displayName, p: p),
-                      _InfoRow(label: '가입', value: joinedAt, p: p),
-                      _InfoRow(label: '최근 로그인', value: lastLoginAt, p: p),
-
-                      if (snapshot.hasError) ...[
-                        const SizedBox(height: 10),
-                        Text(
-                          '계정 정보를 불러오지 못했어요.',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: p.muted,
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                      ] else if (loading) ...[
-                        const SizedBox(height: 10),
-                        Text(
-                          '불러오는 중…',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: p.muted,
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                      ],
-
-                      const SizedBox(height: 18),
-                      _SectionLabel(text: '계정', p: p),
-                      const SizedBox(height: 6),
-
-                      if (widget.onLogout != null)
-                        _ActionRow(
-                          title: '로그아웃',
-                          onTap: () => _handleLogout(context),
-                          p: p,
-                          color: p.ink,
-                        ),
-
-                      _ActionRow(
-                        title: '계정삭제',
-                        onTap: () => _handleDeleteAccount(context),
-                        p: p,
-                        color: p.danger,
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+                decoration: BoxDecoration(
+                  color: p.bg,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.onLogout != null)
+                      _BottomTextAction(
+                        label: '로그아웃',
+                        color: p.ink,
+                        onTap: () => _handleLogout(context),
                       ),
-                    ],
-                  );
-                },
+                    const SizedBox(height: 14),
+                    _BottomTextAction(
+                      label: '계정 삭제',
+                      color: p.danger,
+                      onTap: () => _handleDeleteAccount(context),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -360,25 +333,26 @@ class _InfoRow extends StatelessWidget {
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Text(
               label,
               style: baseStyle?.copyWith(
-                    color: p.muted,
-                    fontWeight: FontWeight.w500,
-                  ),
+                color: p.muted,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          const SizedBox(width: 12),
-          Flexible(
+          Align(
+            alignment: Alignment.centerRight,
             child: Text(
               value,
               textAlign: TextAlign.right,
               style: baseStyle?.copyWith(
-                    color: p.ink,
-                    fontWeight: FontWeight.w500,
-                  ),
+                color: p.ink,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -426,6 +400,106 @@ class _ActionRow extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Minimal bottom action (centered text, no box).
+class _BottomTextAction extends StatefulWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _BottomTextAction({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  State<_BottomTextAction> createState() => _BottomTextActionState();
+}
+
+class _BottomTextActionState extends State<_BottomTextAction> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final opacity = _pressed ? 0.55 : 1.0;
+
+    return Center(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 120),
+          opacity: opacity,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Text(
+              widget.label,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: widget.color,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.1,
+                  ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomSheetAction extends StatefulWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _BottomSheetAction({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  State<_BottomSheetAction> createState() => _BottomSheetActionState();
+}
+
+class _BottomSheetActionState extends State<_BottomSheetAction> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final opacity = _pressed ? 0.55 : 1.0;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 120),
+        opacity: opacity,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Center(
+            child: Text(
+              widget.label,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: widget.color,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.1,
+                  ),
+            ),
+          ),
         ),
       ),
     );

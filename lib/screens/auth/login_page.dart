@@ -1,27 +1,13 @@
 import 'package:flutter/material.dart';
 
-import 'dart:convert';
-
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:lifelog_mobile/theme/palette.dart';
-
-
 import 'package:lifelog_mobile/widgets/brand_logo.dart';
+import 'package:lifelog_mobile/config/api_config.dart';
+import 'package:lifelog_mobile/api/auth_api_client.dart';
 
-class _AuthResult {
-  final String accessToken;
-  final String displayName;
-  final bool isNewUser;
-
-  const _AuthResult({
-    required this.accessToken,
-    required this.displayName,
-    required this.isNewUser,
-  });
-}
 
 class LoginPage extends StatefulWidget {
   final Color? bg;
@@ -37,11 +23,6 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool _loading = false;
   String? _error;
-
-  static const _serverBaseUrl = String.fromEnvironment(
-    'LIFELOG_API_BASE_URL',
-    defaultValue: 'http://localhost:8080',
-  );
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: <String>['email'],
@@ -70,10 +51,15 @@ class _LoginPageState extends State<LoginPage> {
         throw Exception('Google idToken을 가져오지 못했습니다.');
       }
 
-      final authResult = await _exchangeGoogleIdTokenForAuthResult(idToken);
+      final client = AuthApiClient(
+        baseUrl: ApiConfig.baseUrl,
+        storage: _secureStorage,
+      );
+      final authResult = await client.loginWithGoogleIdToken(idToken);
 
       // Persist for API calls
       await _secureStorage.write(key: 'accessToken', value: authResult.accessToken);
+      await _secureStorage.write(key: 'refreshToken', value: authResult.refreshToken);
 
       // Persist minimal identity for Settings header
       await _secureStorage.write(key: 'accountName', value: authResult.displayName);
@@ -91,43 +77,6 @@ class _LoginPageState extends State<LoginPage> {
         _error = '로그인에 실패했습니다.\n${e.toString()}';
       });
     }
-  }
-
-  Future<_AuthResult> _exchangeGoogleIdTokenForAuthResult(String idToken) async {
-    final uri = Uri.parse('$_serverBaseUrl/api/auth/oauth/google');
-
-    final res = await http.post(
-      uri,
-      headers: const {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'idToken': idToken}),
-    );
-
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw Exception('서버 로그인 실패 (${res.statusCode}): ${res.body}');
-    }
-
-    final map = jsonDecode(res.body) as Map<String, dynamic>;
-
-    final accessToken = map['accessToken'] as String?;
-    final displayName = map['displayName'] as String?;
-    final isNewUser = map['isNewUser'] as bool?;
-
-    if (accessToken == null || accessToken.isEmpty) {
-      throw Exception('서버 응답에 accessToken이 없습니다: ${res.body}');
-    }
-
-    // displayName may be empty depending on server/user profile; keep a safe fallback.
-    final safeName = (displayName != null && displayName.trim().isNotEmpty)
-        ? displayName.trim()
-        : '계정';
-
-    return _AuthResult(
-      accessToken: accessToken,
-      displayName: safeName,
-      isNewUser: isNewUser ?? false,
-    );
   }
 
   @override
