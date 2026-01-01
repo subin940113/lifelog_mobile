@@ -24,11 +24,22 @@ class _LoginPageState extends State<LoginPage> {
   bool _loading = false;
   String? _error;
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: <String>['email'],
-  );
+  late final GoogleSignIn _googleSignIn;
 
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+  @override
+  void initState() {
+    super.initState();
+
+    final webClientId = ApiConfig.googleWebClientId.trim();
+
+    _googleSignIn = GoogleSignIn(
+      scopes: const <String>['email'],
+      // For server-side ID token verification, prefer a Web OAuth client id here.
+      serverClientId: webClientId.isNotEmpty ? webClientId : null,
+    );
+  }
 
   Future<void> _loginWithGoogle() async {
     setState(() {

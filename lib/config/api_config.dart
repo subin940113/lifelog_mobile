@@ -7,4 +7,9 @@ class ApiConfig {
     'API_BASE_URL',
     defaultValue: 'http://localhost:8080',
   );
+
+  static const String googleWebClientId = String.fromEnvironment(
+    'GOOGLE_WEB_CLIENT_ID',
+    defaultValue: '',
+  );
 }

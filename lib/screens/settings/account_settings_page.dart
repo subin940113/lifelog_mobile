@@ -7,6 +7,7 @@ import 'package:lifelog_mobile/theme/palette.dart';
 import 'widgets/settings_page_header.dart';
 import 'package:lifelog_mobile/config/api_config.dart';
 
+import 'package:flutter/cupertino.dart';
 
 class AccountSettingsPage extends StatefulWidget {
   final Palette p;
@@ -59,43 +60,104 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     required String actionText,
     required Color actionColor,
   }) async {
+    final platform = Theme.of(context).platform;
+    final isCupertino =
+        platform == TargetPlatform.iOS || platform == TargetPlatform.macOS;
+
+    if (isCupertino) {
+      final isDestructive = actionColor.value == p.danger.value;
+
+      final result = await showCupertinoModalPopup<bool>(
+        context: context,
+        barrierColor: Colors.black.withOpacity(0.12),
+        builder: (sheetContext) {
+          return CupertinoActionSheet(
+            message: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: p.ink.withOpacity(0.85),
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
+            ),
+            actions: [
+              CupertinoActionSheetAction(
+                onPressed: () => Navigator.of(sheetContext).pop(true),
+                isDestructiveAction: isDestructive,
+                child: Text(
+                  actionText,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: isDestructive ? p.danger : p.accent,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.1,
+                      ),
+                ),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(sheetContext).pop(false),
+              child: Text(
+                '취소',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: p.muted,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.1,
+                    ),
+              ),
+            ),
+          );
+        },
+      );
+
+      return result == true;
+    }
+
+    // Material (Android etc.): minimal bottom sheet, no heavy buttons.
     final result = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: p.bg,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       isScrollControlled: false,
       barrierColor: Colors.black.withOpacity(0.18),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
       builder: (sheetContext) {
         return SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.ink.withOpacity(0.85),
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                _BottomSheetAction(
-                  label: actionText,
-                  color: actionColor,
-                  onTap: () => Navigator.of(sheetContext).pop(true),
-                ),
-                const SizedBox(height: 6),
-                _BottomSheetAction(
-                  label: '취소',
-                  color: p.muted,
-                  onTap: () => Navigator.of(sheetContext).pop(false),
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+              decoration: BoxDecoration(
+                color: p.bg,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Wrap(
+                children: [
+                  Center(
+                    child: Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: p.ink.withOpacity(0.85),
+                            fontWeight: FontWeight.w500,
+                            height: 1.4,
+                          ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _BottomSheetAction(
+                    label: actionText,
+                    color: actionColor,
+                    onTap: () => Navigator.of(sheetContext).pop(true),
+                  ),
+                  const SizedBox(height: 6),
+                  _BottomSheetAction(
+                    label: '취소',
+                    color: p.muted,
+                    onTap: () => Navigator.of(sheetContext).pop(false),
+                  ),
+                ],
+              ),
             ),
           ),
         );
