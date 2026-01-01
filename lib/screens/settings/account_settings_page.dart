@@ -40,6 +40,13 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     final client = AuthApiClient(
       baseUrl: ApiConfig.baseUrl,
       storage: _storage,
+      onUnauthorized: () async {
+        await _storage.deleteAll();
+        if (mounted) {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+        widget.onLogout?.call();
+      },
     );
 
     final map = await client.getJson('/api/users/me');
@@ -185,6 +192,10 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         final client = AuthApiClient(
           baseUrl: ApiConfig.baseUrl,
           storage: _storage,
+          onUnauthorized: () async {
+          await _storage.deleteAll();
+          widget.onLogout?.call();
+        },
         );
         await client.logout(refreshToken: refreshToken, allDevices: false);
       }
@@ -209,15 +220,43 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
 
   Future<void> _handleDeleteAccount(BuildContext context) async {
     final ok = await _showActionSheet(
-      context,
-      message: '계정을 삭제할까요?\n삭제 후에는 복구할 수 없어요.',
-      actionText: '삭제',
-      actionColor: p.danger, // ✅ 팔레트 danger
+        context,
+        message: '계정을 삭제할까요?\n삭제 후에는 복구할 수 없어요.',
+        actionText: '삭제',
+        actionColor: p.danger,
     );
 
     if (!ok) return;
 
-    // TODO: 계정 삭제 API 연동 후 구현
+    try {
+        final client = AuthApiClient(
+        baseUrl: ApiConfig.baseUrl,
+        storage: _storage,
+        onUnauthorized: () async {
+            await _storage.deleteAll();
+            final cb = widget.onLogout;
+            if (cb != null) cb();
+        },
+        );
+
+        // ✅ 서버 계정 삭제 (DELETE /api/users/me)
+        await client.deleteAccount();
+    } catch (_) {
+        // 서버/네트워크 실패해도 UX는 계속 진행
+    }
+
+    // ✅ 로컬 세션은 무조건 정리
+    await _storage.delete(key: 'accessToken');
+    await _storage.delete(key: 'refreshToken');
+    await _storage.delete(key: 'accountName');
+    await _storage.delete(key: 'isNewUser');
+
+    if (context.mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+
+    final cb = widget.onLogout;
+    if (cb != null) cb();
   }
 
   @override

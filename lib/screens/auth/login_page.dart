@@ -65,6 +65,10 @@ class _LoginPageState extends State<LoginPage> {
       final client = AuthApiClient(
         baseUrl: ApiConfig.baseUrl,
         storage: _secureStorage,
+        onUnauthorized: () {
+          // Best-effort local cleanup; routing is handled by the app shell.
+          _secureStorage.deleteAll();
+        },
       );
       final authResult = await client.loginWithGoogleIdToken(idToken);
 

@@ -1,8 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+import 'package:lifelog_mobile/api/auth_api_client.dart';
+import 'package:lifelog_mobile/api/log_api_client.dart';
+import 'package:lifelog_mobile/config/api_config.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/screens/record/record_widgets.dart';
 
@@ -32,6 +36,12 @@ class _RecordScreenState extends State<RecordScreen> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _editorFocus = FocusNode();
 
+  // API
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  late final AuthApiClient _authApi;
+  late final LogApiClient _logApi;
+  bool _saving = false;
+
   // STT merge state
   String _committedText = '';
   String _partialText = '';
@@ -56,6 +66,13 @@ class _RecordScreenState extends State<RecordScreen> {
   void initState() {
     super.initState();
 
+    _authApi = AuthApiClient(
+      baseUrl: ApiConfig.baseUrl,
+      storage: _secureStorage,
+      onUnauthorized: widget.onLogout,
+    );
+    _logApi = LogApiClient(_authApi);
+
     _hasText = _controller.text.trim().isNotEmpty;
     _controller.addListener(() {
       final next = _controller.text.trim().isNotEmpty;
@@ -78,7 +95,6 @@ class _RecordScreenState extends State<RecordScreen> {
     _editorFocus.dispose();
     super.dispose();
   }
-
 
   void _setStickyNotice(String? message) {
     if (!mounted) return;
@@ -143,8 +159,7 @@ class _RecordScreenState extends State<RecordScreen> {
                   tween: Tween(begin: 0.0, end: 1.0),
                   duration: const Duration(milliseconds: 140),
                   curve: Curves.easeOut,
-                  builder: (context, t, child) =>
-                      Opacity(opacity: t, child: child),
+                  builder: (context, t, child) => Opacity(opacity: t, child: child),
                   child: Text(
                     message,
                     textAlign: TextAlign.center,
@@ -209,8 +224,7 @@ class _RecordScreenState extends State<RecordScreen> {
       String? preferred;
       if (locales.any((l) => l.localeId == 'ko_KR')) {
         preferred = 'ko_KR';
-      } else if (systemLocale != null &&
-          locales.any((l) => l.localeId == systemLocale.localeId)) {
+      } else if (systemLocale != null && locales.any((l) => l.localeId == systemLocale.localeId)) {
         preferred = systemLocale.localeId;
       } else if (locales.isNotEmpty) {
         preferred = locales.first.localeId;
@@ -388,9 +402,38 @@ class _RecordScreenState extends State<RecordScreen> {
   Future<void> _onDone() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+    if (_saving) return;
 
-    // TODO: 실제 저장 로직 연결
-    _showToast('저장했습니다.');
+    setState(() => _saving = true);
+
+    try {
+      final result = await _logApi.createLog(content: text);
+
+      // Reset editor
+      _controller.clear();
+      _committedText = '';
+      _partialText = '';
+      _lastCommittedChunk = '';
+      _sessionFinalCommitted = false;
+      _editorFocus.unfocus();
+
+      if (!mounted) return;
+      _showToast('저장했습니다. (#${result.logId})');
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e.toString();
+
+      // AuthApiClient 쪽에서 refresh 후에도 실패하면 onUnauthorized가 호출되는 구조
+      if (msg.contains('accessToken이 없습니다')) {
+        _showToast('로그인이 필요합니다.');
+      } else if (msg.contains('토큰 갱신 실패') || msg.contains('refreshToken')) {
+        _showToast('세션이 만료되었습니다. 다시 로그인해 주세요.');
+      } else {
+        _showToast('저장 실패');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -412,7 +455,7 @@ class _RecordScreenState extends State<RecordScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: DoneFab(
         key: _doneFabKey,
-        enabled: _hasText,
+        enabled: _hasText && !_saving,
         onPressed: _onDone,
         p: p,
       ),
@@ -432,11 +475,10 @@ class _RecordScreenState extends State<RecordScreen> {
                     child: InkWell(
                       onTap: () => Navigator.of(context).maybePop(),
                       borderRadius: BorderRadius.circular(18),
-                      child: Padding(
-                        padding: const EdgeInsets.all(6),
+                      child: const Padding(
+                        padding: EdgeInsets.all(6),
                         child: Icon(
                           Icons.chevron_left_rounded,
-                          color: p.ink,
                           size: 26,
                         ),
                       ),
@@ -450,9 +492,7 @@ class _RecordScreenState extends State<RecordScreen> {
                   children: [
                     Expanded(
                       child: HoldToTalkPill(
-                        label: _isListening
-                            ? '말하는 중 • ${_formatElapsed(_elapsed)}'
-                            : '말하기',
+                        label: _isListening ? '말하는 중 • ${_formatElapsed(_elapsed)}' : '말하기',
                         active: _isListening,
                         enabled: _sttAvailable,
                         height: 40,
@@ -498,10 +538,10 @@ class _RecordScreenState extends State<RecordScreen> {
                     _stickyNotice!,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: p.muted,
-                      fontWeight: FontWeight.w600,
-                      height: 1.25,
-                    ),
+                          color: p.muted,
+                          fontWeight: FontWeight.w600,
+                          height: 1.25,
+                        ),
                   ),
                 ),
                 const SizedBox(height: 20), // 제목과 충분히 분리
@@ -513,11 +553,11 @@ class _RecordScreenState extends State<RecordScreen> {
                   Text(
                     '오늘의 기록',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: p.ink,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 24,
-                      letterSpacing: -0.2,
-                    ),
+                          color: p.ink,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 24,
+                          letterSpacing: -0.2,
+                        ),
                   ),
                   if (_isListening) ...[
                     const SizedBox(width: 8),
@@ -527,12 +567,14 @@ class _RecordScreenState extends State<RecordScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                _isListening ? '말하면 바로 여기에 적혀요' : '짧게라도 괜찮아요. 오늘 있었던 일을 적어보세요.',
+                _saving
+                    ? '저장 중…'
+                    : (_isListening ? '말하면 바로 여기에 적혀요' : '짧게라도 괜찮아요. 오늘 있었던 일을 적어보세요.'),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: p.muted,
-                  height: 1.45,
-                  fontSize: 16,
-                ),
+                      color: p.muted,
+                      height: 1.45,
+                      fontSize: 16,
+                    ),
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -545,15 +587,18 @@ class _RecordScreenState extends State<RecordScreen> {
                     maxLines: null,
                     expands: true,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: p.ink,
-                      height: 1.6,
-                      fontSize: 20,
-                    ),
+                          color: p.ink,
+                          height: 1.6,
+                          fontSize: 20,
+                        ),
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: '예) 아침에 일찍 일어나 산책을 했다. 커피를 마시며 하루를 정리했다…',
-                      hintStyle: Theme.of(context).textTheme.bodyLarge
-                          ?.copyWith(color: p.muted, height: 1.6, fontSize: 20),
+                      hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: p.muted,
+                            height: 1.6,
+                            fontSize: 20,
+                          ),
                     ),
                   ),
                 ),

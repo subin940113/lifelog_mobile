@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class AuthLoginResult {
   final String accessToken;
@@ -25,10 +26,12 @@ class AuthLoginResult {
 class AuthApiClient {
   final String baseUrl;
   final FlutterSecureStorage storage;
+  final VoidCallback? onUnauthorized;
 
   AuthApiClient({
     required this.baseUrl,
     required this.storage,
+    this.onUnauthorized,
   });
 
   static Future<void>? _refreshInFlight;
@@ -120,6 +123,23 @@ class AuthApiClient {
     }
   }
 
+  Future<void> deleteAccount() async {
+    final res = await _sendWithRefresh(() async {
+      final token = await _requireAccessToken();
+      return http.delete(
+        _uri('/api/users/me'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+    });
+
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception('계정 삭제 실패 (${res.statusCode}): ${res.body}');
+    }
+  }
+
   Future<AuthLoginResult> loginWithGoogleIdToken(String idToken) async {
     final map = await postJsonUnauthenticated(
       '/api/auth/oauth/google',
@@ -153,6 +173,9 @@ class AuthApiClient {
   Future<String> _requireAccessToken() async {
     final accessToken = await storage.read(key: 'accessToken');
     if (accessToken == null || accessToken.isEmpty) {
+      if (onUnauthorized != null) {
+        onUnauthorized!();
+      }
       throw Exception('accessToken이 없습니다. 다시 로그인해주세요.');
     }
     return accessToken;
@@ -193,6 +216,12 @@ class AuthApiClient {
 
     try {
       await refreshFuture;
+    } catch (e) {
+      // Refresh failed -> session is no longer valid
+      if (onUnauthorized != null) {
+        onUnauthorized!();
+      }
+      rethrow;
     } finally {
       _refreshInFlight = null;
     }
