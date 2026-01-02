@@ -10,6 +10,6 @@ class ApiConfig {
 
   static const String googleWebClientId = String.fromEnvironment(
     'GOOGLE_WEB_CLIENT_ID',
-    defaultValue: '',
+    defaultValue: '737064199460-uv468beoijmibisraq9vqb75nf78d1al.apps.googleusercontent.com',
   );
 }
