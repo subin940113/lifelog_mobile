@@ -9,6 +9,7 @@ import 'package:lifelog_mobile/api/log_api_client.dart';
 import 'package:lifelog_mobile/config/api_config.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/screens/record/record_widgets.dart';
+import 'package:lifelog_mobile/widgets/app_toast.dart';
 
 class RecordScreen extends StatefulWidget {
   final VoidCallback? onLogout;
@@ -51,8 +52,6 @@ class _RecordScreenState extends State<RecordScreen> {
   String _lastCommittedChunk = '';
 
   bool _hasText = false; // 완료 버튼 활성화용
-  OverlayEntry? _toastEntry;
-  Timer? _toastTimer;
   String? _stickyNotice; // 권한/사용불가 같은 상태성 메시지(지속 노출)
 
   Future<bool> _hasSpeechPermission() async {
@@ -85,11 +84,6 @@ class _RecordScreenState extends State<RecordScreen> {
   @override
   void dispose() {
     _timer?.cancel();
-
-    _toastTimer?.cancel();
-    _toastEntry?.remove();
-    _toastEntry = null;
-
     _speech.stop();
     _controller.dispose();
     _editorFocus.dispose();
@@ -102,29 +96,14 @@ class _RecordScreenState extends State<RecordScreen> {
     setState(() => _stickyNotice = message);
   }
 
-  void _showToast(String message) {
-    if (!mounted) return;
-
-    final palette = Palette.from(Theme.of(context).colorScheme);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Ultra-minimal: text only (no box)
-    final fg = isDark ? const Color(0xFFECECEC) : palette.muted;
-
-    _toastTimer?.cancel();
-    _toastEntry?.remove();
-    _toastEntry = null;
-
-    final overlay = Overlay.of(context);
-    if (overlay == null) return;
-
-    // ✅ 기본값(측정 실패 시): 홈 인디케이터 위 + 적당한 여백
+  double _computeToastBottomPadding() {
     final media = MediaQuery.of(context);
     final screenH = media.size.height;
 
+    // 기본값: 홈 인디케이터 위 + 여백
     double bottomPadding = media.padding.bottom + 18;
 
-    // ✅ DoneFab 실제 위치 기반으로 토스트를 “버튼 위”에 배치
+    // DoneFab 위치 기반(버튼 위)
     final fabCtx = _doneFabKey.currentContext;
     if (fabCtx != null) {
       final render = fabCtx.findRenderObject();
@@ -132,14 +111,12 @@ class _RecordScreenState extends State<RecordScreen> {
         final topLeft = render.localToGlobal(Offset.zero);
         final fabTopY = topLeft.dy;
 
-        // bottom padding = 화면바닥~fabTop 거리 + gap
         const gap = 14.0;
         bottomPadding = (screenH - fabTopY) + gap;
 
-        // 키보드가 올라온 경우(직접입력), 토스트가 키보드 위에 뜨도록 보정
+        // 키보드가 올라온 경우 보정
         bottomPadding += media.viewInsets.bottom;
 
-        // 너무 위로 올라가서 어색해지는 것 방지(상한)
         bottomPadding = bottomPadding.clamp(
           media.padding.bottom + 18,
           screenH * 0.75,
@@ -147,44 +124,16 @@ class _RecordScreenState extends State<RecordScreen> {
       }
     }
 
-    final entry = OverlayEntry(
-      builder: (_) {
-        return IgnorePointer(
-          child: SafeArea(
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: bottomPadding),
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 140),
-                  curve: Curves.easeOut,
-                  builder: (context, t, child) => Opacity(opacity: t, child: child),
-                  child: Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: fg,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          letterSpacing: 0.2,
-                        ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+    return bottomPadding;
+  }
+
+  void _showToast(String message) {
+    if (!mounted) return;
+    AppToast.show(
+      context,
+      message,
+      bottomPadding: _computeToastBottomPadding(),
     );
-
-    _toastEntry = entry;
-    overlay.insert(entry);
-
-    _toastTimer = Timer(const Duration(milliseconds: 1200), () {
-      _toastEntry?.remove();
-      _toastEntry = null;
-    });
   }
 
   Future<void> _initStt() async {
@@ -418,12 +367,11 @@ class _RecordScreenState extends State<RecordScreen> {
       _editorFocus.unfocus();
 
       if (!mounted) return;
-      _showToast('저장했습니다. (#${result.logId})');
+      _showToast('저장했습니다.');
     } catch (e) {
       if (!mounted) return;
       final msg = e.toString();
 
-      // AuthApiClient 쪽에서 refresh 후에도 실패하면 onUnauthorized가 호출되는 구조
       if (msg.contains('accessToken이 없습니다')) {
         _showToast('로그인이 필요합니다.');
       } else if (msg.contains('토큰 갱신 실패') || msg.contains('refreshToken')) {
@@ -465,7 +413,6 @@ class _RecordScreenState extends State<RecordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Back control, aligned with content
               SizedBox(
                 height: 56,
                 child: Align(
@@ -530,7 +477,7 @@ class _RecordScreenState extends State<RecordScreen> {
               ),
               const SizedBox(height: 6),
 
-              // A안: 세그먼트 바로 아래에 상태 캡션처럼 노출
+              // 상태 캡션(지속 메시지)
               if (_stickyNotice != null) ...[
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -544,9 +491,10 @@ class _RecordScreenState extends State<RecordScreen> {
                         ),
                   ),
                 ),
-                const SizedBox(height: 20), // 제목과 충분히 분리
+                const SizedBox(height: 20),
               ] else
                 const SizedBox(height: 16),
+
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -569,7 +517,7 @@ class _RecordScreenState extends State<RecordScreen> {
               Text(
                 _saving
                     ? '저장 중…'
-                    : (_isListening ? '말하면 바로 여기에 적혀요' : '짧게라도 괜찮아요. 오늘 있었던 일을 적어보세요.'),
+                    : (_isListening ? '말하면 바로 여기에 적혀요' : '짧게라도 괜찮아요. 지금 떠오르는 걸 적어보세요.'),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: p.muted,
                       height: 1.45,
@@ -577,6 +525,7 @@ class _RecordScreenState extends State<RecordScreen> {
                     ),
               ),
               const SizedBox(height: 16),
+
               Expanded(
                 child: Theme(
                   data: localTheme,

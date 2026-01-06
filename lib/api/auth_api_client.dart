@@ -36,16 +36,35 @@ class AuthApiClient {
 
   static Future<void>? _refreshInFlight;
 
-  Uri _uri(String path) {
+  Uri _uri(String path, {Map<String, String>? queryParameters}) {
     final normalized = path.startsWith('/') ? path : '/$path';
-    return Uri.parse('$baseUrl$normalized');
+    final base = Uri.parse('$baseUrl$normalized');
+
+    if (queryParameters == null || queryParameters.isEmpty) return base;
+
+    // 기존 base의 쿼리와 병합
+    final merged = <String, String>{
+      ...base.queryParameters,
+      ...queryParameters,
+    };
+    return base.replace(queryParameters: merged);
   }
 
-  Future<Map<String, dynamic>> getJson(String path) async {
+  Future<Map<String, dynamic>> getJson(
+    String path, {
+    Map<String, String>? queryParameters,
+  }) async {
     final res = await _sendWithRefresh(() async {
       final token = await _requireAccessToken();
+
+      final uri = _uri(path).replace(
+        queryParameters: (queryParameters == null || queryParameters.isEmpty)
+            ? null
+            : queryParameters,
+      );
+
       return http.get(
-        _uri(path),
+        uri,
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -158,9 +177,7 @@ class AuthApiClient {
       throw Exception('서버 응답에 refreshToken이 없습니다: ${jsonEncode(map)}');
     }
 
-    final safeName = (displayName != null && displayName.trim().isNotEmpty)
-        ? displayName.trim()
-        : '계정';
+    final safeName = (displayName != null && displayName.trim().isNotEmpty) ? displayName.trim() : '계정';
 
     return AuthLoginResult(
       accessToken: accessToken,
@@ -217,7 +234,6 @@ class AuthApiClient {
     try {
       await refreshFuture;
     } catch (e) {
-      // Refresh failed -> session is no longer valid
       if (onUnauthorized != null) {
         onUnauthorized!();
       }
@@ -256,5 +272,22 @@ class AuthApiClient {
 
     await storage.write(key: 'accessToken', value: newAccessToken);
     await storage.write(key: 'refreshToken', value: newRefreshToken);
+  }
+
+  Future<Map<String, dynamic>> deleteJson(String path) async {
+    final res = await _sendWithRefresh(() async {
+      final token = await _requireAccessToken();
+      return http.delete(
+        _uri(path),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+    });
+
+    final decoded = jsonDecode(res.body);
+    if (decoded is Map<String, dynamic>) return decoded;
+    throw Exception('서버 응답 JSON이 객체가 아닙니다: ${res.body}');
   }
 }

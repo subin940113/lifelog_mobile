@@ -176,7 +176,7 @@ class _LoginPageState extends State<LoginPage> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Text(
-                  '© ${DateTime.now().year} lifelog. All rights reserved.',
+                  '© ${DateTime.now().year} bluelog. All rights reserved.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: p.muted.withOpacity(0.80),

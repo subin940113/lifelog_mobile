@@ -1,0 +1,60 @@
+import 'package:flutter/material.dart';
+
+/// SettingsPageHeader와 별개로 쓰는 공통 헤더(좌측 정렬, < + 타이틀)
+class AppPageHeader extends StatelessWidget {
+  final String title;
+  final Color? titleColor;
+  final Color? iconColor;
+
+  const AppPageHeader({
+    super.key,
+    required this.title,
+    this.titleColor,
+    this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.centerLeft,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 28),
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: titleColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                      ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: -14,
+              child: InkWell(
+                onTap: () => Navigator.of(context).maybePop(),
+                borderRadius: BorderRadius.circular(18),
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Icon(
+                    Icons.chevron_left_rounded,
+                    color: iconColor,
+                    size: 26,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

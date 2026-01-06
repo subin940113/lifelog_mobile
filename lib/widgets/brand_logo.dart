@@ -39,7 +39,7 @@ class _TypingLogoState extends State<_TypingLogo>
     with TickerProviderStateMixin {
   static const int _msPerChar = 220;
   static const Duration _loopPause = Duration(milliseconds: 650);
-  static const String _text = 'lifelog';
+  static const String _text = 'bluelog';
 
   late final AnimationController _controller;
   late final AnimationController _blink;
