@@ -11,7 +11,7 @@ import 'package:lifelog_mobile/screens/settings/settings_routes.dart';
 import 'package:lifelog_mobile/widgets/app_page_header.dart';
 import 'package:lifelog_mobile/widgets/app_toast.dart';
 
-import 'interest_manage_page.dart' hide InterestBadge;
+import 'interest_setting_page.dart' hide InterestBadge;
 import 'widgets/interest_badge.dart';
 import 'widgets/palette_switch.dart';
 

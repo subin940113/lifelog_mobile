@@ -17,9 +17,7 @@ import 'widgets/settings_row.dart';
 
 import 'package:speech_to_text/speech_to_text.dart';
 import 'language_settings_page.dart';
-
-// ✅ 인사이트 설정 허브
-import 'package:lifelog_mobile/screens/insight/insight_hub_page.dart';
+import 'insight_setting_page.dart';
 
 class SettingsHomePage extends StatelessWidget {
   final VoidCallback? onOpenLanguage;
@@ -207,27 +205,8 @@ class SettingsHomePage extends StatelessWidget {
                     p: p,
                   ),
 
-                  SettingsRow(
-                    title: 'PIN 잠금',
-                    onTap: () => pushSettingsPage(
-                      context,
-                      const _PlaceholderSettingsPage(title: 'PIN 잠금'),
-                    ),
-                    p: p,
-                    showChevron: false,
-                  ),
-
                   const SizedBox(height: 18),
                   _SectionLabel(text: '정보', p: p),
-
-                  SettingsRow(
-                    title: '문의하기',
-                    onTap: () => pushSettingsPage(
-                      context,
-                      const _PlaceholderSettingsPage(title: '문의하기'),
-                    ),
-                    p: p,
-                  ),
 
                   SettingsRow(
                     title: '이용 약관 및 개인정보 처리방침',
