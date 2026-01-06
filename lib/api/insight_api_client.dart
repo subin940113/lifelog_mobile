@@ -11,26 +11,53 @@ class InsightSettings {
   }
 }
 
+/// Cursor paging response
+class InsightsPage {
+  final List<AiInsightItem> items;
+  final String? nextCursor;
+
+  const InsightsPage({
+    required this.items,
+    required this.nextCursor,
+  });
+
+  bool get hasMore => nextCursor != null && nextCursor!.trim().isNotEmpty;
+}
+
 class InsightApiClient {
   final AuthApiClient _api;
   InsightApiClient(this._api);
 
-  /// GET /api/insights?limit=20
+  /// GET /api/insights?limit=20&cursor=...
   /// {
-  ///   "insights":[
-  ///     {"kind":"PATTERN","title":"...","body":"...","evidence":"...","keyword":"고양이"}
-  ///   ]
+  ///   "insights":[ { ... } ],
+  ///   "nextCursor": "..."
   /// }
-  Future<List<AiInsightItem>> getInsights({int limit = 20}) async {
-    final safeLimit = limit.clamp(0, 50);
-    final map = await _api.getJson('/api/insights?limit=$safeLimit');
+  Future<InsightsPage> getInsightsPage({
+    int limit = 20,
+    String? cursor,
+  }) async {
+    final safeLimit = limit.clamp(1, 50);
+
+    final qs = StringBuffer('/api/insights?limit=$safeLimit');
+    if (cursor != null && cursor.trim().isNotEmpty) {
+      qs.write('&cursor=${Uri.encodeComponent(cursor)}');
+    }
+
+    final map = await _api.getJson(qs.toString());
 
     final list = (map['insights'] as List?) ?? const [];
-    return list
+    final items = list
         .whereType<Map>()
         .map((m) => AiInsightItem.fromJson(m.cast<String, dynamic>()))
         .where((x) => x.title.trim().isNotEmpty && x.body.trim().isNotEmpty)
         .toList();
+
+    final nextCursor = (map['nextCursor'] as String?)?.trim();
+    return InsightsPage(
+      items: items,
+      nextCursor: (nextCursor != null && nextCursor.isNotEmpty) ? nextCursor : null,
+    );
   }
 
   /// GET /api/insights/settings

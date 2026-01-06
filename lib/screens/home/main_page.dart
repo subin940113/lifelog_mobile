@@ -14,54 +14,13 @@ import '../record/record_screen.dart';
 import '../settings/settings_home_page.dart';
 import '../settings/settings_routes.dart';
 
-import 'package:lifelog_mobile/screens/insight/insight_hub_page.dart';
-
-// 기록 전체보기
 import 'logs_all_page.dart';
 import 'log_models.dart';
 
+import 'package:lifelog_mobile/screens/insight/insight_all_page.dart';
+import 'package:lifelog_mobile/screens/insight/widgets/insight_detail_sheet.dart';
+
 String _formatKoreanDate(DateTime dt) => '${dt.month}월 ${dt.day}일';
-
-enum _InsightKind { tendency, pattern, highlight, warning, reflection }
-
-class _InsightPreview {
-  final _InsightKind kind;
-  final String title;
-  final String body;
-  final String? evidence;
-
-  const _InsightPreview({
-    required this.kind,
-    required this.title,
-    required this.body,
-    this.evidence,
-  });
-
-  static _InsightKind _kindFrom(String? s) {
-    switch ((s ?? '').toUpperCase()) {
-      case 'PATTERN':
-        return _InsightKind.pattern;
-      case 'HIGHLIGHT':
-        return _InsightKind.highlight;
-      case 'WARNING':
-        return _InsightKind.warning;
-      case 'REFLECTION':
-        return _InsightKind.reflection;
-      case 'TENDENCY':
-      default:
-        return _InsightKind.tendency;
-    }
-  }
-
-  factory _InsightPreview.fromJson(Map<String, dynamic> m) {
-    return _InsightPreview(
-      kind: _kindFrom(m['kind'] as String?),
-      title: (m['title'] as String?) ?? '',
-      body: (m['body'] as String?) ?? '',
-      evidence: (m['evidence'] as String?),
-    );
-  }
-}
 
 class MainPage extends StatefulWidget {
   final Color bg;
@@ -129,17 +88,6 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  void _openInsightHub() {
-    final p = widget.p;
-    pushSettingsPage<void>(
-      context,
-      InsightHubPage(
-        p: p,
-        onLogout: widget.onLogout,
-      ),
-    );
-  }
-
   void _openAllLogs() {
     final p = widget.p;
     final bg = widget.bg;
@@ -151,6 +99,28 @@ class _MainPageState extends State<MainPage> {
         bg: bg,
         onLogout: widget.onLogout,
       ),
+    );
+  }
+
+  void _openAllInsights() {
+    final p = widget.p;
+    final bg = widget.bg;
+
+    pushSettingsPage<void>(
+      context,
+      InsightsAllPage(
+        p: p,
+        bg: bg,
+        onLogout: widget.onLogout,
+      ),
+    );
+  }
+
+  Future<void> _openInsightDetail(InsightPreviewUi item) async {
+    await showInsightDetailSheet(
+      context,
+      p: widget.p,
+      item: item,
     );
   }
 
@@ -184,7 +154,7 @@ class _MainPageState extends State<MainPage> {
             : (topInsight.signalCount <= 2 ? '작은 신호가 관측되고 있어요' : '특정 패턴이 감지되고 있어요'))
         : rawHeadline;
 
-    final insights = vm?.insights ?? const <_InsightPreview>[];
+    final insights = vm?.insights ?? const <InsightPreviewUi>[];
     final visibleInsights = insights.take(2).toList();
 
     final logs = vm?.recentLogs ?? const <LogPreview>[];
@@ -236,7 +206,7 @@ class _MainPageState extends State<MainPage> {
             _TopInsightCard(p: p, items: topInsight),
             const SizedBox(height: 18),
 
-            // ---- Insights header (설정: 파란 글씨) ----
+            // ---- Insights header (우측: 파란 >) ----
             Row(
               children: [
                 Expanded(
@@ -244,27 +214,15 @@ class _MainPageState extends State<MainPage> {
                     '인사이트',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: p.ink,
-                          fontWeight: FontWeight.w600, // 메뉴 타이틀 더 진하게
+                          fontWeight: FontWeight.w600,
                           fontSize: 17,
                           letterSpacing: -0.1,
                         ),
                   ),
                 ),
-                TextButton(
-                  onPressed: _openInsightHub,
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                    minimumSize: const Size(0, 0),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    splashFactory: NoSplash.splashFactory,
-                  ),
-                  child: Text(
-                    '설정',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: p.accent,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
+                _HeaderChevronButton(
+                  p: p,
+                  onTap: _openAllInsights,
                 ),
               ],
             ),
@@ -312,7 +270,11 @@ class _MainPageState extends State<MainPage> {
                   )
                 else
                   for (int i = 0; i < visibleInsights.length; i++) ...[
-                    _AiInsightRow(p: p, item: visibleInsights[i]),
+                    _AiInsightRow(
+                      p: p,
+                      item: visibleInsights[i],
+                      onTap: () => _openInsightDetail(visibleInsights[i]),
+                    ),
                     if (i != visibleInsights.length - 1) const SizedBox(height: 10),
                   ],
               ],
@@ -320,7 +282,7 @@ class _MainPageState extends State<MainPage> {
 
             const SizedBox(height: 20),
 
-            // ---- Logs header (전체 보기: 파란 글씨) ----
+            // ---- Logs header (우측: 파란 >) ----
             Row(
               children: [
                 Expanded(
@@ -328,27 +290,15 @@ class _MainPageState extends State<MainPage> {
                     '기록',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: p.ink,
-                          fontWeight: FontWeight.w600, // 메뉴 타이틀 더 진하게
+                          fontWeight: FontWeight.w600,
                           fontSize: 17,
                           letterSpacing: -0.1,
                         ),
                   ),
                 ),
-                TextButton(
-                  onPressed: _openAllLogs,
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                    minimumSize: const Size(0, 0),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    splashFactory: NoSplash.splashFactory,
-                  ),
-                  child: Text(
-                    '전체 보기',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: p.accent,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
+                _HeaderChevronButton(
+                  p: p,
+                  onTap: _openAllLogs,
                 ),
               ],
             ),
@@ -404,27 +354,66 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
+class _HeaderChevronButton extends StatelessWidget {
+  final Palette p;
+  final VoidCallback onTap;
+
+  const _HeaderChevronButton({
+    required this.p,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // ✅ 44x44 고정: 좌우 여백/정렬 일관성 확보 (기록/인사이트 동일)
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: InkResponse(
+          onTap: onTap,
+          radius: 24,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          child: Icon(
+            Icons.chevron_right_rounded,
+            color: p.accent,
+            size: 26,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AiInsightRow extends StatelessWidget {
   final Palette p;
-  final _InsightPreview item;
+  final InsightPreviewUi item;
+  final VoidCallback? onTap;
 
   const _AiInsightRow({
     required this.p,
     required this.item,
+    this.onTap,
   });
 
-  String _labelFor(_InsightKind kind) {
+  String _labelFor(InsightKindUi kind) {
     switch (kind) {
-      case _InsightKind.tendency:
+      case InsightKindUi.tendency:
         return '성향';
-      case _InsightKind.pattern:
+      case InsightKindUi.pattern:
         return '패턴';
-      case _InsightKind.highlight:
+      case InsightKindUi.highlight:
         return '포인트';
-      case _InsightKind.warning:
+      case InsightKindUi.warning:
         return '주의';
-      case _InsightKind.reflection:
+      case InsightKindUi.reflection:
         return '회고';
+      case InsightKindUi.contrast:
+        return '대비';
+      case InsightKindUi.question:
+        return '질문';
     }
   }
 
@@ -432,71 +421,77 @@ class _AiInsightRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = _labelFor(item.kind);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 2, 0, 0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 7),
-            child: Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: p.accent,
-                borderRadius: BorderRadius.circular(999),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(0, 2, 0, 0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 7),
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: p.accent,
+                  borderRadius: BorderRadius.circular(999),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        label,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: p.accent.withOpacity(0.9),
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: -0.1,
-                            ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          item.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: p.ink,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          label,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: p.accent.withOpacity(0.9),
                                 fontWeight: FontWeight.w500,
-                                height: 1.25,
+                                letterSpacing: -0.1,
                               ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    item.body,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: p.muted,
-                          fontWeight: FontWeight.w500,
-                          height: 1.55,
-                          fontSize: 16,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            item.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: p.ink,
+                                  fontWeight: FontWeight.w500,
+                                  height: 1.25,
+                                ),
+                          ),
                         ),
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      item.body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: p.muted,
+                            fontWeight: FontWeight.w500,
+                            height: 1.55,
+                            fontSize: 16,
+                          ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -795,7 +790,7 @@ class _RecentLogRow extends StatelessWidget {
 
 class _HomeVm {
   final _TopInsightPreview topInsight;
-  final List<_InsightPreview> insights;
+  final List<InsightPreviewUi> insights;
   final List<LogPreview> recentLogs;
 
   const _HomeVm({
@@ -830,7 +825,7 @@ class _HomeVm {
     final insightsRaw = (map['insights'] as List?) ?? const [];
     final insights = insightsRaw
         .whereType<Map>()
-        .map((m) => _InsightPreview.fromJson(m.cast<String, dynamic>()))
+        .map((m) => InsightPreviewUi.fromJson(m.cast<String, dynamic>()))
         .toList();
 
     final logsRaw = (map['recentLogs'] as List?) ?? const [];

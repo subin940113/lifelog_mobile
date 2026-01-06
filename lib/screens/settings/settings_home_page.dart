@@ -18,6 +18,9 @@ import 'widgets/settings_row.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'language_settings_page.dart';
 
+// ✅ 인사이트 설정 허브
+import 'package:lifelog_mobile/screens/insight/insight_hub_page.dart';
+
 class SettingsHomePage extends StatelessWidget {
   final VoidCallback? onOpenLanguage;
 
@@ -28,6 +31,7 @@ class SettingsHomePage extends StatelessWidget {
 
   final ValueChanged<ThemeMode> onChangeTheme;
   final VoidCallback? onLogout;
+
   /// Logged-in user's display name shown in the account header.
   /// If null, it will be loaded from secure storage.
   final String? accountName;
@@ -122,6 +126,16 @@ class SettingsHomePage extends StatelessWidget {
       );
     }
 
+    void openInsightSettings() {
+      pushSettingsPage<void>(
+        context,
+        InsightHubPage(
+          p: p,
+          onLogout: onLogout,
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: p.bg,
       body: SafeArea(
@@ -136,7 +150,6 @@ class SettingsHomePage extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
                 children: [
-                  // ✅ 탭 하이라이트/리플 없이 즉시 전환
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: openAccount,
@@ -163,6 +176,7 @@ class SettingsHomePage extends StatelessWidget {
                   const SizedBox(height: 18),
 
                   _SectionLabel(text: '설정', p: p),
+
                   SettingsRow(
                     title: '테마',
                     onTap: () => showThemeSheet(
@@ -176,6 +190,13 @@ class SettingsHomePage extends StatelessWidget {
                   ),
 
                   SettingsRow(title: '언어', onTap: openLanguage, p: p),
+
+                  // ✅ 인사이트 설정 메뉴 추가
+                  SettingsRow(
+                    title: '인사이트',
+                    onTap: openInsightSettings,
+                    p: p,
+                  ),
 
                   SettingsRow(
                     title: '알림',
