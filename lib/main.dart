@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Lifelog',
+      title: 'bluelog',
       themeMode: themeProvider.mode,
       theme: _lightTheme,
       darkTheme: _darkTheme,

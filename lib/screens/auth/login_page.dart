@@ -49,7 +49,6 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final account = await _googleSignIn.signIn();
       if (account == null) {
-        // User canceled
         if (!mounted) return;
         setState(() => _loading = false);
         return;
@@ -65,33 +64,16 @@ class _LoginPageState extends State<LoginPage> {
         baseUrl: ApiConfig.baseUrl,
         storage: _secureStorage,
         onUnauthorized: () {
-          // Best-effort local cleanup; routing is handled by the app shell.
           _secureStorage.deleteAll();
         },
       );
+
       final authResult = await client.loginWithGoogleIdToken(idToken);
 
-      // Persist for API calls
-      await _secureStorage.write(
-        key: 'accessToken',
-        value: authResult.accessToken,
-      );
-      await _secureStorage.write(
-        key: 'refreshToken',
-        value: authResult.refreshToken,
-      );
-
-      // Persist minimal identity for Settings header
-      await _secureStorage.write(
-        key: 'accountName',
-        value: authResult.displayName,
-      );
-
-      // Persist onboarding hint
-      await _secureStorage.write(
-        key: 'isNewUser',
-        value: authResult.isNewUser.toString(),
-      );
+      await _secureStorage.write(key: 'accessToken', value: authResult.accessToken);
+      await _secureStorage.write(key: 'refreshToken', value: authResult.refreshToken);
+      await _secureStorage.write(key: 'accountName', value: authResult.displayName);
+      await _secureStorage.write(key: 'isNewUser', value: authResult.isNewUser.toString());
 
       if (!mounted) return;
       setState(() => _loading = false);
@@ -109,7 +91,14 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final p = widget.p ?? Palette.from(Theme.of(context).colorScheme);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // ✅ 시스템 다크면 다크 배경, 라이트면 FAFAFA (기존 유지)
     final bg = widget.bg ?? (isDark ? p.bg : const Color(0xFFFAFAFA));
+
+    // ✅ 다크에서 대비 보정 (너무 “밝은 회색”으로 뜨지 않게만)
+    final copyColor = isDark ? p.muted.withOpacity(0.88) : p.muted;
+    final errorColor = isDark ? p.muted.withOpacity(0.92) : p.muted;
+    final footerColor = isDark ? p.muted.withOpacity(0.70) : p.muted.withOpacity(0.80);
 
     return Scaffold(
       backgroundColor: bg,
@@ -125,7 +114,6 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Logo (only strong emphasis)
                         BrandLogo(
                           p: p,
                           style: BrandLogoStyle.wordmark,
@@ -133,13 +121,11 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         const SizedBox(height: 8),
 
-                        // Copy
                         RichText(
                           textAlign: TextAlign.center,
                           text: TextSpan(
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: p.muted,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: copyColor,
                                   fontWeight: FontWeight.w500,
                                   height: 1.35,
                                 ),
@@ -148,25 +134,13 @@ class _LoginPageState extends State<LoginPage> {
                               WidgetSpan(
                                 alignment: PlaceholderAlignment.middle,
                                 child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: 1,
-                                    bottom: 3,
-                                  ), // ✅ 마진
+                                  padding: const EdgeInsets.only(left: 1, bottom: 3),
                                   child: Text(
                                     '.',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                           color: p.accent,
                                           fontWeight: FontWeight.w700,
-                                          fontSize:
-                                              (Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium
-                                                      ?.fontSize ??
-                                                  14) *
-                                              1.3, // ✅ 살짝 크게
+                                          fontSize: (Theme.of(context).textTheme.bodyMedium?.fontSize ?? 14) * 1.3,
                                           height: 1.0,
                                         ),
                                   ),
@@ -181,9 +155,8 @@ class _LoginPageState extends State<LoginPage> {
                           Text(
                             _error!,
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: p.muted,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: errorColor,
                                   fontWeight: FontWeight.w600,
                                   height: 1.35,
                                 ),
@@ -191,7 +164,6 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 18),
                         ],
 
-                        // Google only — pure text action
                         _AuthText(
                           p: p,
                           label: 'Google로 시작하기',
@@ -206,7 +178,8 @@ class _LoginPageState extends State<LoginPage> {
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: p.muted,
+                              // ✅ 다크에서 너무 죽지 않게
+                              color: isDark ? p.muted.withOpacity(0.90) : p.muted,
                             ),
                           ),
                         ],
@@ -222,10 +195,10 @@ class _LoginPageState extends State<LoginPage> {
                   '© ${DateTime.now().year} bluelog. All rights reserved.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: p.muted.withOpacity(0.80),
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.1,
-                  ),
+                        color: footerColor,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.1,
+                      ),
                 ),
               ),
             ],
@@ -236,9 +209,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-/// Minimal auth action:
-/// - No icon, no arrow, no underline, no box
-/// - Press feedback: subtle opacity only
 class _AuthText extends StatefulWidget {
   final Palette p;
   final String label;
@@ -262,8 +232,24 @@ class _AuthTextState extends State<_AuthText> {
   @override
   Widget build(BuildContext context) {
     final p = widget.p;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final color = widget.enabled ? p.ink : p.muted;
+    // ✅ 다크에서 “화이트 + 아주 약한 블루 틴트”
+    // - 너무 파래지면 링크처럼 보여서 6~12% 정도만 권장
+    Color tintWhite(Color tint, {double t = 0.10, double opacity = 0.94}) {
+      final mixed = Color.lerp(Colors.white, tint, t)!;
+      return mixed.withOpacity(opacity);
+    }
+
+    final enabledColor = isDark
+        ? tintWhite(p.accent, t: 0.10, opacity: 0.84) // 👈 약한 푸른빛
+        : p.ink;
+
+    final disabledColor = isDark
+        ? tintWhite(p.accent, t: 0.08, opacity: 0.55) // 👈 비활성도 약간 블루
+        : p.muted;
+
+    final color = widget.enabled ? enabledColor : disabledColor;
     final opacity = widget.enabled ? (_pressed ? 0.55 : 1.0) : 0.45;
 
     return GestureDetector(
@@ -288,10 +274,10 @@ class _AuthTextState extends State<_AuthText> {
           child: Text(
             widget.label,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.1,
-            ),
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.1,
+                ),
           ),
         ),
       ),
