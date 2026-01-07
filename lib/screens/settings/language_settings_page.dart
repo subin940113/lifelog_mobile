@@ -5,33 +5,18 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'widgets/settings_page_header.dart';
 
-// ✅ Glass 공통 컴포넌트
 import 'package:lifelog_mobile/widgets/glass_dot.dart';
 
 typedef OnApplySettings = void Function(String? localeId);
 
 const String kSttLocaleStorageKey = 'sttLocaleId';
 
-/// ✅ 한국 사용자 기준 “자주 쓰는 언어”만 노출 (기기 지원되는 것만 표시)
-/// - 정렬은 고정(가나다 X) : ko → en → ja → zh
-/// - 저장된 선택값이 top set에 없으면 맨 위에 1개 추가로 보여줌(선택값 보존 UX)
-const List<String> _krTopLocaleIds = <String>[
-  // Korean
-  'ko_KR', 'ko-KR', 'ko',
+/// ✅ 기본은 항상 한국어
+const String _kDefaultLocaleId = 'ko_KR';
 
-  // English
-  'en_US', 'en-US', 'en_GB', 'en-GB', 'en',
-
-  // Japanese
-  'ja_JP', 'ja-JP', 'ja',
-
-  // Chinese (Simplified / Traditional)
-  'zh_CN', 'zh-CN', 'zh_Hans_CN', 'zh-Hans-CN', 'zh_Hans', 'zh-Hans',
-  'zh_TW', 'zh-TW', 'zh_Hant_TW', 'zh-Hant-TW', 'zh_Hant', 'zh-Hant',
-  'zh_HK', 'zh-HK', 'zh',
-];
-
-void showLanguageSheet(
+/// ✅ (중요) 이제 Future로 결과를 돌려줌.
+/// SettingsHomePage에서 await 가능 -> 복귀 시 리프레시 트리거 가능
+Future<String?> showLanguageSheet(
   BuildContext context, {
   required Color bg,
   required Palette p,
@@ -40,7 +25,7 @@ void showLanguageSheet(
   required bool isListening,
   required OnApplySettings onApply,
 }) {
-  Navigator.of(context).push(
+  return Navigator.of(context).push<String?>(
     PageRouteBuilder(
       pageBuilder: (_, __, ___) => LanguageSettingsPage(
         bg: bg,
@@ -59,6 +44,21 @@ void showLanguageSheet(
       },
     ),
   );
+}
+
+/// ✅ 완전 하드코딩: UI에 노출할 언어 정의
+class _HardcodedLang {
+  final String key; // 내부 식별자
+  final String label; // 화면 표시명(해당 언어로)
+  final List<String> preferredLocaleIds; // 우선순위 localeId 후보들
+  final List<String> preferredPrefixes; // 위 후보가 없을 때 prefix로 보정
+
+  const _HardcodedLang({
+    required this.key,
+    required this.label,
+    required this.preferredLocaleIds,
+    required this.preferredPrefixes,
+  });
 }
 
 class LanguageSettingsPage extends StatefulWidget {
@@ -86,135 +86,191 @@ class LanguageSettingsPage extends StatefulWidget {
 class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
-  String? _localeId;
+  // ✅ UI에 보여줄 언어는 여기서만 관리
+  static const List<_HardcodedLang> _langs = <_HardcodedLang>[
+    _HardcodedLang(
+      key: 'ko',
+      label: '한국어',
+      preferredLocaleIds: <String>['ko_KR', 'ko-KR', 'ko'],
+      preferredPrefixes: <String>['ko'],
+    ),
+    _HardcodedLang(
+      key: 'en',
+      label: 'English',
+      preferredLocaleIds: <String>[
+        'en_US',
+        'en-US',
+        'en_GB',
+        'en-GB',
+        'en_AU',
+        'en-AU',
+        'en',
+      ],
+      preferredPrefixes: <String>['en'],
+    ),
+    _HardcodedLang(
+      key: 'ja',
+      label: '日本語',
+      preferredLocaleIds: <String>['ja_JP', 'ja-JP', 'ja'],
+      preferredPrefixes: <String>['ja'],
+    ),
+    _HardcodedLang(
+      key: 'zh-Hans',
+      label: '简体中文',
+      preferredLocaleIds: <String>[
+        'zh_CN',
+        'zh-CN',
+        'zh_Hans_CN',
+        'zh-Hans-CN',
+        'zh_Hans',
+        'zh-Hans',
+        'zh',
+      ],
+      preferredPrefixes: <String>['zh', 'zh-hans'],
+    ),
+    _HardcodedLang(
+      key: 'zh-Hant',
+      label: '繁體中文',
+      preferredLocaleIds: <String>[
+        'zh_TW',
+        'zh-TW',
+        'zh_Hant_TW',
+        'zh-Hant-TW',
+        'zh_Hant',
+        'zh-Hant',
+        'zh_HK',
+        'zh-HK',
+      ],
+      preferredPrefixes: <String>['zh-hant', 'zh'],
+    ),
+  ];
+
+  String? _localeId; // 실제 저장되는 값 (STT localeId)
   bool _loadedStored = false;
 
   @override
   void initState() {
     super.initState();
+    // initialLocaleId는 “표시용 초기값”일 뿐이고,
+    // 실제 선택값 확정은 storage를 기준으로 맞춤
     _localeId = widget.initialLocaleId;
-    _loadStoredIfNeeded();
+    _loadStoredOrSetDefault();
   }
 
-  Future<void> _loadStoredIfNeeded() async {
-    final saved = await _storage.read(key: kSttLocaleStorageKey);
-    if (!mounted) return;
+  String _norm(String? s) => (s ?? '').trim();
 
-    if (saved != null && widget.locales.any((l) => l.localeId == saved)) {
-      setState(() {
-        _localeId = saved;
-        _loadedStored = true;
-      });
-      return;
+  String _prefixOf(String id) {
+    final lower = id.toLowerCase();
+    return lower.split(RegExp(r'[_-]')).first;
+  }
+
+  bool _deviceSupports(String id) {
+    final target = _norm(id);
+    if (target.isEmpty) return false;
+    return widget.locales.any((l) => _norm(l.localeId) == target);
+  }
+
+  /// ✅ 기기 지원 locale 목록에서, 특정 언어에 대해 “대표 localeId”를 하나 고른다.
+  String? _pickSupportedLocaleId(_HardcodedLang lang) {
+    if (widget.locales.isEmpty) return null;
+
+    final all = widget.locales
+        .map((l) => _norm(l.localeId))
+        .where((id) => id.isNotEmpty)
+        .toList();
+
+    // 1) localeId exact 우선순위 매칭
+    for (final wanted in lang.preferredLocaleIds) {
+      final w = _norm(wanted);
+      if (w.isEmpty) continue;
+      if (all.any((id) => _norm(id) == w)) return w;
     }
 
-    setState(() => _loadedStored = true);
+    // 2) prefix로 fallback
+    for (final pref in lang.preferredPrefixes) {
+      final pfx = _norm(pref).toLowerCase();
+      for (final id in all) {
+        if (_prefixOf(id) == pfx) return id;
+      }
+    }
+
+    return null;
+  }
+
+  /// ✅ UI에 보여줄 언어 리스트(기기 지원되는 것만)
+  List<_LangRowVm> _buildRows() {
+    final rows = <_LangRowVm>[];
+    for (final lang in _langs) {
+      final supported = _pickSupportedLocaleId(lang);
+      if (supported == null) continue;
+      rows.add(_LangRowVm(lang: lang, localeId: supported));
+    }
+    return rows;
+  }
+
+  /// ✅ 저장값이 없으면 "항상 한국어"를 기본으로 확정해 storage에 써 둠
+  Future<void> _loadStoredOrSetDefault() async {
+    final savedRaw = await _storage.read(key: kSttLocaleStorageKey);
+    final saved = _norm(savedRaw);
+
+    String resolved;
+
+    if (saved.isNotEmpty && _deviceSupports(saved)) {
+      resolved = saved;
+    } else {
+      // 저장값이 없거나, 저장값이 기기 지원 목록에 없으면 -> 한국어로 고정
+      // (기기에서 ko_KR이 없을 수도 있으니, 지원되는 ko를 하나 찾고 없으면 fallback)
+      final rows = _buildRows();
+      final koRow =
+          rows.where((r) => r.lang.key == 'ko').cast<_LangRowVm?>().toList();
+      resolved = koRow.isNotEmpty ? koRow.first!.localeId : _kDefaultLocaleId;
+
+      // ✅ 기본값을 storage에 “명시적으로” 저장해 둠
+      await _storage.write(key: kSttLocaleStorageKey, value: resolved);
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _localeId = resolved;
+      _loadedStored = true;
+    });
+
+    // ✅ 즉시 반영 (RecordScreen 등 즉시 언어 갱신 가능)
+    widget.onApply(resolved);
   }
 
   Future<void> _selectLocale(String? id) async {
     if (widget.isListening) return;
 
-    setState(() => _localeId = id);
+    final v = _norm(id);
+    if (v.isEmpty) return;
 
-    await _storage.write(key: kSttLocaleStorageKey, value: id);
+    setState(() => _localeId = v);
+
+    await _storage.write(key: kSttLocaleStorageKey, value: v);
     if (!mounted) return;
 
-    widget.onApply(id);
-  }
-
-  String _norm(String? s) => (s ?? '').trim();
-
-  bool _isBareCode(String id) => !id.contains('_') && !id.contains('-');
-
-  List<LocaleName> _buildKrTopLocales({
-    required List<LocaleName> all,
-    required String? selectedId,
-  }) {
-    if (all.isEmpty) return const <LocaleName>[];
-
-    // localeId -> LocaleName
-    final byId = <String, LocaleName>{};
-    for (final l in all) {
-      final id = _norm(l.localeId);
-      if (id.isNotEmpty) byId[id] = l;
-    }
-
-    final picked = <LocaleName>[];
-    final used = <String>{};
-
-    LocaleName? findByPrefix(String prefix) {
-      final pfx = prefix.toLowerCase();
-      for (final l in all) {
-        final id = _norm(l.localeId);
-        if (id.isEmpty) continue;
-        final head = id.toLowerCase().split(RegExp(r'[_-]')).first;
-        if (head == pfx) return l;
-      }
-      return null;
-    }
-
-    void addIfNew(LocaleName? l) {
-      if (l == null) return;
-      final id = _norm(l.localeId);
-      if (id.isEmpty) return;
-      if (used.add(id)) picked.add(l);
-    }
-
-    // 1) Top set in fixed priority order
-    for (final wanted in _krTopLocaleIds) {
-      final exact = byId[wanted];
-      if (exact != null) {
-        addIfNew(exact);
-        continue;
-      }
-
-      if (_isBareCode(wanted)) {
-        addIfNew(findByPrefix(wanted));
-      }
-    }
-
-    // 2) Keep the selected locale visible even if it's outside the top set
-    final sel = _norm(selectedId);
-    if (sel.isNotEmpty && byId[sel] != null && !used.contains(sel)) {
-      picked.insert(0, byId[sel]!);
-      used.add(sel);
-    }
-
-    // 3) If still empty (rare), fallback to ko/en/ja/zh prefix-filtered list
-    if (picked.isEmpty) {
-      const prefixes = <String>{'ko', 'en', 'ja', 'zh'};
-      return all.where((l) {
-        final id = _norm(l.localeId).toLowerCase();
-        if (id.isEmpty) return false;
-        final head = id.split(RegExp(r'[_-]')).first;
-        return prefixes.contains(head);
-      }).toList();
-    }
-
-    return picked;
+    widget.onApply(v);
   }
 
   @override
   Widget build(BuildContext context) {
     final p = widget.p;
 
-    final selectedId = _localeId;
-    final displayLocales = _buildKrTopLocales(
-      all: widget.locales,
-      selectedId: selectedId,
-    );
+    final rows = _buildRows();
 
-    // 선택값이 목록에 없으면 첫 항목을 “표시상” 선택으로 처리
-    final effectiveSelectedId =
-        (displayLocales.any((l) => _norm(l.localeId) == _norm(selectedId)))
-        ? selectedId
-        : (displayLocales.isNotEmpty
-              ? displayLocales.first.localeId
-              : selectedId);
+    // 표시상 선택값 보정: 현재 _localeId가 rows 안에 없으면 한국어(있으면) or 첫 항목
+    String? effectiveSelected;
+    if (rows.any((r) => _norm(r.localeId) == _norm(_localeId))) {
+      effectiveSelected = _localeId;
+    } else {
+      final ko = rows.where((r) => r.lang.key == 'ko').toList();
+      effectiveSelected = ko.isNotEmpty ? ko.first.localeId : (rows.isNotEmpty ? rows.first.localeId : _localeId);
+    }
 
     return WillPopScope(
       onWillPop: () async {
-        Navigator.of(context).pop(_localeId);
+        Navigator.of(context).pop(_localeId); // ✅ SettingsHomePage에서 await로 수신 가능
         return false;
       },
       child: Scaffold(
@@ -222,12 +278,33 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
         appBar: null,
         body: SafeArea(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SettingsPageHeader(
                 title: '언어',
                 titleColor: p.ink,
                 iconColor: p.ink,
               ),
+
+              // ✅ 안내문: 왼쪽 패딩 문제는 Align 제거하고 Row/Expanded로 고정하면 깔끔해짐
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '선택한 언어는 기록 말하기에서 음성 인식 언어로 사용돼요.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: p.muted.withOpacity(0.8),
+                              fontWeight: FontWeight.w500,
+                              height: 1.4,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               Expanded(
                 child: !_loadedStored
                     ? Padding(
@@ -236,8 +313,7 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
                           alignment: Alignment.topLeft,
                           child: Text(
                             '불러오는 중…',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: p.muted,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -246,17 +322,17 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
                       )
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
-                        itemCount: displayLocales.length,
+                        itemCount: rows.length,
                         separatorBuilder: (_, __) => const SizedBox.shrink(),
                         itemBuilder: (context, index) {
-                          final l = displayLocales[index];
+                          final row = rows[index];
                           final selected =
-                              _norm(l.localeId) == _norm(effectiveSelectedId);
+                              _norm(row.localeId) == _norm(effectiveSelected);
 
                           return InkWell(
                             onTap: widget.isListening
                                 ? null
-                                : () => _selectLocale(l.localeId),
+                                : () => _selectLocale(row.localeId),
                             splashColor: Colors.transparent,
                             highlightColor: Colors.transparent,
                             child: SizedBox(
@@ -265,7 +341,7 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      l.name,
+                                      row.lang.label,
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyLarge
@@ -297,4 +373,11 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
       ),
     );
   }
+}
+
+class _LangRowVm {
+  final _HardcodedLang lang;
+  final String localeId; // 실제 STT에 전달/저장되는 값
+
+  const _LangRowVm({required this.lang, required this.localeId});
 }

@@ -50,7 +50,7 @@ class SettingsRow extends StatelessWidget {
         Text(
           trailingText!,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: p.muted,
+            color: showChevron? p.accent : p.muted,
             fontWeight: FontWeight.w500,
             fontSize: trailingTextSize,
           ),

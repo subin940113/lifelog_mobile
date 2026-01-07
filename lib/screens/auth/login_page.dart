@@ -131,7 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                         BrandLogo(
                           p: p,
                           style: BrandLogoStyle.wordmark,
-                          scale: 1.0,
+                          scale: 1.2,
                         ),
                         const SizedBox(height: 8),
 
@@ -143,6 +143,8 @@ class _LoginPageState extends State<LoginPage> {
                                   color: copyColor,
                                   fontWeight: FontWeight.w500,
                                   height: 1.35,
+                                  fontSize: 16,
+                                  letterSpacing: -1,
                                 ),
                             children: [
                               const TextSpan(text: '문득 든 생각이 사라지기 전에'),
@@ -150,7 +152,7 @@ class _LoginPageState extends State<LoginPage> {
                                 alignment: PlaceholderAlignment.middle,
                                 child: Padding(
                                   padding: const EdgeInsets.only(
-                                    left: 1,
+                                    left: 1.5,
                                     bottom: 3,
                                   ),
                                   child: Text(
@@ -177,7 +179,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
 
-                        const SizedBox(height: 34),
+                        const SizedBox(height: 40),
                         if (_error != null) ...[
                           Text(
                             _error!,
@@ -273,7 +275,7 @@ class _AuthTextState extends State<_AuthText> {
 
     final enabledColor = isDark
         ? tintWhite(p.accent, t: 0.10, opacity: 0.84) // 👈 약한 푸른빛
-        : p.ink;
+        : p.ink.withOpacity(0.97);
 
     final disabledColor = isDark
         ? tintWhite(p.accent, t: 0.08, opacity: 0.55) // 👈 비활성도 약간 블루
@@ -303,7 +305,7 @@ class _AuthTextState extends State<_AuthText> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Text(
             widget.label,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: color,
               fontWeight: FontWeight.w600,
               letterSpacing: -0.1,

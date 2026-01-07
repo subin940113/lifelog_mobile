@@ -614,9 +614,6 @@ class _InfoRow extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: p.outline.withOpacity(0.9))),
-      ),
       child: Row(
         children: [
           Expanded(
@@ -673,9 +670,6 @@ class _EditableInfoRow extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: p.outline.withOpacity(0.9))),
-      ),
       child: Row(
         children: [
           SizedBox(
