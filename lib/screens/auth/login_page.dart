@@ -70,10 +70,22 @@ class _LoginPageState extends State<LoginPage> {
 
       final authResult = await client.loginWithGoogleIdToken(idToken);
 
-      await _secureStorage.write(key: 'accessToken', value: authResult.accessToken);
-      await _secureStorage.write(key: 'refreshToken', value: authResult.refreshToken);
-      await _secureStorage.write(key: 'accountName', value: authResult.displayName);
-      await _secureStorage.write(key: 'isNewUser', value: authResult.isNewUser.toString());
+      await _secureStorage.write(
+        key: 'accessToken',
+        value: authResult.accessToken,
+      );
+      await _secureStorage.write(
+        key: 'refreshToken',
+        value: authResult.refreshToken,
+      );
+      await _secureStorage.write(
+        key: 'accountName',
+        value: authResult.displayName,
+      );
+      await _secureStorage.write(
+        key: 'isNewUser',
+        value: authResult.isNewUser.toString(),
+      );
 
       if (!mounted) return;
       setState(() => _loading = false);
@@ -98,7 +110,9 @@ class _LoginPageState extends State<LoginPage> {
     // ✅ 다크에서 대비 보정 (너무 “밝은 회색”으로 뜨지 않게만)
     final copyColor = isDark ? p.muted.withOpacity(0.88) : p.muted;
     final errorColor = isDark ? p.muted.withOpacity(0.92) : p.muted;
-    final footerColor = isDark ? p.muted.withOpacity(0.70) : p.muted.withOpacity(0.80);
+    final footerColor = isDark
+        ? p.muted.withOpacity(0.70)
+        : p.muted.withOpacity(0.80);
 
     return Scaffold(
       backgroundColor: bg,
@@ -124,7 +138,8 @@ class _LoginPageState extends State<LoginPage> {
                         RichText(
                           textAlign: TextAlign.center,
                           text: TextSpan(
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
                                   color: copyColor,
                                   fontWeight: FontWeight.w500,
                                   height: 1.35,
@@ -134,13 +149,25 @@ class _LoginPageState extends State<LoginPage> {
                               WidgetSpan(
                                 alignment: PlaceholderAlignment.middle,
                                 child: Padding(
-                                  padding: const EdgeInsets.only(left: 1, bottom: 3),
+                                  padding: const EdgeInsets.only(
+                                    left: 1,
+                                    bottom: 3,
+                                  ),
                                   child: Text(
                                     '.',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
                                           color: p.accent,
                                           fontWeight: FontWeight.w700,
-                                          fontSize: (Theme.of(context).textTheme.bodyMedium?.fontSize ?? 14) * 1.3,
+                                          fontSize:
+                                              (Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium
+                                                      ?.fontSize ??
+                                                  14) *
+                                              1.3,
                                           height: 1.0,
                                         ),
                                   ),
@@ -155,7 +182,8 @@ class _LoginPageState extends State<LoginPage> {
                           Text(
                             _error!,
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
                                   color: errorColor,
                                   fontWeight: FontWeight.w600,
                                   height: 1.35,
@@ -179,7 +207,9 @@ class _LoginPageState extends State<LoginPage> {
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               // ✅ 다크에서 너무 죽지 않게
-                              color: isDark ? p.muted.withOpacity(0.90) : p.muted,
+                              color: isDark
+                                  ? p.muted.withOpacity(0.90)
+                                  : p.muted,
                             ),
                           ),
                         ],
@@ -195,10 +225,10 @@ class _LoginPageState extends State<LoginPage> {
                   '© ${DateTime.now().year} bluelog. All rights reserved.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: footerColor,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.1,
-                      ),
+                    color: footerColor,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.1,
+                  ),
                 ),
               ),
             ],
@@ -274,10 +304,10 @@ class _AuthTextState extends State<_AuthText> {
           child: Text(
             widget.label,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.1,
-                ),
+              color: color,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.1,
+            ),
           ),
         ),
       ),

@@ -296,4 +296,26 @@ class AuthApiClient {
     if (decoded is Map<String, dynamic>) return decoded;
     throw Exception('서버 응답 JSON이 객체가 아닙니다: ${res.body}');
   }
+
+  Future<Map<String, dynamic>> patchJson(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    final res = await _sendWithRefresh(() async {
+      final token = await _requireAccessToken();
+      return http.patch(
+        _uri(path),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+    });
+
+    final decoded = jsonDecode(res.body);
+    if (decoded is Map<String, dynamic>) return decoded;
+    throw Exception('서버 응답 JSON이 객체가 아닙니다: ${res.body}');
+  }
 }

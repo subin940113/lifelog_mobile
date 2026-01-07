@@ -19,7 +19,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'language_settings_page.dart';
 import 'insight_setting_page.dart';
 
-class SettingsHomePage extends StatelessWidget {
+class SettingsHomePage extends StatefulWidget {
   final VoidCallback? onOpenLanguage;
 
   final List<LocaleName>? languageLocales;
@@ -49,22 +49,27 @@ class SettingsHomePage extends StatelessWidget {
   });
 
   @override
+  State<SettingsHomePage> createState() => _SettingsHomePageState();
+}
+
+class _SettingsHomePageState extends State<SettingsHomePage> {
+  @override
   Widget build(BuildContext context) {
     final p = Palette.from(Theme.of(context).colorScheme);
     final themeMode = context.watch<ThemeProvider>().mode;
 
     Future<void> _openLanguageDefault() async {
-      final provided = languageLocales;
+      final provided = widget.languageLocales;
       if (provided != null && provided.isNotEmpty) {
         showLanguageSheet(
           context,
           bg: p.bg,
           p: p,
           locales: provided,
-          initialLocaleId: languageInitialLocaleId,
-          isListening: languageIsListening ?? false,
+          initialLocaleId: widget.languageInitialLocaleId,
+          isListening: widget.languageIsListening ?? false,
           onApply: (localeId) {
-            final cb = onApplyLanguage;
+            final cb = widget.onApplyLanguage;
             if (cb != null) cb(localeId);
           },
         );
@@ -85,7 +90,7 @@ class SettingsHomePage extends StatelessWidget {
           initialLocaleId: system?.localeId,
           isListening: false,
           onApply: (localeId) {
-            final cb = onApplyLanguage;
+            final cb = widget.onApplyLanguage;
             if (cb != null) cb(localeId);
           },
         );
@@ -98,7 +103,7 @@ class SettingsHomePage extends StatelessWidget {
           initialLocaleId: null,
           isListening: false,
           onApply: (localeId) {
-            final cb = onApplyLanguage;
+            final cb = widget.onApplyLanguage;
             if (cb != null) cb(localeId);
           },
         );
@@ -106,7 +111,7 @@ class SettingsHomePage extends StatelessWidget {
     }
 
     void openLanguage() {
-      final override = onOpenLanguage;
+      final override = widget.onOpenLanguage;
       if (override != null) {
         override();
         return;
@@ -114,15 +119,23 @@ class SettingsHomePage extends StatelessWidget {
       _openLanguageDefault();
     }
 
-    void openAccount() {
-      pushSettingsPage<void>(
+    Future<void> openAccount() async {
+      await pushSettingsPage<void>(
         context,
-        AccountSettingsPage(p: p, onLogout: onLogout),
+        AccountSettingsPage(p: p, onLogout: widget.onLogout),
       );
+
+      // ✅ AccountSettingsPage에서 accountName(storage)을 갱신했을 수 있으니
+      // SettingsHomePage를 리빌드해서 FutureBuilder가 다시 read 하게 만듦
+      if (!mounted) return;
+      setState(() {});
     }
 
     void openInsightSettings() {
-      pushSettingsPage<void>(context, InsightHubPage(p: p, onLogout: onLogout));
+      pushSettingsPage<void>(
+        context,
+        InsightHubPage(p: p, onLogout: widget.onLogout),
+      );
     }
 
     return Scaffold(
@@ -145,9 +158,11 @@ class SettingsHomePage extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: FutureBuilder<String?>(
-                        future: accountName != null
-                            ? Future.value(accountName)
-                            : _secureStorage.read(key: 'accountName'),
+                        future: widget.accountName != null
+                            ? Future.value(widget.accountName)
+                            : SettingsHomePage._secureStorage.read(
+                                key: 'accountName',
+                              ),
                         builder: (context, snapshot) {
                           final name =
                               (snapshot.data != null &&
@@ -160,28 +175,21 @@ class SettingsHomePage extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 18),
-
                   _SectionLabel(text: '설정', p: p),
-
                   SettingsRow(
                     title: '테마',
                     onTap: () => showThemeSheet(
                       context,
                       p,
                       value: themeMode,
-                      onChanged: onChangeTheme,
+                      onChanged: widget.onChangeTheme,
                     ),
                     p: p,
                     trailingText: themeLabel(themeMode),
                   ),
-
                   SettingsRow(title: '언어', onTap: openLanguage, p: p),
-
-                  // ✅ 인사이트 설정 메뉴 추가
                   SettingsRow(title: '인사이트', onTap: openInsightSettings, p: p),
-
                   SettingsRow(
                     title: '알림',
                     onTap: () => pushSettingsPage(
@@ -190,10 +198,8 @@ class SettingsHomePage extends StatelessWidget {
                     ),
                     p: p,
                   ),
-
                   const SizedBox(height: 18),
                   _SectionLabel(text: '정보', p: p),
-
                   SettingsRow(
                     title: '이용 약관 및 개인정보 처리방침',
                     onTap: () => pushSettingsPage(
@@ -204,7 +210,6 @@ class SettingsHomePage extends StatelessWidget {
                     ),
                     p: p,
                   ),
-
                   SettingsRow(
                     title: '버전 정보',
                     onTap: () {},

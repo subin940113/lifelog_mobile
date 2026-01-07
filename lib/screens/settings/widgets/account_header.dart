@@ -30,7 +30,6 @@ class AccountHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ✅ 기존 텍스트 그대로 유지
                 Text(
                   accountName,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -41,7 +40,7 @@ class AccountHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '계정',
+                  '개인 설정 · 계정 관리',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: p.muted,
                     fontWeight: FontWeight.w500,
