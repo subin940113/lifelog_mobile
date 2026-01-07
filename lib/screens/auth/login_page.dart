@@ -128,21 +128,52 @@ class _LoginPageState extends State<LoginPage> {
                         // Logo (only strong emphasis)
                         BrandLogo(
                           p: p,
-                          style: BrandLogoStyle.primary,
+                          style: BrandLogoStyle.wordmark,
                           scale: 1.0,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
 
-                        // Copy (temporary placeholder — we’ll refine later)
-                        Text(
-                          '나도 몰랐던 나의 패턴을 발견하다.',
+                        // Copy
+                        RichText(
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: p.muted,
-                                fontWeight: FontWeight.w500,
-                                height: 1.35,
+                          text: TextSpan(
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: p.muted,
+                                  fontWeight: FontWeight.w500,
+                                  height: 1.35,
+                                ),
+                            children: [
+                              const TextSpan(text: '문득 든 생각이 사라지기 전에'),
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 1,
+                                    bottom: 3,
+                                  ), // ✅ 마진
+                                  child: Text(
+                                    '.',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: p.accent,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize:
+                                              (Theme.of(context)
+                                                      .textTheme
+                                                      .bodyMedium
+                                                      ?.fontSize ??
+                                                  14) *
+                                              1.3, // ✅ 살짝 크게
+                                          height: 1.0,
+                                        ),
+                                  ),
+                                ),
                               ),
+                            ],
+                          ),
                         ),
 
                         const SizedBox(height: 34),

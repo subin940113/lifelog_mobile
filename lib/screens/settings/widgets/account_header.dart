@@ -14,11 +14,6 @@ class AccountHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: p.muted.withOpacity(0.12), width: 1),
-        ),
-      ),
       child: Row(
         children: [
           // 🔵 기존 accent bar → glass bar (사이즈 동일)

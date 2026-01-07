@@ -41,11 +41,6 @@ class SettingsRow extends StatelessWidget {
       highlightColor: Colors.transparent,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: p.muted.withOpacity(0.12), width: 1),
-          ),
-        ),
         child: Row(
           children: [
             Expanded(
