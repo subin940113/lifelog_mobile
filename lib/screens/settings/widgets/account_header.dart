@@ -35,7 +35,7 @@ class AccountHeader extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: p.ink,
                     fontWeight: FontWeight.w700,
-                    fontSize: 18,
+                    fontSize: 20,
                   ),
                 ),
                 const SizedBox(height: 4),

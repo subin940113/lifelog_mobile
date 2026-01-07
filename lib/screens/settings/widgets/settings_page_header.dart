@@ -15,7 +15,7 @@ class SettingsPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 56,
+      height: 72,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18),
         child: Stack(
@@ -25,13 +25,13 @@ class SettingsPageHeader extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
-                padding: const EdgeInsets.only(left: 28),
+                padding: const EdgeInsets.only(left: 40),
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: titleColor,
                     fontWeight: FontWeight.w600,
-                    fontSize: 18,
+                    fontSize: 20,
                   ),
                 ),
               ),
@@ -42,11 +42,11 @@ class SettingsPageHeader extends StatelessWidget {
                 onTap: () => Navigator.of(context).maybePop(),
                 borderRadius: BorderRadius.circular(18),
                 child: Padding(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(8),
                   child: Icon(
                     Icons.chevron_left_rounded,
                     color: iconColor,
-                    size: 26,
+                    size: 28,
                   ),
                 ),
               ),

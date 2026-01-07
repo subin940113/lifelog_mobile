@@ -1,26 +1,16 @@
+// lib/widgets/glass_switch.dart
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// Subtle glass switch (less “metal / bulge”, more “thin glass”)
-/// - No strong outline
-/// - Softer highlight, reduced shadow
-/// - Slight translucency + optional background blur
+/// Flatter glass switch (keep color, kill volume)
 class GlassSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
 
-  /// Main accent color when ON
   final Color color;
-
-  /// Whether user interaction is enabled
   final bool enabled;
-
-  /// Track size
   final double width;
   final double height;
-
-  /// Optional: apply a tiny blur to the track background.
-  /// If your screen already has lots of blur/glass, you can set false.
   final bool blurEnabled;
 
   const GlassSwitch({
@@ -38,21 +28,15 @@ class GlassSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final opacity = enabled ? 1.0 : 0.45;
 
-    // ------------------------------------------------------------
-    // ✅ 핵심 변경: “유리감 유지 + 파랑만 진하게”
-    //
-    // - white로 너무 보내면(0.08~0.12) 파랑이 탁/연해짐
-    // - lerp는 0.03~0.05가 적절
-    // - 대신 opacity를 높여 “흐림”을 제거
-    // ------------------------------------------------------------
-    final onBase = Color.lerp(color, Colors.white, 0.02)!; // ✅ 파랑 유지
+    // ✅ 색은 유지 + 살짝만 밝게(이전 유지)
+    final onBase = Color.lerp(color, Colors.white, 0.10)!;
     final offBase = const Color(0xFFE3E7EC);
 
-    final onOpacity = 0.98; // ✅ “파랑 흐림” 제거
+    final onOpacity = 0.98;
     final offOpacity = 0.98;
 
-    // “Glass” overlay intensity
-    final topHi = Colors.white.withOpacity(value ? 0.10 : 0.08);
+    // ✅ 볼륨 줄이기: 하이라이트 강도/범위 축소
+    final topHi = Colors.white.withOpacity(value ? 0.035 : 0.03);
     final botHi = Colors.white.withOpacity(0.0);
 
     final radius = BorderRadius.circular(999);
@@ -71,33 +55,33 @@ class GlassSwitch extends StatelessWidget {
             ),
           ),
 
-          // Optional blur (very mild)
+          // Optional blur (keep off by default)
           if (blurEnabled)
             BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
               child: const SizedBox.expand(),
             ),
 
-          // Thin glass highlight (top → fade)
+          // ✅ 얇은 상단 sheen만 (그라데이션 길이 짧게)
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [topHi, botHi],
-                stops: const [0.0, 0.8],
+                stops: const [0.0, 0.35],
               ),
             ),
           ),
 
-          // Very subtle depth (no “metal rim”)
+          // ✅ 그림자 거의 제거 (flat)
           DecoratedBox(
             decoration: BoxDecoration(
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withOpacity(0.018),
+                  blurRadius: 3,
+                  offset: const Offset(0, 1),
                 ),
               ],
             ),
@@ -106,7 +90,7 @@ class GlassSwitch extends StatelessWidget {
       ),
     );
 
-    final thumbSize = height - 6; // padding 3 top/bot
+    final thumbSize = height - 6;
     final thumb = _GlassThumb(size: thumbSize, active: value, accent: color);
 
     return AnimatedOpacity(
@@ -124,10 +108,7 @@ class GlassSwitch extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Track
                 Positioned.fill(child: track),
-
-                // Thumb
                 Padding(
                   padding: const EdgeInsets.all(3),
                   child: AnimatedAlign(
@@ -161,9 +142,8 @@ class _GlassThumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Thumb should feel like “white glass disk”, not plastic/metal ball.
-    // Keep shadow tight and light.
-    final shadowColor = Colors.black.withOpacity(0.10);
+    // ✅ thumb 볼륨도 줄이기: shadow/하이라이트/바닥쉐이딩 축소
+    final shadowColor = Colors.black.withOpacity(0.07);
 
     return SizedBox(
       width: size,
@@ -174,8 +154,8 @@ class _GlassThumb extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: shadowColor,
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -186,18 +166,18 @@ class _GlassThumb extends StatelessWidget {
               // Base: slightly translucent white
               DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.92),
+                  color: Colors.white.withOpacity(0.94),
                 ),
               ),
 
-              // Soft top highlight (thin glass sheen)
+              // Top highlight (much weaker)
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     center: const Alignment(-0.6, -0.7),
-                    radius: 1.1,
+                    radius: 1.0,
                     colors: [
-                      Colors.white.withOpacity(0.22),
+                      Colors.white.withOpacity(0.10),
                       Colors.white.withOpacity(0.0),
                     ],
                     stops: const [0.0, 0.7],
@@ -205,14 +185,14 @@ class _GlassThumb extends StatelessWidget {
                 ),
               ),
 
-              // VERY subtle bottom shading (avoid “embossed”)
+              // Bottom shading (almost none)
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     center: const Alignment(0.8, 0.9),
-                    radius: 1.2,
+                    radius: 1.1,
                     colors: [
-                      Colors.black.withOpacity(0.06),
+                      Colors.black.withOpacity(0.025),
                       Colors.black.withOpacity(0.0),
                     ],
                     stops: const [0.0, 0.75],
@@ -220,18 +200,18 @@ class _GlassThumb extends StatelessWidget {
                 ),
               ),
 
-              // When ON, add a faint tint reflection (not a rim)
+              // When ON, add faint tint reflection (reduced)
               if (active)
                 DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: RadialGradient(
                       center: const Alignment(-0.2, -0.2),
-                      radius: 1.1,
+                      radius: 1.0,
                       colors: [
-                        accent.withOpacity(0.10),
+                        accent.withOpacity(0.06),
                         accent.withOpacity(0.0),
                       ],
-                      stops: const [0.0, 0.8],
+                      stops: const [0.0, 0.85],
                     ),
                   ),
                 ),

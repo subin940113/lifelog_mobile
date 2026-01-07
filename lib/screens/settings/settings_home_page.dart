@@ -16,6 +16,7 @@ import 'widgets/settings_page_header.dart';
 import 'widgets/settings_row.dart';
 
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'language_settings_page.dart';
 import 'insight_setting_page.dart';
 
@@ -138,6 +139,26 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
       );
     }
 
+    Future<void> openTerms() async {
+      const url =
+          'https://www.notion.so/bluelog-Terms-of-Service-Privacy-Policy-2e18e970a6f7800e825cc2a086fe430b?source=copy_link';
+      final uri = Uri.parse(url);
+
+      try {
+        final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (!ok && context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('링크를 열 수 없어요.')));
+        }
+      } catch (_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('링크를 여는 중 오류가 발생했어요.')));
+      }
+    }
+
     return Scaffold(
       backgroundColor: p.bg,
       body: SafeArea(
@@ -202,12 +223,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                   _SectionLabel(text: '정보', p: p),
                   SettingsRow(
                     title: '이용 약관 및 개인정보 처리방침',
-                    onTap: () => pushSettingsPage(
-                      context,
-                      const _PlaceholderSettingsPage(
-                        title: '이용 약관 및 개인정보 처리방침',
-                      ),
-                    ),
+                    onTap: openTerms,
                     p: p,
                   ),
                   SettingsRow(
@@ -238,7 +254,7 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: p.muted,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.2,

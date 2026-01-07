@@ -205,7 +205,7 @@ class _InsightRow extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 7),
-              child: GlassDot(size: 6, color: p.accent, active: false),
+              child: GlassDot(size: 8, color: p.accent, active: false),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -218,7 +218,7 @@ class _InsightRow extends StatelessWidget {
                       children: [
                         Text(
                           label,
-                          style: Theme.of(context).textTheme.bodySmall
+                          style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
                                 color: p.accent.withOpacity(0.9),
                                 fontWeight: FontWeight.w500,

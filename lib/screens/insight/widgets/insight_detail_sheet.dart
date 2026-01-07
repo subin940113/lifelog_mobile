@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
+import 'package:lifelog_mobile/widgets/glass_dot.dart';
 
 enum InsightKindUi {
   tendency,
@@ -94,18 +95,15 @@ class InsightDetailSheet extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: p.accent,
-                      shape: BoxShape.circle,
-                    ),
+                  GlassDot(
+                    size: 8,
+                    color: p.accent,
+                    active: false, // 디테일 시트에서는 pulse 없음
                   ),
                   const SizedBox(width: 10),
                   Text(
                     label,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: p.accent.withOpacity(0.95),
                       fontWeight: FontWeight.w600,
                     ),
@@ -135,7 +133,7 @@ class InsightDetailSheet extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   '참고',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: p.muted.withOpacity(0.8),
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.2,

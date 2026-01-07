@@ -172,6 +172,13 @@ class _InterestManagePageState extends State<InterestManagePage> {
     final p = widget.p;
     final underlineColor = p.outline.withOpacity(0.85);
 
+    // ✅ 전체선택(하이라이트), 핸들(물방울), 커서 색상 팔레트로 고정
+    final selectionTheme = TextSelectionThemeData(
+      cursorColor: p.accent,
+      selectionColor: p.accent.withOpacity(0.22),
+      selectionHandleColor: p.accent,
+    );
+
     return Scaffold(
       backgroundColor: p.bg,
       appBar: AppBar(
@@ -184,189 +191,192 @@ class _InterestManagePageState extends State<InterestManagePage> {
       ),
       body: SafeArea(
         top: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
-          children: [
-            if (_loading)
-              Text(
-                '불러오는 중…',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: p.muted,
-                  fontWeight: FontWeight.w500,
+        child: TextSelectionTheme(
+          data: selectionTheme,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+            children: [
+              if (_loading)
+                Text(
+                  '불러오는 중…',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: p.muted,
+                    fontWeight: FontWeight.w500,
+                  ),
+                )
+              else ...[
+                Text(
+                  '관심사를 등록하면 키워드 기반으로 인사이트가 생성돼요.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: p.muted,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
                 ),
-              )
-            else ...[
-              Text(
-                '관심사를 등록하면 키워드 기반으로 인사이트가 생성돼요.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: p.muted,
-                  fontWeight: FontWeight.w500,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 14),
+                const SizedBox(height: 14),
 
-              // ✅ 한 덩어리: 입력 → (에러) → 배지 → 메타
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Input row
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 2),
-                          child: TextField(
-                            controller: _controller,
-                            focusNode: _focusNode,
-                            cursorColor: p.accent,
-                            enabled: !_saving,
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  color: p.ink,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16,
-                                ),
-                            decoration: InputDecoration(
-                              isDense: true,
-                              contentPadding: const EdgeInsets.only(
-                                top: 6,
-                                bottom: 8,
-                              ),
-                              border: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: underlineColor,
-                                  width: 1,
-                                ),
-                              ),
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: underlineColor,
-                                  width: 1,
-                                ),
-                              ),
-                              focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: p.accent.withOpacity(0.9),
-                                  width: 1,
-                                ),
-                              ),
-                              hintText: '키워드 입력',
-                              hintStyle: Theme.of(context).textTheme.bodyLarge
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: TextField(
+                              controller: _controller,
+                              focusNode: _focusNode,
+                              enabled: !_saving,
+
+                              // ✅ 커서 색상 (TextSelectionTheme와 중복이지만 안전빵)
+                              cursorColor: p.accent,
+
+                              style: Theme.of(context).textTheme.bodyLarge
                                   ?.copyWith(
-                                    color: p.muted.withOpacity(0.65),
+                                    color: p.ink,
                                     fontWeight: FontWeight.w500,
                                     fontSize: 16,
                                   ),
-                            ),
-                            textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => _addKeyword(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: SizedBox(
-                          height: 34,
-                          child: TextButton(
-                            onPressed: _saving ? null : _addKeyword,
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              minimumSize: const Size(0, 34),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              splashFactory: NoSplash.splashFactory,
-                              foregroundColor: p.accent,
-                            ),
-                            child: Text(
-                              _saving ? '저장…' : '추가',
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(
-                                    color: p.accent,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                    height: 1.0,
+                              decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: const EdgeInsets.only(
+                                  top: 6,
+                                  bottom: 8,
+                                ),
+                                border: UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: underlineColor,
+                                    width: 1,
                                   ),
+                                ),
+                                enabledBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: underlineColor,
+                                    width: 1,
+                                  ),
+                                ),
+                                focusedBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: p.accent.withOpacity(0.9),
+                                    width: 1,
+                                  ),
+                                ),
+                                hintText: '키워드 입력',
+                                hintStyle: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      color: p.muted.withOpacity(0.65),
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 16,
+                                    ),
+                              ),
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => _addKeyword(),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  if (_errorText != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      _errorText!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w500,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-
-                  const SizedBox(height: 14),
-
-                  // Badges
-                  if (_keywords.isEmpty)
-                    Text(
-                      '아직 등록된 관심사가 없어요.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.muted.withOpacity(0.75),
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
-                      ),
-                    )
-                  else
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final k in _keywords)
-                          InkWell(
-                            onTap: _saving ? null : () => _removeKeyword(k),
-                            borderRadius: BorderRadius.circular(999),
-                            splashColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            child: InterestBadge(p: p, text: k),
+                        const SizedBox(width: 10),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: SizedBox(
+                            height: 34,
+                            child: TextButton(
+                              onPressed: _saving ? null : _addKeyword,
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                minimumSize: const Size(0, 34),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                splashFactory: NoSplash.splashFactory,
+                                foregroundColor: p.accent,
+                              ),
+                              child: Text(
+                                _saving ? '저장…' : '추가',
+                                style: Theme.of(context).textTheme.bodyLarge
+                                    ?.copyWith(
+                                      color: p.accent,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                      height: 1.0,
+                                    ),
+                              ),
+                            ),
                           ),
+                        ),
                       ],
                     ),
 
-                  const SizedBox(height: 12),
-
-                  // Meta line (same block rhythm)
-                  Row(
-                    children: [
+                    if (_errorText != null) ...[
+                      const SizedBox(height: 8),
                       Text(
-                        '${_keywords.length}/$_maxKeywords',
+                        _errorText!,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: p.muted.withOpacity(0.8),
+                          color: p.muted,
                           fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          '태그를 탭하면 삭제돼요.',
-                          textAlign: TextAlign.right,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: p.muted.withOpacity(0.75),
-                                fontWeight: FontWeight.w500,
-                              ),
+                          height: 1.35,
                         ),
                       ),
                     ],
-                  ),
-                ],
-              ),
+
+                    const SizedBox(height: 14),
+
+                    if (_keywords.isEmpty)
+                      Text(
+                        '아직 등록된 관심사가 없어요.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: p.muted.withOpacity(0.75),
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
+                        ),
+                      )
+                    else
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final k in _keywords)
+                            InkWell(
+                              onTap: _saving ? null : () => _removeKeyword(k),
+                              borderRadius: BorderRadius.circular(999),
+                              splashColor: Colors.transparent,
+                              highlightColor: Colors.transparent,
+                              child: InterestBadge(p: p, text: k),
+                            ),
+                        ],
+                      ),
+
+                    const SizedBox(height: 12),
+
+                    Row(
+                      children: [
+                        Text(
+                          '${_keywords.length}/$_maxKeywords',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: p.muted.withOpacity(0.8),
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '태그를 탭하면 삭제돼요.',
+                            textAlign: TextAlign.right,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: p.muted.withOpacity(0.75),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

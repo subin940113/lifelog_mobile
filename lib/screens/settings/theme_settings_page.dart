@@ -89,13 +89,7 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
                 itemCount: modes.length,
-                separatorBuilder: (_, __) => Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white.withOpacity(0.06)
-                      : p.muted.withOpacity(0.10),
-                ),
+                separatorBuilder: (_, __) => const SizedBox.shrink(),
                 itemBuilder: (context, index) {
                   final mode = modes[index];
                   final selected = mode == _selected;
@@ -119,13 +113,14 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                                   ?.copyWith(
                                     color: p.ink,
                                     fontWeight: FontWeight.w500,
+                                    fontSize: 18,
                                   ),
                             ),
                           ),
                           if (selected)
-                            GlassDot(size: 10, color: p.accent, active: false)
+                            GlassDot(size: 12, color: p.accent, active: false)
                           else
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 12),
                         ],
                       ),
                     ),

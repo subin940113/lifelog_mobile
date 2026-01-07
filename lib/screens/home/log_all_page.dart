@@ -208,7 +208,7 @@ class _DateHeader extends StatelessWidget {
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: p.ink,
             fontWeight: FontWeight.w700,
-            fontSize: 16,
+            fontSize: 18,
             letterSpacing: -0.1,
           ),
         ),
@@ -216,7 +216,7 @@ class _DateHeader extends StatelessWidget {
 
         // ✅ 기존 단색 점 → GlassDot
         GlassDot(
-          size: 6,
+          size: 8,
           color: p.accent,
           active: false, // 날짜 헤더는 애니메이션 없이 “질감”만
         ),
@@ -265,7 +265,7 @@ class _TimelineLogRow extends StatelessWidget {
             width: 62,
             child: Text(
               item.timeLabel,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: p.muted,
                 fontWeight: FontWeight.w600,
               ),
@@ -275,11 +275,11 @@ class _TimelineLogRow extends StatelessWidget {
           Expanded(
             child: Text(
               item.preview,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: p.ink,
                 fontWeight: FontWeight.w500,
                 height: 1.55,
-                fontSize: 16,
+                fontSize: 18,
               ),
             ),
           ),

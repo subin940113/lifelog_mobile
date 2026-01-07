@@ -18,7 +18,7 @@ class GlassChevronButton extends StatefulWidget {
     required this.onTap,
     required this.accent,
     this.depth = 0.50,
-    this.iconSize = 26,
+    this.iconSize = 28,
   });
 
   @override

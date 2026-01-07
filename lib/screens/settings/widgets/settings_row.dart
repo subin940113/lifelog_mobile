@@ -5,9 +5,24 @@ class SettingsRow extends StatelessWidget {
   final String title;
   final VoidCallback onTap;
   final Palette p;
+
+  /// 완전 커스텀 trailing (예: Switch 등)
   final Widget? trailing;
+
+  /// trailing 텍스트 (예: 현재 테마명)
   final String? trailingText;
+
+  /// > 표시 여부
   final bool showChevron;
+
+  /// 우측 요소들 간격
+  final double rightGap;
+
+  /// chevron 크기
+  final double chevronSize;
+
+  /// trailingText 크기
+  final double trailingTextSize;
 
   const SettingsRow({
     super.key,
@@ -17,23 +32,38 @@ class SettingsRow extends StatelessWidget {
     this.trailing,
     this.trailingText,
     this.showChevron = true,
+    this.rightGap = 6,
+    this.chevronSize = 26,
+    this.trailingTextSize = 16,
   });
 
   @override
   Widget build(BuildContext context) {
-    final right =
-        trailing ??
-        (trailingText != null
-            ? Text(
-                trailingText!,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: p.muted,
-                  fontWeight: FontWeight.w500,
-                ),
-              )
-            : (showChevron
-                  ? Icon(Icons.chevron_right_rounded, color: p.muted)
-                  : const SizedBox.shrink()));
+    final List<Widget> rightItems = [];
+
+    // custom trailing
+    if (trailing != null) rightItems.add(trailing!);
+
+    // trailing text
+    if (trailingText != null) {
+      rightItems.add(
+        Text(
+          trailingText!,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: p.muted,
+            fontWeight: FontWeight.w500,
+            fontSize: trailingTextSize,
+          ),
+        ),
+      );
+    }
+
+    // chevron
+    if (showChevron) {
+      rightItems.add(
+        Icon(Icons.chevron_right_rounded, color: p.muted, size: chevronSize),
+      );
+    }
 
     return InkWell(
       onTap: onTap,
@@ -49,14 +79,30 @@ class SettingsRow extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: p.ink,
                   fontWeight: FontWeight.w500,
-                  fontSize: 16,
+                  fontSize: 18,
                 ),
               ),
             ),
-            right,
+
+            // ✅ trailing + text + chevron 나란히
+            if (rightItems.isNotEmpty)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: _withGaps(rightItems, gap: rightGap),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  List<Widget> _withGaps(List<Widget> items, {required double gap}) {
+    if (items.length <= 1) return items;
+    final out = <Widget>[];
+    for (var i = 0; i < items.length; i++) {
+      if (i > 0) out.add(SizedBox(width: gap));
+      out.add(items[i]);
+    }
+    return out;
   }
 }

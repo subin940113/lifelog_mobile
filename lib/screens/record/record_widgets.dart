@@ -60,7 +60,7 @@ class ModePill extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: fg,
                   fontWeight: FontWeight.w600,
-                  fontSize: 16,
+                  fontSize: 18,
                 ),
               ),
             ),
@@ -197,7 +197,7 @@ class _HoldToTalkPillState extends State<HoldToTalkPill> {
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: fg,
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: 18,
                   ),
                 ),
               ),
@@ -280,8 +280,8 @@ class DoneFab extends StatelessWidget {
           enabled: enabled,
           color: p.accent,
           icon: Icons.check_rounded,
-          size: 64,
-          iconSize: 28,
+          size: 72,
+          iconSize: 32,
 
           // 톤/감도: 기존 스타일과 일치
           lighten: 0.06,

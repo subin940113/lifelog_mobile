@@ -32,7 +32,7 @@ class AppPageHeader extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: titleColor,
                     fontWeight: FontWeight.w600,
-                    fontSize: 18,
+                    fontSize: 20,
                   ),
                 ),
               ),
@@ -47,7 +47,7 @@ class AppPageHeader extends StatelessWidget {
                   child: Icon(
                     Icons.chevron_left_rounded,
                     color: iconColor,
-                    size: 26,
+                    size: 28,
                   ),
                 ),
               ),

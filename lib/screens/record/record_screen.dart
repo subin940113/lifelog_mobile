@@ -15,6 +15,8 @@ import 'package:lifelog_mobile/widgets/app_toast.dart';
 
 import 'package:lifelog_mobile/widgets/glass_dot.dart';
 
+const String kSttLocaleStorageKey = 'sttLocaleId';
+
 class RecordScreen extends StatefulWidget {
   final VoidCallback? onLogout;
 
@@ -48,12 +50,12 @@ class _RecordScreenState extends State<RecordScreen> {
   String _committedText = '';
   String _partialText = '';
 
-  // STT session guards (prevents double-commit on stop vs finalResult)
+  // STT session guards
   bool _sessionFinalCommitted = false;
   String _lastCommittedChunk = '';
 
-  bool _hasText = false; // 완료 버튼 활성화용
-  String? _stickyNotice; // 권한/사용불가 같은 상태성 메시지(지속 노출)
+  bool _hasText = false;
+  String? _stickyNotice;
 
   Future<bool> _hasSpeechPermission() async {
     final dynamic v = _speech.hasPermission;
@@ -101,10 +103,8 @@ class _RecordScreenState extends State<RecordScreen> {
     final media = MediaQuery.of(context);
     final screenH = media.size.height;
 
-    // 기본값: 홈 인디케이터 위 + 여백
     double bottomPadding = media.padding.bottom + 18;
 
-    // DoneFab 위치 기반(버튼 위)
     final fabCtx = _doneFabKey.currentContext;
     if (fabCtx != null) {
       final render = fabCtx.findRenderObject();
@@ -115,7 +115,6 @@ class _RecordScreenState extends State<RecordScreen> {
         const gap = 14.0;
         bottomPadding = (screenH - fabTopY) + gap;
 
-        // 키보드가 올라온 경우 보정
         bottomPadding += media.viewInsets.bottom;
 
         bottomPadding = bottomPadding.clamp(
@@ -171,16 +170,33 @@ class _RecordScreenState extends State<RecordScreen> {
       final locales = await _speech.locales();
       final systemLocale = await _speech.systemLocale();
 
+      // ✅ 1) 저장된 언어 최우선
+      final saved = await _secureStorage.read(key: kSttLocaleStorageKey);
       String? preferred;
-      if (locales.any((l) => l.localeId == 'ko_KR')) {
-        preferred = 'ko_KR';
-      } else if (systemLocale != null &&
-          locales.any((l) => l.localeId == systemLocale.localeId)) {
-        preferred = systemLocale.localeId;
-      } else if (locales.isNotEmpty) {
-        preferred = locales.first.localeId;
+
+      if (saved != null && locales.any((l) => l.localeId == saved)) {
+        preferred = saved;
+      } else {
+        // ✅ 2) 저장값이 없거나 유효하지 않으면 기존 로직 fallback
+        if (locales.any((l) => l.localeId == 'ko_KR')) {
+          preferred = 'ko_KR';
+        } else if (systemLocale != null &&
+            locales.any((l) => l.localeId == systemLocale.localeId)) {
+          preferred = systemLocale.localeId;
+        } else if (locales.isNotEmpty) {
+          preferred = locales.first.localeId;
+        }
+
+        // ✅ fallback으로 결정된 값도 저장해둠(다음부터 일관되게)
+        if (preferred != null) {
+          await _secureStorage.write(
+            key: kSttLocaleStorageKey,
+            value: preferred,
+          );
+        }
       }
 
+      if (!mounted) return;
       setState(() {
         _sttAvailable = true;
         _selectedLocaleId = preferred;
@@ -248,6 +264,7 @@ class _RecordScreenState extends State<RecordScreen> {
       return;
     }
 
+    // ✅ 저장/선택된 localeId 사용
     final localeId = _selectedLocaleId;
     if (localeId == null) {
       _showToast('인식 언어가 설정되지 않았습니다. 설정에서 선택하세요.');
@@ -360,7 +377,6 @@ class _RecordScreenState extends State<RecordScreen> {
     try {
       await _logApi.createLog(content: text);
 
-      // Reset editor
       _controller.clear();
       _committedText = '';
       _partialText = '';
@@ -405,8 +421,6 @@ class _RecordScreenState extends State<RecordScreen> {
     return Scaffold(
       backgroundColor: bg,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-
-      // ✅ GlassFab 직접 사용 → DoneFab(공통) 사용
       floatingActionButton: SizedBox(
         key: _doneFabKey,
         child: DoneFab(
@@ -416,7 +430,6 @@ class _RecordScreenState extends State<RecordScreen> {
           floatEnabled: false,
         ),
       ),
-
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 2, 20, 18),
@@ -488,7 +501,6 @@ class _RecordScreenState extends State<RecordScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-
               if (_stickyNotice != null) ...[
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -505,7 +517,6 @@ class _RecordScreenState extends State<RecordScreen> {
                 const SizedBox(height: 20),
               ] else
                 const SizedBox(height: 16),
-
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -538,7 +549,6 @@ class _RecordScreenState extends State<RecordScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
               Expanded(
                 child: Theme(
                   data: localTheme,
@@ -570,7 +580,6 @@ class _RecordScreenState extends State<RecordScreen> {
   }
 }
 
-/// ✅ 배경(원형/캡슐) 없이 아이콘만 “살짝 떠있는” 느낌.
 class _DepthIcon extends StatelessWidget {
   final IconData icon;
   final double size;

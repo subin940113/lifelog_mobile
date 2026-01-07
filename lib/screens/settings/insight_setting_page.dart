@@ -18,6 +18,9 @@ import 'widgets/interest_badge.dart';
 // ✅ Glass 토글
 import 'package:lifelog_mobile/widgets/glass_switch.dart';
 
+// ✅ Chevron button (사용자 제공 코드 파일로 분리해두었다고 가정)
+import 'package:lifelog_mobile/widgets/glass_chevron_button.dart';
+
 class InsightHubPage extends StatefulWidget {
   final Palette p;
   final VoidCallback? onLogout;
@@ -116,6 +119,15 @@ class _InsightHubPageState extends State<InsightHubPage> {
     await _load();
   }
 
+  TextStyle? _sectionTitleStyle(BuildContext context, Palette p) {
+    return Theme.of(context).textTheme.titleMedium?.copyWith(
+      color: p.ink,
+      fontWeight: FontWeight.w600,
+      fontSize: 18,
+      letterSpacing: -0.15,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = widget.p;
@@ -158,12 +170,7 @@ class _InsightHubPageState extends State<InsightHubPage> {
                     Expanded(
                       child: Text(
                         '인사이트 생성',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: p.ink,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 16,
-                            ),
+                        style: _sectionTitleStyle(context, p),
                       ),
                     ),
                     AbsorbPointer(
@@ -173,6 +180,7 @@ class _InsightHubPageState extends State<InsightHubPage> {
                         onChanged: _setEnabled,
                         color: p.accent,
                         enabled: !_savingEnabled,
+                        blurEnabled: false,
                       ),
                     ),
                   ],
@@ -186,6 +194,7 @@ class _InsightHubPageState extends State<InsightHubPage> {
                     color: p.muted,
                     fontWeight: FontWeight.w500,
                     height: 1.4,
+                    letterSpacing: -0.05,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -196,35 +205,14 @@ class _InsightHubPageState extends State<InsightHubPage> {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        '관심사',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: p.ink,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 16,
-                            ),
-                      ),
+                      child: Text('관심사', style: _sectionTitleStyle(context, p)),
                     ),
 
-                    // ✅ 원형 배경/링 방지: 텍스트만 (Material ripple 억제)
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
+                    // ✅ "편집" 텍스트 대신 ChevronButton
+                    GlassChevronButton(
                       onTap: _openManage,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 6,
-                        ),
-                        child: Text(
-                          '편집',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: p.accent,
-                                fontWeight: FontWeight.w500,
-                              ),
-                        ),
-                      ),
+                      accent: p.accent,
+                      depth: 0.42,
                     ),
                   ],
                 ),

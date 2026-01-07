@@ -227,7 +227,7 @@ class _MainPageState extends State<MainPage> {
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: p.ink,
                       fontWeight: FontWeight.w600,
-                      fontSize: 17,
+                      fontSize: 20,
                       letterSpacing: -0.1,
                     ),
                   ),
@@ -302,7 +302,7 @@ class _MainPageState extends State<MainPage> {
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: p.ink,
                       fontWeight: FontWeight.w600,
-                      fontSize: 17,
+                      fontSize: 20,
                       letterSpacing: -0.1,
                     ),
                   ),
@@ -404,7 +404,7 @@ class _AiInsightRow extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 7),
-              child: GlassDot(size: 6, color: p.accent, active: false),
+              child: GlassDot(size: 8, color: p.accent, active: false),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -417,7 +417,7 @@ class _AiInsightRow extends StatelessWidget {
                       children: [
                         Text(
                           label,
-                          style: Theme.of(context).textTheme.bodySmall
+                          style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
                                 color: p.accent.withOpacity(0.9),
                                 fontWeight: FontWeight.w500,
@@ -493,7 +493,7 @@ class _SectionHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            GlassDot(size: 6, color: p.accent, active: dotActive),
+            GlassDot(size: 8, color: p.accent, active: dotActive),
           ],
         ),
         if (subtitle.isNotEmpty) ...[
@@ -504,7 +504,7 @@ class _SectionHeader extends StatelessWidget {
               color: p.muted.withOpacity(0.9),
               fontWeight: FontWeight.w500,
               height: 1.45,
-              fontSize: 15,
+              fontSize: 16,
             ),
           ),
         ],
@@ -651,7 +651,7 @@ class _RecentLogRow extends StatelessWidget {
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -659,7 +659,7 @@ class _RecentLogRow extends StatelessWidget {
               width: 74,
               child: Text(
                 item.timeLabel,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: p.muted,
                   fontWeight: FontWeight.w500,
                 ),
@@ -675,7 +675,7 @@ class _RecentLogRow extends StatelessWidget {
                   color: p.ink,
                   fontWeight: FontWeight.w500,
                   height: 1.45,
-                  fontSize: 16,
+                  fontSize: 18,
                 ),
               ),
             ),
