@@ -1,6 +1,10 @@
+// lib/screens/settings/theme_settings_page.dart (또는 기존 파일)
 import 'package:flutter/material.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'widgets/settings_page_header.dart';
+
+// ✅ Glass 공통 컴포넌트
+import 'package:lifelog_mobile/widgets/glass_dot.dart';
 
 String themeLabel(ThemeMode mode) {
   switch (mode) {
@@ -119,14 +123,7 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
                             ),
                           ),
                           if (selected)
-                            Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                color: p.accent,
-                                shape: BoxShape.circle,
-                              ),
-                            )
+                            GlassDot(size: 10, color: p.accent, active: false)
                           else
                             const SizedBox(width: 10),
                         ],

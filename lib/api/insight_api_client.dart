@@ -16,10 +16,7 @@ class InsightsPage {
   final List<AiInsightItem> items;
   final String? nextCursor;
 
-  const InsightsPage({
-    required this.items,
-    required this.nextCursor,
-  });
+  const InsightsPage({required this.items, required this.nextCursor});
 
   bool get hasMore => nextCursor != null && nextCursor!.trim().isNotEmpty;
 }
@@ -33,10 +30,7 @@ class InsightApiClient {
   ///   "insights":[ { ... } ],
   ///   "nextCursor": "..."
   /// }
-  Future<InsightsPage> getInsightsPage({
-    int limit = 20,
-    String? cursor,
-  }) async {
+  Future<InsightsPage> getInsightsPage({int limit = 20, String? cursor}) async {
     final safeLimit = limit.clamp(1, 50);
 
     final qs = StringBuffer('/api/insights?limit=$safeLimit');
@@ -56,7 +50,9 @@ class InsightApiClient {
     final nextCursor = (map['nextCursor'] as String?)?.trim();
     return InsightsPage(
       items: items,
-      nextCursor: (nextCursor != null && nextCursor.isNotEmpty) ? nextCursor : null,
+      nextCursor: (nextCursor != null && nextCursor.isNotEmpty)
+          ? nextCursor
+          : null,
     );
   }
 
@@ -71,10 +67,9 @@ class InsightApiClient {
   /// body: { "enabled": true/false }
   /// res:  { "enabled": true/false }
   Future<InsightSettings> setEnabled(bool enabled) async {
-    final map = await _api.postJson(
-      '/api/insights/settings',
-      {'enabled': enabled},
-    );
+    final map = await _api.postJson('/api/insights/settings', {
+      'enabled': enabled,
+    });
     return InsightSettings.fromJson(map);
   }
 }

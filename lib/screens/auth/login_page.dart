@@ -8,7 +8,6 @@ import 'package:lifelog_mobile/widgets/brand_logo.dart';
 import 'package:lifelog_mobile/config/api_config.dart';
 import 'package:lifelog_mobile/api/auth_api_client.dart';
 
-
 class LoginPage extends StatefulWidget {
   final Color? bg;
   final Palette? p;
@@ -73,14 +72,26 @@ class _LoginPageState extends State<LoginPage> {
       final authResult = await client.loginWithGoogleIdToken(idToken);
 
       // Persist for API calls
-      await _secureStorage.write(key: 'accessToken', value: authResult.accessToken);
-      await _secureStorage.write(key: 'refreshToken', value: authResult.refreshToken);
+      await _secureStorage.write(
+        key: 'accessToken',
+        value: authResult.accessToken,
+      );
+      await _secureStorage.write(
+        key: 'refreshToken',
+        value: authResult.refreshToken,
+      );
 
       // Persist minimal identity for Settings header
-      await _secureStorage.write(key: 'accountName', value: authResult.displayName);
+      await _secureStorage.write(
+        key: 'accountName',
+        value: authResult.displayName,
+      );
 
       // Persist onboarding hint
-      await _secureStorage.write(key: 'isNewUser', value: authResult.isNewUser.toString());
+      await _secureStorage.write(
+        key: 'isNewUser',
+        value: authResult.isNewUser.toString(),
+      );
 
       if (!mounted) return;
       setState(() => _loading = false);
@@ -139,7 +150,8 @@ class _LoginPageState extends State<LoginPage> {
                           Text(
                             _error!,
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
                                   color: p.muted,
                                   fontWeight: FontWeight.w600,
                                   height: 1.35,

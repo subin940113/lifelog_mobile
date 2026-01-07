@@ -4,6 +4,9 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'widgets/settings_page_header.dart';
 
+// ✅ Glass 공통 컴포넌트
+import 'package:lifelog_mobile/widgets/glass_dot.dart';
+
 void showLanguageSheet(
   BuildContext context, {
   required Color bg,
@@ -71,35 +74,19 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
   Widget build(BuildContext context) {
     final p = widget.p;
 
-    // Keep the list minimal: only widely used languages.
-    // We filter by localeId prefix because speech_to_text localeIds can vary by region.
-    const allowedPrefixes = <String>{
-      'ko', // Korean
-      'en', // English
-      'ja', // Japanese
-      'zh', // Chinese (Simplified/Traditional)
-      // 'es', // Spanish
-      // 'fr', // French
-      // 'de', // German
-      // 'pt', // Portuguese (PT/BR)
-      // 'it', // Italian
-    };
+    const allowedPrefixes = <String>{'ko', 'en', 'ja', 'zh'};
 
     final allLocales = widget.locales;
 
     final filteredLocales = allLocales.where((l) {
       final id = (l.localeId ?? '').toLowerCase();
       if (id.isEmpty) return false;
-      // localeId can be like `en_US` or `en-US` depending on platform.
       final prefix = id.split(RegExp(r'[_-]')).first;
       return allowedPrefixes.contains(prefix);
     }).toList();
 
-    // If filtering produces an empty list (device returns unexpected localeId formats),
-    // fall back to the original list so the screen never becomes blank.
     final locales = filteredLocales.isNotEmpty ? filteredLocales : allLocales;
 
-    // If the initial selection is not in the filtered list, fall back to the first available.
     final selectedId = (locales.any((l) => l.localeId == _localeId))
         ? _localeId
         : (locales.isNotEmpty ? locales.first.localeId : _localeId);
@@ -155,14 +142,7 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
                             ),
                           ),
                           if (selected)
-                            Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                color: p.accent,
-                                shape: BoxShape.circle,
-                              ),
-                            )
+                            GlassDot(size: 10, color: p.accent, active: false)
                           else
                             const SizedBox(width: 10),
                         ],

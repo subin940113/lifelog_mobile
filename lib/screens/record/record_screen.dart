@@ -1,4 +1,6 @@
+// lib/screens/record/record_screen.dart
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -11,13 +13,12 @@ import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/screens/record/record_widgets.dart';
 import 'package:lifelog_mobile/widgets/app_toast.dart';
 
+import 'package:lifelog_mobile/widgets/glass_dot.dart';
+
 class RecordScreen extends StatefulWidget {
   final VoidCallback? onLogout;
 
-  const RecordScreen({
-    super.key,
-    this.onLogout,
-  });
+  const RecordScreen({super.key, this.onLogout});
 
   @override
   State<RecordScreen> createState() => _RecordScreenState();
@@ -173,7 +174,8 @@ class _RecordScreenState extends State<RecordScreen> {
       String? preferred;
       if (locales.any((l) => l.localeId == 'ko_KR')) {
         preferred = 'ko_KR';
-      } else if (systemLocale != null && locales.any((l) => l.localeId == systemLocale.localeId)) {
+      } else if (systemLocale != null &&
+          locales.any((l) => l.localeId == systemLocale.localeId)) {
         preferred = systemLocale.localeId;
       } else if (locales.isNotEmpty) {
         preferred = locales.first.localeId;
@@ -315,7 +317,7 @@ class _RecordScreenState extends State<RecordScreen> {
       _timer?.cancel();
       _timer = null;
       setState(() => _isListening = false);
-      _showToast('음성 인식을 시작하지 못했습니다. 입력 장치/권한을 확인해 주세요.');
+      _showToast('음성 인식을 시작하지 못했습니다.\n입력 장치/권한을 확인해 주세요.');
     }
   }
 
@@ -356,7 +358,7 @@ class _RecordScreenState extends State<RecordScreen> {
     setState(() => _saving = true);
 
     try {
-      final result = await _logApi.createLog(content: text);
+      await _logApi.createLog(content: text);
 
       // Reset editor
       _controller.clear();
@@ -398,15 +400,23 @@ class _RecordScreenState extends State<RecordScreen> {
       ),
     );
 
+    final doneEnabled = _hasText && !_saving;
+
     return Scaffold(
       backgroundColor: bg,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: DoneFab(
+
+      // ✅ GlassFab 직접 사용 → DoneFab(공통) 사용
+      floatingActionButton: SizedBox(
         key: _doneFabKey,
-        enabled: _hasText && !_saving,
-        onPressed: _onDone,
-        p: p,
+        child: DoneFab(
+          enabled: doneEnabled,
+          onPressed: _onDone,
+          p: p,
+          floatEnabled: false,
+        ),
       ),
+
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 2, 20, 18),
@@ -419,13 +429,13 @@ class _RecordScreenState extends State<RecordScreen> {
                   alignment: Alignment.centerLeft,
                   child: Transform.translate(
                     offset: const Offset(-14, 0),
-                    child: InkWell(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () => Navigator.of(context).maybePop(),
-                      borderRadius: BorderRadius.circular(18),
                       child: const Padding(
                         padding: EdgeInsets.all(6),
-                        child: Icon(
-                          Icons.chevron_left_rounded,
+                        child: _DepthIcon(
+                          icon: Icons.chevron_left_rounded,
                           size: 26,
                         ),
                       ),
@@ -439,7 +449,9 @@ class _RecordScreenState extends State<RecordScreen> {
                   children: [
                     Expanded(
                       child: HoldToTalkPill(
-                        label: _isListening ? '말하는 중 • ${_formatElapsed(_elapsed)}' : '말하기',
+                        label: _isListening
+                            ? '말하는 중 • ${_formatElapsed(_elapsed)}'
+                            : '말하기',
                         active: _isListening,
                         enabled: _sttAvailable,
                         height: 40,
@@ -477,7 +489,6 @@ class _RecordScreenState extends State<RecordScreen> {
               ),
               const SizedBox(height: 6),
 
-              // 상태 캡션(지속 메시지)
               if (_stickyNotice != null) ...[
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
@@ -485,10 +496,10 @@ class _RecordScreenState extends State<RecordScreen> {
                     _stickyNotice!,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: p.muted,
-                          fontWeight: FontWeight.w600,
-                          height: 1.25,
-                        ),
+                      color: p.muted,
+                      fontWeight: FontWeight.w600,
+                      height: 1.25,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -501,15 +512,15 @@ class _RecordScreenState extends State<RecordScreen> {
                   Text(
                     '오늘의 기록',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: p.ink,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 24,
-                          letterSpacing: -0.2,
-                        ),
+                      color: p.ink,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 24,
+                      letterSpacing: -0.2,
+                    ),
                   ),
                   if (_isListening) ...[
                     const SizedBox(width: 8),
-                    RecordingDot(color: p.accent),
+                    GlassDot(size: 6, color: p.accent, active: true),
                   ],
                 ],
               ),
@@ -517,12 +528,14 @@ class _RecordScreenState extends State<RecordScreen> {
               Text(
                 _saving
                     ? '저장 중…'
-                    : (_isListening ? '말하면 바로 여기에 적혀요' : '짧게라도 괜찮아요. 지금 떠오르는 걸 적어보세요.'),
+                    : (_isListening
+                          ? '말하면 바로 여기에 적혀요'
+                          : '짧게라도 괜찮아요. 지금 떠오르는 걸 적어보세요.'),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: p.muted,
-                      height: 1.45,
-                      fontSize: 16,
-                    ),
+                  color: p.muted,
+                  height: 1.45,
+                  fontSize: 16,
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -536,18 +549,15 @@ class _RecordScreenState extends State<RecordScreen> {
                     maxLines: null,
                     expands: true,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: p.ink,
-                          height: 1.6,
-                          fontSize: 20,
-                        ),
+                      color: p.ink,
+                      height: 1.6,
+                      fontSize: 20,
+                    ),
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: '예) 아침에 일찍 일어나 산책을 했다. 커피를 마시며 하루를 정리했다…',
-                      hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: p.muted,
-                            height: 1.6,
-                            fontSize: 20,
-                          ),
+                      hintStyle: Theme.of(context).textTheme.bodyLarge
+                          ?.copyWith(color: p.muted, height: 1.6, fontSize: 20),
                     ),
                   ),
                 ),
@@ -556,6 +566,60 @@ class _RecordScreenState extends State<RecordScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// ✅ 배경(원형/캡슐) 없이 아이콘만 “살짝 떠있는” 느낌.
+class _DepthIcon extends StatelessWidget {
+  final IconData icon;
+  final double size;
+  final Color? color;
+
+  const _DepthIcon({required this.icon, required this.size, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? Theme.of(context).iconTheme.color ?? Colors.black87;
+
+    const shadowOpacity = 0.20;
+    const shadowBlur = 5.0;
+    const shadowDy = 2.2;
+
+    const hiOpacity = 0.16;
+    const hiBlur = 1.8;
+    const hiDy = -0.7;
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Transform.translate(
+          offset: const Offset(0, shadowDy),
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(
+              sigmaX: shadowBlur,
+              sigmaY: shadowBlur,
+            ),
+            child: Icon(
+              icon,
+              size: size,
+              color: Colors.black.withOpacity(shadowOpacity),
+            ),
+          ),
+        ),
+        Icon(icon, size: size, color: c),
+        Transform.translate(
+          offset: const Offset(0, hiDy),
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: hiBlur, sigmaY: hiBlur),
+            child: Icon(
+              icon,
+              size: size,
+              color: Colors.white.withOpacity(hiOpacity),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

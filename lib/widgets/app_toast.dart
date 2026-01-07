@@ -46,7 +46,8 @@ class AppToast {
                   tween: Tween(begin: 0.0, end: 1.0),
                   duration: const Duration(milliseconds: 140),
                   curve: Curves.easeOut,
-                  builder: (context, t, child) => Opacity(opacity: t, child: child),
+                  builder: (context, t, child) =>
+                      Opacity(opacity: t, child: child),
                   child: Text(
                     message,
                     textAlign: TextAlign.center,

@@ -48,7 +48,7 @@ class Palette {
         accentSoft: Color(0xFFE9F0FF),
 
         // 🔴 danger
-        danger: Color(0xFFCF3F3F),     // deep muted red
+        danger: Color(0xFFCF3F3F), // deep muted red
         dangerSoft: Color(0xFFFFE8E8), // very soft red tint
       );
     }
@@ -64,7 +64,7 @@ class Palette {
       accentSoft: Color(0xFFE9F0FF),
 
       // 🔴 danger
-      danger: Color(0xFFD64545),     // warm brick red
+      danger: Color(0xFFD64545), // warm brick red
       dangerSoft: Color(0xFFFFE9E9), // paper-like red tint
     );
   }

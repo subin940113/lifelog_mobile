@@ -117,21 +117,12 @@ class SettingsHomePage extends StatelessWidget {
     void openAccount() {
       pushSettingsPage<void>(
         context,
-        AccountSettingsPage(
-          p: p,
-          onLogout: onLogout,
-        ),
+        AccountSettingsPage(p: p, onLogout: onLogout),
       );
     }
 
     void openInsightSettings() {
-      pushSettingsPage<void>(
-        context,
-        InsightHubPage(
-          p: p,
-          onLogout: onLogout,
-        ),
-      );
+      pushSettingsPage<void>(context, InsightHubPage(p: p, onLogout: onLogout));
     }
 
     return Scaffold(
@@ -158,14 +149,13 @@ class SettingsHomePage extends StatelessWidget {
                             ? Future.value(accountName)
                             : _secureStorage.read(key: 'accountName'),
                         builder: (context, snapshot) {
-                          final name = (snapshot.data != null && snapshot.data!.trim().isNotEmpty)
+                          final name =
+                              (snapshot.data != null &&
+                                  snapshot.data!.trim().isNotEmpty)
                               ? snapshot.data!.trim()
                               : '계정';
 
-                          return AccountHeader(
-                            p: p,
-                            accountName: name,
-                          );
+                          return AccountHeader(p: p, accountName: name);
                         },
                       ),
                     ),
@@ -190,11 +180,7 @@ class SettingsHomePage extends StatelessWidget {
                   SettingsRow(title: '언어', onTap: openLanguage, p: p),
 
                   // ✅ 인사이트 설정 메뉴 추가
-                  SettingsRow(
-                    title: '인사이트',
-                    onTap: openInsightSettings,
-                    p: p,
-                  ),
+                  SettingsRow(title: '인사이트', onTap: openInsightSettings, p: p),
 
                   SettingsRow(
                     title: '알림',
@@ -248,10 +234,10 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: p.muted,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
+          color: p.muted,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
+        ),
       ),
     );
   }
@@ -281,9 +267,9 @@ class _PlaceholderSettingsPage extends StatelessWidget {
                 child: Text(
                   '준비 중',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: p.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

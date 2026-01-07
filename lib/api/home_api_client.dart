@@ -12,7 +12,8 @@ class HomeApiClient {
     final safeLimitLogs = limitLogs.clamp(1, 20);
     final safeLimitInsights = limitInsights.clamp(0, 20);
 
-    final path = '/api/home?limitLogs=$safeLimitLogs&limitInsights=$safeLimitInsights';
+    final path =
+        '/api/home?limitLogs=$safeLimitLogs&limitInsights=$safeLimitInsights';
     return _api.getJson(path);
   }
 }

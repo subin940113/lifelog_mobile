@@ -1,3 +1,4 @@
+// lib/screens/insight/insight_all_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -6,8 +7,13 @@ import 'package:lifelog_mobile/config/api_config.dart';
 import 'package:lifelog_mobile/api/auth_api_client.dart';
 import 'package:lifelog_mobile/api/home_api_client.dart';
 
-import '../settings/widgets/settings_page_header.dart';
 import 'widgets/insight_detail_sheet.dart';
+
+// ✅ 공통 헤더
+import 'package:lifelog_mobile/widgets/app_page_header.dart';
+
+// ✅ Glass 공통 컴포넌트
+import 'package:lifelog_mobile/widgets/glass_dot.dart';
 
 class InsightsAllPage extends StatefulWidget {
   final Palette p;
@@ -54,10 +60,7 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
     });
 
     try {
-      final map = await _homeApi.getHome(
-        limitLogs: 0,
-        limitInsights: 50,
-      );
+      final map = await _homeApi.getHome(limitLogs: 0, limitInsights: 50);
 
       final insightsRaw = (map['insights'] as List?) ?? const [];
       final items = insightsRaw
@@ -80,11 +83,7 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
   }
 
   void _openDetail(InsightPreviewUi item) {
-    showInsightDetailSheet(
-      context,
-      p: widget.p,
-      item: item,
-    );
+    showInsightDetailSheet(context, p: widget.p, item: item);
   }
 
   String _labelFor(InsightKindUi kind) {
@@ -115,11 +114,7 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
       body: SafeArea(
         child: Column(
           children: [
-            SettingsPageHeader(
-              title: '인사이트',
-              titleColor: p.ink,
-              iconColor: p.ink,
-            ),
+            AppPageHeader(title: '인사이트', titleColor: p.ink, iconColor: p.ink),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _load,
@@ -131,7 +126,8 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
                           '불러오는 중…',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: p.muted,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -142,7 +138,8 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
                           _error!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: p.muted,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -153,7 +150,8 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
                           '아직 인사이트가 없어요',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: p.muted.withOpacity(0.7),
                                 fontWeight: FontWeight.w500,
                               ),
@@ -207,14 +205,7 @@ class _InsightRow extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 7),
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: p.accent,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
+              child: GlassDot(size: 6, color: p.accent, active: false),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -227,7 +218,8 @@ class _InsightRow extends StatelessWidget {
                       children: [
                         Text(
                           label,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: p.accent.withOpacity(0.9),
                                 fontWeight: FontWeight.w500,
                               ),
@@ -238,7 +230,8 @@ class _InsightRow extends StatelessWidget {
                             item.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
                                   color: p.ink,
                                   fontWeight: FontWeight.w500,
                                   height: 1.25,
@@ -253,11 +246,11 @@ class _InsightRow extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.muted,
-                            fontWeight: FontWeight.w500,
-                            height: 1.55,
-                            fontSize: 16,
-                          ),
+                        color: p.muted,
+                        fontWeight: FontWeight.w500,
+                        height: 1.55,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),

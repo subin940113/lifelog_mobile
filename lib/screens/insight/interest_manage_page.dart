@@ -17,11 +17,7 @@ class InterestManagePage extends StatefulWidget {
   final Palette p;
   final VoidCallback? onLogout;
 
-  const InterestManagePage({
-    super.key,
-    required this.p,
-    this.onLogout,
-  });
+  const InterestManagePage({super.key, required this.p, this.onLogout});
 
   @override
   State<InterestManagePage> createState() => _InterestManagePageState();
@@ -76,7 +72,8 @@ class _InterestManagePageState extends State<InterestManagePage> {
   }
 
   String _normalize(String input) => input.trim();
-  bool _equalsIgnoreCase(String a, String b) => a.toLowerCase() == b.toLowerCase();
+  bool _equalsIgnoreCase(String a, String b) =>
+      a.toLowerCase() == b.toLowerCase();
 
   Future<void> _load() async {
     setState(() {
@@ -183,11 +180,7 @@ class _InterestManagePageState extends State<InterestManagePage> {
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         titleSpacing: 0,
-        title: AppPageHeader(
-          title: '관심사',
-          titleColor: p.ink,
-          iconColor: p.ink,
-        ),
+        title: AppPageHeader(title: '관심사', titleColor: p.ink, iconColor: p.ink),
       ),
       body: SafeArea(
         top: false,
@@ -198,18 +191,18 @@ class _InterestManagePageState extends State<InterestManagePage> {
               Text(
                 '불러오는 중…',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: p.muted,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  color: p.muted,
+                  fontWeight: FontWeight.w500,
+                ),
               )
             else ...[
               Text(
                 '관심사를 등록하면 키워드 기반으로 인사이트가 생성돼요.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: p.muted,
-                      fontWeight: FontWeight.w500,
-                      height: 1.4,
-                    ),
+                  color: p.muted,
+                  fontWeight: FontWeight.w500,
+                  height: 1.4,
+                ),
               ),
               const SizedBox(height: 14),
 
@@ -229,25 +222,39 @@ class _InterestManagePageState extends State<InterestManagePage> {
                             focusNode: _focusNode,
                             cursorColor: p.accent,
                             enabled: !_saving,
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
                                   color: p.ink,
                                   fontWeight: FontWeight.w500,
                                   fontSize: 16,
                                 ),
                             decoration: InputDecoration(
                               isDense: true,
-                              contentPadding: const EdgeInsets.only(top: 6, bottom: 8),
+                              contentPadding: const EdgeInsets.only(
+                                top: 6,
+                                bottom: 8,
+                              ),
                               border: UnderlineInputBorder(
-                                borderSide: BorderSide(color: underlineColor, width: 1),
+                                borderSide: BorderSide(
+                                  color: underlineColor,
+                                  width: 1,
+                                ),
                               ),
                               enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: underlineColor, width: 1),
+                                borderSide: BorderSide(
+                                  color: underlineColor,
+                                  width: 1,
+                                ),
                               ),
                               focusedBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(color: p.accent.withOpacity(0.9), width: 1),
+                                borderSide: BorderSide(
+                                  color: p.accent.withOpacity(0.9),
+                                  width: 1,
+                                ),
                               ),
                               hintText: '키워드 입력',
-                              hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              hintStyle: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
                                     color: p.muted.withOpacity(0.65),
                                     fontWeight: FontWeight.w500,
                                     fontSize: 16,
@@ -266,7 +273,9 @@ class _InterestManagePageState extends State<InterestManagePage> {
                           child: TextButton(
                             onPressed: _saving ? null : _addKeyword,
                             style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
                               minimumSize: const Size(0, 34),
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               splashFactory: NoSplash.splashFactory,
@@ -274,7 +283,8 @@ class _InterestManagePageState extends State<InterestManagePage> {
                             ),
                             child: Text(
                               _saving ? '저장…' : '추가',
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
                                     color: p.accent,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 16,
@@ -292,10 +302,10 @@ class _InterestManagePageState extends State<InterestManagePage> {
                     Text(
                       _errorText!,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.muted,
-                            fontWeight: FontWeight.w500,
-                            height: 1.35,
-                          ),
+                        color: p.muted,
+                        fontWeight: FontWeight.w500,
+                        height: 1.35,
+                      ),
                     ),
                   ],
 
@@ -306,10 +316,10 @@ class _InterestManagePageState extends State<InterestManagePage> {
                     Text(
                       '아직 등록된 관심사가 없어요.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.muted.withOpacity(0.75),
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
-                          ),
+                        color: p.muted.withOpacity(0.75),
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
                     )
                   else
                     Wrap(
@@ -335,16 +345,17 @@ class _InterestManagePageState extends State<InterestManagePage> {
                       Text(
                         '${_keywords.length}/$_maxKeywords',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: p.muted.withOpacity(0.8),
-                              fontWeight: FontWeight.w500,
-                            ),
+                          color: p.muted.withOpacity(0.8),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           '태그를 탭하면 삭제돼요.',
                           textAlign: TextAlign.right,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: p.muted.withOpacity(0.75),
                                 fontWeight: FontWeight.w500,
                               ),

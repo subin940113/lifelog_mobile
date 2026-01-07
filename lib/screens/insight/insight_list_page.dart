@@ -181,9 +181,9 @@ class _InsightListPageState extends State<InsightListPage> {
         title: Text(
           widget.keyword,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: p.ink,
-                fontWeight: FontWeight.w700,
-              ),
+            color: p.ink,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       body: SafeArea(
@@ -197,25 +197,25 @@ class _InsightListPageState extends State<InsightListPage> {
                 Text(
                   '불러오는 중…',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: p.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 )
               else if (_error != null)
                 Text(
                   _error!,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: p.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 )
               else if (showEmpty)
                 Text(
                   '아직 인사이트가 없어요',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: p.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 )
               else ...[
                 for (int i = 0; i < _items.length; i++) ...[
@@ -230,9 +230,9 @@ class _InsightListPageState extends State<InsightListPage> {
                       child: Text(
                         '더 불러오는 중…',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: p.muted,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: p.muted,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   )
@@ -242,16 +242,19 @@ class _InsightListPageState extends State<InsightListPage> {
                     child: TextButton(
                       onPressed: _loadMore,
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         splashFactory: NoSplash.splashFactory,
                       ),
                       child: Text(
                         '더 보기',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: p.accent,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          color: p.accent,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   )
@@ -270,10 +273,7 @@ class _InsightCard extends StatelessWidget {
   final Palette p;
   final AiInsightItem item;
 
-  const _InsightCard({
-    required this.p,
-    required this.item,
-  });
+  const _InsightCard({required this.p, required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -291,30 +291,30 @@ class _InsightCard extends StatelessWidget {
           Text(
             item.title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: p.ink,
-                  fontWeight: FontWeight.w700,
-                  height: 1.25,
-                ),
+              color: p.ink,
+              fontWeight: FontWeight.w700,
+              height: 1.25,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             item.body,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: p.muted,
-                  fontWeight: FontWeight.w600,
-                  height: 1.55,
-                  fontSize: 16,
-                ),
+              color: p.muted,
+              fontWeight: FontWeight.w600,
+              height: 1.55,
+              fontSize: 16,
+            ),
           ),
           if (evidence.isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(
               evidence,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: p.muted.withOpacity(0.9),
-                    fontWeight: FontWeight.w600,
-                    height: 1.4,
-                  ),
+                color: p.muted.withOpacity(0.9),
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
             ),
           ],
         ],

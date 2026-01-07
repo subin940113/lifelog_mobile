@@ -77,7 +77,10 @@ class AuthApiClient {
     throw Exception('서버 응답 JSON이 객체가 아닙니다: ${res.body}');
   }
 
-  Future<Map<String, dynamic>> postJson(String path, Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> postJson(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
     final res = await _sendWithRefresh(() async {
       final token = await _requireAccessToken();
       return http.post(
@@ -160,10 +163,9 @@ class AuthApiClient {
   }
 
   Future<AuthLoginResult> loginWithGoogleIdToken(String idToken) async {
-    final map = await postJsonUnauthenticated(
-      '/api/auth/oauth/google',
-      {'idToken': idToken},
-    );
+    final map = await postJsonUnauthenticated('/api/auth/oauth/google', {
+      'idToken': idToken,
+    });
 
     final accessToken = map['accessToken'] as String?;
     final refreshToken = map['refreshToken'] as String?;
@@ -177,7 +179,9 @@ class AuthApiClient {
       throw Exception('서버 응답에 refreshToken이 없습니다: ${jsonEncode(map)}');
     }
 
-    final safeName = (displayName != null && displayName.trim().isNotEmpty) ? displayName.trim() : '계정';
+    final safeName = (displayName != null && displayName.trim().isNotEmpty)
+        ? displayName.trim()
+        : '계정';
 
     return AuthLoginResult(
       accessToken: accessToken,
@@ -206,7 +210,9 @@ class AuthApiClient {
     return refreshToken;
   }
 
-  Future<http.Response> _sendWithRefresh(Future<http.Response> Function() request) async {
+  Future<http.Response> _sendWithRefresh(
+    Future<http.Response> Function() request,
+  ) async {
     var res = await request();
 
     if (res.statusCode == 401 || res.statusCode == 403) {

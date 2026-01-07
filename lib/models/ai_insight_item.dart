@@ -19,7 +19,9 @@ class AiInsightItem {
       title: (m['title'] as String?) ?? '',
       body: (m['body'] as String?) ?? '',
       evidence: (m['evidence'] as String?),
-      keyword: (m['keyword'] as String?)?.trim().isEmpty == true ? null : (m['keyword'] as String?),
+      keyword: (m['keyword'] as String?)?.trim().isEmpty == true
+          ? null
+          : (m['keyword'] as String?),
     );
   }
 }

@@ -1,8 +1,10 @@
+// lib/screens/record/record_widgets.dart
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 
 import 'package:lifelog_mobile/theme/palette.dart';
+import 'package:lifelog_mobile/widgets/glass_fab.dart';
 
 /// Minimal, text-only segmented pill for mode switching.
 class ModePill extends StatelessWidget {
@@ -248,65 +250,45 @@ class RecordingDot extends StatelessWidget {
   }
 }
 
-/// Minimal circular done button (FAB-like), centered at bottom.
+/// ✅ Done button (FAB-like) — now backed by the shared GlassFab component.
+/// - 기존 호출부 변경 없이 그대로 사용 가능
+/// - “체크 원형 버튼”이 앱 전체에서 동일하게 유지됨
 class DoneFab extends StatelessWidget {
   final bool enabled;
   final VoidCallback onPressed;
   final Palette p;
+
+  /// 필요하면 화면별로 부유감을 켤 수 있도록 열어둠 (기본 false 권장)
+  final bool floatEnabled;
 
   const DoneFab({
     super.key,
     required this.enabled,
     required this.onPressed,
     required this.p,
+    this.floatEnabled = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    const fg = Color(0xFFFFFFFF);
-
-    // Lighter “link-like” blue (closer to the reference website tone)
-    final enabledBg = Color.lerp(p.accent, Colors.white, 0.18)!;
-    final disabledBg = enabledBg.withOpacity(0.38);
-
     return SafeArea(
       minimum: const EdgeInsets.only(bottom: 24),
       child: Transform.translate(
         offset: const Offset(0, -10),
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOut,
-          opacity: enabled ? 1.0 : 0.32,
-          child: IgnorePointer(
-            ignoring: !enabled,
-            child: Material(
-              color: Colors.transparent,
-              shape: const CircleBorder(),
-              child: InkResponse(
-                onTap: onPressed,
-                radius: 40,
-                splashColor: Colors.transparent,
-                highlightColor: Colors.transparent,
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: enabled ? enabledBg : disabledBg,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text(
-                    '✓',
-                    style: TextStyle(
-                      color: Color(0xFFFFFFFF),
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+        child: GlassFab(
+          onPressed: onPressed,
+          enabled: enabled,
+          color: p.accent,
+          icon: Icons.check_rounded,
+          size: 64,
+          iconSize: 28,
+
+          // 톤/감도: 기존 스타일과 일치
+          lighten: 0.06,
+          pressedScale: 0.98,
+
+          // 완료 버튼은 안정감 우선
+          floatEnabled: floatEnabled,
         ),
       ),
     );

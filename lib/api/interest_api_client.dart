@@ -14,7 +14,9 @@ class InterestApiClient {
   /// POST /api/interests/enabled
   /// body: { "enabled": true/false }
   Future<InterestState> setEnabled(bool enabled) async {
-    final map = await _api.postJson('/api/interests/enabled', {'enabled': enabled});
+    final map = await _api.postJson('/api/interests/enabled', {
+      'enabled': enabled,
+    });
     return InterestState.fromJson(map);
   }
 
@@ -28,7 +30,9 @@ class InterestApiClient {
   /// POST /api/interests/remove
   /// body: { "keyword": "..." }
   Future<InterestState> removeKeyword(String keyword) async {
-    final map = await _api.postJson('/api/interests/remove', {'keyword': keyword});
+    final map = await _api.postJson('/api/interests/remove', {
+      'keyword': keyword,
+    });
     return InterestState.fromJson(map);
   }
 }

@@ -1,3 +1,4 @@
+// lib/screens/home/logs_all_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -8,6 +9,9 @@ import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/widgets/app_page_header.dart';
 
 import 'log_models.dart';
+
+// ✅ Glass 공통 컴포넌트
+import 'package:lifelog_mobile/widgets/glass_dot.dart';
 
 class AllLogsPage extends StatefulWidget {
   final Palette p;
@@ -65,10 +69,7 @@ class _AllLogsPageState extends State<AllLogsPage> {
     });
 
     try {
-      final res = await _logApi.getAllLogs(
-        limit: _pageSize,
-        cursor: _cursor,
-      );
+      final res = await _logApi.getAllLogs(limit: _pageSize, cursor: _cursor);
 
       final next = res.items.map((m) => LogPreview.fromJson(m)).toList();
 
@@ -104,11 +105,7 @@ class _AllLogsPageState extends State<AllLogsPage> {
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         titleSpacing: 0,
-        title: AppPageHeader(
-          title: '기록',
-          titleColor: p.ink,
-          iconColor: p.ink,
-        ),
+        title: AppPageHeader(title: '기록', titleColor: p.ink, iconColor: p.ink),
       ),
       body: SafeArea(
         top: false,
@@ -140,13 +137,14 @@ class _AllLogsPageState extends State<AllLogsPage> {
                       onPressed: () => _loadNext(reset: false),
                       style: TextButton.styleFrom(
                         splashFactory: NoSplash.splashFactory,
+                        foregroundColor: p.accent,
                       ),
                       child: Text(
                         '더 보기',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: p.accent,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: p.accent,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -163,10 +161,7 @@ class _GroupedTimeline extends StatelessWidget {
   final Palette p;
   final List<LogPreview> logs;
 
-  const _GroupedTimeline({
-    required this.p,
-    required this.logs,
-  });
+  const _GroupedTimeline({required this.p, required this.logs});
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +184,6 @@ class _GroupedTimeline extends StatelessWidget {
       children.add(const SizedBox(height: 10));
     }
 
-    // 마지막 여백 정리
     if (children.isNotEmpty) children.removeLast();
 
     return Column(
@@ -203,10 +197,7 @@ class _DateHeader extends StatelessWidget {
   final Palette p;
   final String dateLabel;
 
-  const _DateHeader({
-    required this.p,
-    required this.dateLabel,
-  });
+  const _DateHeader({required this.p, required this.dateLabel});
 
   @override
   Widget build(BuildContext context) {
@@ -215,20 +206,19 @@ class _DateHeader extends StatelessWidget {
         Text(
           dateLabel,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: p.ink,
-                fontWeight: FontWeight.w700,
-                fontSize: 16,
-                letterSpacing: -0.1,
-              ),
+            color: p.ink,
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+            letterSpacing: -0.1,
+          ),
         ),
         const SizedBox(width: 8),
-        Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(
-            color: p.accent,
-            borderRadius: BorderRadius.circular(99),
-          ),
+
+        // ✅ 기존 단색 점 → GlassDot
+        GlassDot(
+          size: 6,
+          color: p.accent,
+          active: false, // 날짜 헤더는 애니메이션 없이 “질감”만
         ),
       ],
     );
@@ -239,10 +229,7 @@ class _StatusText extends StatelessWidget {
   final Palette p;
   final String text;
 
-  const _StatusText({
-    required this.p,
-    required this.text,
-  });
+  const _StatusText({required this.p, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -251,26 +238,21 @@ class _StatusText extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: p.muted.withOpacity(0.75),
-              fontWeight: FontWeight.w500,
-              height: 1.4,
-            ),
+          color: p.muted.withOpacity(0.75),
+          fontWeight: FontWeight.w500,
+          height: 1.4,
+        ),
       ),
     );
   }
 }
 
 /// Row: [시간] [본문]
-/// - 선/마커 제거 (요청 반영)
-/// - 날짜는 상단 그룹 헤더로만 표시
 class _TimelineLogRow extends StatelessWidget {
   final Palette p;
   final LogPreview item;
 
-  const _TimelineLogRow({
-    required this.p,
-    required this.item,
-  });
+  const _TimelineLogRow({required this.p, required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -284,9 +266,9 @@ class _TimelineLogRow extends StatelessWidget {
             child: Text(
               item.timeLabel,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: p.muted,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: p.muted,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -294,11 +276,11 @@ class _TimelineLogRow extends StatelessWidget {
             child: Text(
               item.preview,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: p.ink,
-                    fontWeight: FontWeight.w500,
-                    height: 1.55,
-                    fontSize: 16,
-                  ),
+                color: p.ink,
+                fontWeight: FontWeight.w500,
+                height: 1.55,
+                fontSize: 16,
+              ),
             ),
           ),
         ],

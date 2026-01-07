@@ -83,10 +83,10 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               message,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: p.ink.withOpacity(0.85),
-                    fontWeight: FontWeight.w500,
-                    height: 1.4,
-                  ),
+                color: p.ink.withOpacity(0.85),
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
             ),
             actions: [
               CupertinoActionSheetAction(
@@ -95,10 +95,10 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                 child: Text(
                   actionText,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: isDestructive ? p.danger : p.accent,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.1,
-                      ),
+                    color: isDestructive ? p.danger : p.accent,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.1,
+                  ),
                 ),
               ),
             ],
@@ -107,10 +107,10 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               child: Text(
                 '취소',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: p.muted,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.1,
-                    ),
+                  color: p.muted,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.1,
+                ),
               ),
             ),
           );
@@ -145,10 +145,10 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                       message,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.ink.withOpacity(0.85),
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
-                          ),
+                        color: p.ink.withOpacity(0.85),
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -193,9 +193,9 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           baseUrl: ApiConfig.baseUrl,
           storage: _storage,
           onUnauthorized: () async {
-          await _storage.deleteAll();
-          widget.onLogout?.call();
-        },
+            await _storage.deleteAll();
+            widget.onLogout?.call();
+          },
         );
         await client.logout(refreshToken: refreshToken, allDevices: false);
       }
@@ -220,29 +220,29 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
 
   Future<void> _handleDeleteAccount(BuildContext context) async {
     final ok = await _showActionSheet(
-        context,
-        message: '계정을 삭제할까요?\n삭제 후에는 복구할 수 없어요.',
-        actionText: '삭제',
-        actionColor: p.danger,
+      context,
+      message: '계정을 삭제할까요?\n삭제 후에는 복구할 수 없어요.',
+      actionText: '삭제',
+      actionColor: p.danger,
     );
 
     if (!ok) return;
 
     try {
-        final client = AuthApiClient(
+      final client = AuthApiClient(
         baseUrl: ApiConfig.baseUrl,
         storage: _storage,
         onUnauthorized: () async {
-            await _storage.deleteAll();
-            final cb = widget.onLogout;
-            if (cb != null) cb();
+          await _storage.deleteAll();
+          final cb = widget.onLogout;
+          if (cb != null) cb();
         },
-        );
+      );
 
-        // ✅ 서버 계정 삭제 (DELETE /api/users/me)
-        await client.deleteAccount();
+      // ✅ 서버 계정 삭제 (DELETE /api/users/me)
+      await client.deleteAccount();
     } catch (_) {
-        // 서버/네트워크 실패해도 UX는 계속 진행
+      // 서버/네트워크 실패해도 UX는 계속 진행
     }
 
     // ✅ 로컬 세션은 무조건 정리
@@ -252,7 +252,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     await _storage.delete(key: 'isNewUser');
 
     if (context.mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }
 
     final cb = widget.onLogout;
@@ -277,7 +277,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                   child: FutureBuilder<_UserMe>(
                     future: _meFuture,
                     builder: (context, snapshot) {
-                      final loading = snapshot.connectionState == ConnectionState.waiting;
+                      final loading =
+                          snapshot.connectionState == ConnectionState.waiting;
 
                       // Defaults (em dash) – replaced when API data is available
                       var displayName = '—';
@@ -291,7 +292,9 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                         joinedAt = _fmtInstant(InstantLike(me.createdAt));
                         lastLoginAt = _fmtInstant(InstantLike(me.lastLoginAt));
 
-                        displayName = me.displayName?.isNotEmpty == true ? me.displayName! : '—';
+                        displayName = me.displayName?.isNotEmpty == true
+                            ? me.displayName!
+                            : '—';
                       }
 
                       return ListView(
@@ -305,7 +308,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                             const SizedBox(height: 10),
                             Text(
                               '계정 정보를 불러오지 못했어요.',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
                                     color: p.muted,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -314,7 +318,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                             const SizedBox(height: 10),
                             Text(
                               '불러오는 중…',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
                                     color: p.muted,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -333,9 +338,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               bottom: 0,
               child: Container(
                 padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
-                decoration: BoxDecoration(
-                  color: p.bg,
-                ),
+                decoration: BoxDecoration(color: p.bg),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -403,10 +406,10 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: p.muted,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
+          color: p.muted,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
+        ),
       ),
     );
   }
@@ -417,11 +420,7 @@ class _InfoRow extends StatelessWidget {
   final String value;
   final Palette p;
 
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    required this.p,
-  });
+  const _InfoRow({required this.label, required this.value, required this.p});
 
   @override
   Widget build(BuildContext context) {
@@ -429,9 +428,7 @@ class _InfoRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: p.outline.withOpacity(0.9)),
-        ),
+        border: Border(bottom: BorderSide(color: p.outline.withOpacity(0.9))),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -485,9 +482,7 @@ class _ActionRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: p.outline.withOpacity(0.9)),
-          ),
+          border: Border(bottom: BorderSide(color: p.outline.withOpacity(0.9))),
         ),
         child: Row(
           children: [
@@ -495,9 +490,9 @@ class _ActionRow extends StatelessWidget {
               child: Text(
                 title,
                 style: baseStyle?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],
@@ -546,10 +541,10 @@ class _BottomTextActionState extends State<_BottomTextAction> {
               widget.label,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: widget.color,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.1,
-                  ),
+                color: widget.color,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.1,
+              ),
             ),
           ),
         ),
@@ -595,10 +590,10 @@ class _BottomSheetActionState extends State<_BottomSheetAction> {
             child: Text(
               widget.label,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: widget.color,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.1,
-                  ),
+                color: widget.color,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.1,
+              ),
             ),
           ),
         ),

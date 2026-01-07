@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 
-enum InsightKindUi { tendency, pattern, highlight, warning, reflection, contrast, question }
+enum InsightKindUi {
+  tendency,
+  pattern,
+  highlight,
+  warning,
+  reflection,
+  contrast,
+  question,
+}
 
 class InsightPreviewUi {
   final InsightKindUi kind;
@@ -50,11 +58,7 @@ class InsightDetailSheet extends StatelessWidget {
   final Palette p;
   final InsightPreviewUi item;
 
-  const InsightDetailSheet({
-    super.key,
-    required this.p,
-    required this.item,
-  });
+  const InsightDetailSheet({super.key, required this.p, required this.item});
 
   String labelFor(InsightKindUi kind) {
     switch (kind) {
@@ -102,9 +106,9 @@ class InsightDetailSheet extends StatelessWidget {
                   Text(
                     label,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: p.accent.withOpacity(0.95),
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: p.accent.withOpacity(0.95),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -112,30 +116,30 @@ class InsightDetailSheet extends StatelessWidget {
               Text(
                 item.title,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: p.ink,
-                      fontWeight: FontWeight.w600,
-                      height: 1.2,
-                    ),
+                  color: p.ink,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 item.body,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: p.muted,
-                      fontWeight: FontWeight.w500,
-                      height: 1.55,
-                      fontSize: 16,
-                    ),
+                  color: p.muted,
+                  fontWeight: FontWeight.w500,
+                  height: 1.55,
+                  fontSize: 16,
+                ),
               ),
               if (evidence.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Text(
                   '참고',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: p.muted.withOpacity(0.8),
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.2,
-                      ),
+                    color: p.muted.withOpacity(0.8),
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.2,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -148,10 +152,10 @@ class InsightDetailSheet extends StatelessWidget {
                   child: Text(
                     evidence,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: p.ink.withOpacity(0.85),
-                          fontWeight: FontWeight.w500,
-                          height: 1.5,
-                        ),
+                      color: p.ink.withOpacity(0.85),
+                      fontWeight: FontWeight.w500,
+                      height: 1.5,
+                    ),
                   ),
                 ),
               ],
@@ -177,9 +181,6 @@ Future<void> showInsightDetailSheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
     ),
-    builder: (_) => InsightDetailSheet(
-      p: p,
-      item: item,
-    ),
+    builder: (_) => InsightDetailSheet(p: p, item: item),
   );
 }

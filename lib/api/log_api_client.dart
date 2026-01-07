@@ -6,13 +6,8 @@ class LogApiClient {
   LogApiClient(this._api);
 
   /// POST /api/logs
-  Future<CreateLogResult> createLog({
-    required String content,
-  }) async {
-    final res = await _api.postJson(
-      '/api/logs',
-      {'content': content},
-    );
+  Future<CreateLogResult> createLog({required String content}) async {
+    final res = await _api.postJson('/api/logs', {'content': content});
 
     final logId = res['logId'];
     if (logId is! int) {
@@ -35,10 +30,7 @@ class LogApiClient {
   ///   ],
   ///   "nextCursor": "..."
   /// }
-  Future<LogsPageResponse> getAllLogs({
-    int limit = 50,
-    String? cursor,
-  }) async {
+  Future<LogsPageResponse> getAllLogs({int limit = 50, String? cursor}) async {
     final safeLimit = limit.clamp(1, 100);
 
     final qp = <String, String>{
@@ -47,22 +39,24 @@ class LogApiClient {
     };
 
     // AuthApiClient에는 query parameter 지원이 없으므로, URL에 직접 붙입니다.
-    final uri = Uri(
-      path: '/api/logs',
-      queryParameters: qp,
-    ).toString();
+    final uri = Uri(path: '/api/logs', queryParameters: qp).toString();
 
     final map = await _api.getJson(uri);
 
     final dynamic rawList = map['items'] ?? const [];
     final List<Map<String, dynamic>> items = (rawList is List)
-        ? rawList.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList()
+        ? rawList
+              .whereType<Map>()
+              .map((e) => e.cast<String, dynamic>())
+              .toList()
         : <Map<String, dynamic>>[];
 
     final nextCursor = (map['nextCursor'] as String?)?.trim();
     return LogsPageResponse(
       items: items,
-      nextCursor: (nextCursor == null || nextCursor.isEmpty) ? null : nextCursor,
+      nextCursor: (nextCursor == null || nextCursor.isEmpty)
+          ? null
+          : nextCursor,
     );
   }
 }
@@ -77,8 +71,5 @@ class LogsPageResponse {
   final List<Map<String, dynamic>> items;
   final String? nextCursor;
 
-  const LogsPageResponse({
-    required this.items,
-    required this.nextCursor,
-  });
+  const LogsPageResponse({required this.items, required this.nextCursor});
 }

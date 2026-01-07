@@ -1,3 +1,4 @@
+// lib/screens/settings/insight/insight_hub_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -13,17 +14,15 @@ import 'package:lifelog_mobile/widgets/app_toast.dart';
 
 import 'interest_setting_page.dart' hide InterestBadge;
 import 'widgets/interest_badge.dart';
-import 'widgets/palette_switch.dart';
+
+// ✅ Glass 토글
+import 'package:lifelog_mobile/widgets/glass_switch.dart';
 
 class InsightHubPage extends StatefulWidget {
   final Palette p;
   final VoidCallback? onLogout;
 
-  const InsightHubPage({
-    super.key,
-    required this.p,
-    this.onLogout,
-  });
+  const InsightHubPage({super.key, required this.p, this.onLogout});
 
   @override
   State<InsightHubPage> createState() => _InsightHubPageState();
@@ -63,9 +62,7 @@ class _InsightHubPageState extends State<InsightHubPage> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-    });
+    setState(() => _loading = true);
 
     try {
       final settings = await _insightApi.getSettings();
@@ -111,16 +108,11 @@ class _InsightHubPageState extends State<InsightHubPage> {
   Future<void> _openManage() async {
     await Navigator.of(context).push(
       buildSettingsRoute<void>(
-        InterestManagePage(
-          p: widget.p,
-          onLogout: widget.onLogout,
-        ),
+        InterestManagePage(p: widget.p, onLogout: widget.onLogout),
       ),
     );
 
     if (!mounted) return;
-
-    // 편집 후 최신 상태 재로딩 (keywords는 서버 기준)
     await _load();
   }
 
@@ -153,17 +145,21 @@ class _InsightHubPageState extends State<InsightHubPage> {
                 Text(
                   '불러오는 중…',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    color: p.muted,
+                    fontWeight: FontWeight.w500,
+                  ),
                 )
               else ...[
+                // -------------------------
+                // 인사이트 생성 섹션
+                // -------------------------
                 Row(
                   children: [
                     Expanded(
                       child: Text(
                         '인사이트 생성',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
                               color: p.ink,
                               fontWeight: FontWeight.w500,
                               fontSize: 16,
@@ -172,47 +168,58 @@ class _InsightHubPageState extends State<InsightHubPage> {
                     ),
                     AbsorbPointer(
                       absorbing: _savingEnabled,
-                      child: PaletteSwitch(
-                        p: p,
+                      child: GlassSwitch(
                         value: _enabled,
                         onChanged: _setEnabled,
+                        color: p.accent,
+                        enabled: !_savingEnabled,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _enabled ? '관심사 키워드가 있어야 인사이트가 생성돼요.' : '끄면 기록만 하고 인사이트는 생성하지 않아요.',
+                  _enabled
+                      ? '관심사 키워드가 있어야 인사이트가 생성돼요.'
+                      : '끄면 기록만 하고 인사이트는 생성하지 않아요.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
-                      ),
+                    color: p.muted,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 18),
 
+                // -------------------------
+                // 관심사 섹션
+                // -------------------------
                 Row(
                   children: [
                     Expanded(
                       child: Text(
                         '관심사',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
                               color: p.ink,
                               fontWeight: FontWeight.w500,
                               fontSize: 16,
                             ),
                       ),
                     ),
-                    InkWell(
+
+                    // ✅ 원형 배경/링 방지: 텍스트만 (Material ripple 억제)
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: _openManage,
-                      borderRadius: BorderRadius.circular(10),
-                      splashColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
                         child: Text(
                           '편집',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: p.accent,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -227,9 +234,9 @@ class _InsightHubPageState extends State<InsightHubPage> {
                   Text(
                     '아직 등록된 관심사가 없어요.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: p.muted.withOpacity(0.75),
-                          fontWeight: FontWeight.w500,
-                        ),
+                      color: p.muted.withOpacity(0.75),
+                      fontWeight: FontWeight.w500,
+                    ),
                   )
                 else
                   Wrap(

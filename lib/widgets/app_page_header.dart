@@ -30,10 +30,10 @@ class AppPageHeader extends StatelessWidget {
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: titleColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
-                      ),
+                    color: titleColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                  ),
                 ),
               ),
             ),

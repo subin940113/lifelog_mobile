@@ -1,3 +1,4 @@
+// lib/screens/home/main_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,11 +15,16 @@ import '../record/record_screen.dart';
 import '../settings/settings_home_page.dart';
 import '../settings/settings_routes.dart';
 
-import 'logs_all_page.dart';
+import 'log_all_page.dart';
 import 'log_models.dart';
 
 import 'package:lifelog_mobile/screens/insight/insight_all_page.dart';
 import 'package:lifelog_mobile/screens/insight/widgets/insight_detail_sheet.dart';
+
+// ✅ 공통 glass 컴포넌트
+import 'package:lifelog_mobile/widgets/glass_fab.dart';
+import 'package:lifelog_mobile/widgets/glass_dot.dart';
+import 'package:lifelog_mobile/widgets/glass_chevron_button.dart';
 
 String _formatKoreanDate(DateTime dt) => '${dt.month}월 ${dt.day}일';
 
@@ -68,10 +74,7 @@ class _MainPageState extends State<MainPage> {
     });
 
     try {
-      final map = await _homeApi.getHome(
-        limitLogs: 3,
-        limitInsights: 2,
-      );
+      final map = await _homeApi.getHome(limitLogs: 3, limitInsights: 2);
 
       final vm = _HomeVm.fromJson(map);
       if (!mounted) return;
@@ -94,11 +97,7 @@ class _MainPageState extends State<MainPage> {
 
     pushSettingsPage<void>(
       context,
-      AllLogsPage(
-        p: p,
-        bg: bg,
-        onLogout: widget.onLogout,
-      ),
+      AllLogsPage(p: p, bg: bg, onLogout: widget.onLogout),
     );
   }
 
@@ -108,20 +107,12 @@ class _MainPageState extends State<MainPage> {
 
     pushSettingsPage<void>(
       context,
-      InsightsAllPage(
-        p: p,
-        bg: bg,
-        onLogout: widget.onLogout,
-      ),
+      InsightsAllPage(p: p, bg: bg, onLogout: widget.onLogout),
     );
   }
 
   Future<void> _openInsightDetail(InsightPreviewUi item) async {
-    await showInsightDetailSheet(
-      context,
-      p: widget.p,
-      item: item,
-    );
+    await showInsightDetailSheet(context, p: widget.p, item: item);
   }
 
   @override
@@ -134,24 +125,30 @@ class _MainPageState extends State<MainPage> {
     final showInitialLoading = _loadingHome && vm == null;
     final showError = _homeError != null;
 
-    final topInsight = vm?.topInsight ??
+    final topInsight =
+        vm?.topInsight ??
         _TopInsightPreview(
           date: DateTime.now(),
-          headline: showInitialLoading ? '불러오는 중…' : (_homeError ?? '아직 해석할 신호가 충분하지 않아요'),
+          headline: showInitialLoading
+              ? '불러오는 중…'
+              : (_homeError ?? '아직 해석할 신호가 충분하지 않아요'),
           signalCount: 0,
           axes: const [],
           lastTimeLabel: '—',
         );
 
     final rawHeadline = topInsight.headline.trim();
-    final isDefaultHeadline = rawHeadline.isEmpty ||
+    final isDefaultHeadline =
+        rawHeadline.isEmpty ||
         rawHeadline == '아직 해석할 신호가 충분하지 않아요' ||
         rawHeadline == '아직 해석할 신호가 충분하지 않아요.';
 
     final effectiveHeadline = isDefaultHeadline
         ? (topInsight.signalCount == 0
-            ? '아직 해석할 신호가 충분하지 않아요'
-            : (topInsight.signalCount <= 2 ? '작은 신호가 관측되고 있어요' : '특정 패턴이 감지되고 있어요'))
+              ? '아직 해석할 신호가 충분하지 않아요'
+              : (topInsight.signalCount <= 2
+                    ? '작은 신호가 관측되고 있어요'
+                    : '특정 패턴이 감지되고 있어요'))
         : rawHeadline;
 
     final insights = vm?.insights ?? const <InsightPreviewUi>[];
@@ -159,20 +156,34 @@ class _MainPageState extends State<MainPage> {
 
     final logs = vm?.recentLogs ?? const <LogPreview>[];
 
+    // 헤더 점은 “활성 상태일 때만” 은은하게
+    final headerDotActive = !showInitialLoading && !showError;
+
     return Scaffold(
       backgroundColor: bg,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: RecordFab(
-        enabled: true,
-        p: p,
-        onPressed: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => RecordScreen(onLogout: onLogout)),
-          );
-          if (!mounted) return;
-          _loadHome();
-        },
+
+      // ✅ RecordFab -> GlassFab 적용
+      floatingActionButton: SafeArea(
+        minimum: const EdgeInsets.only(bottom: 24),
+        child: Transform.translate(
+          offset: const Offset(0, -10),
+          child: GlassFab(
+            enabled: true,
+            color: p.accent,
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => RecordScreen(onLogout: onLogout),
+                ),
+              );
+              if (!mounted) return;
+              _loadHome();
+            },
+          ),
+        ),
       ),
+
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
@@ -201,34 +212,31 @@ class _MainPageState extends State<MainPage> {
               title: _formatKoreanDate(topInsight.date),
               subtitle: effectiveHeadline,
               p: p,
+              dotActive: headerDotActive,
             ),
             const SizedBox(height: 14),
             _TopInsightCard(p: p, items: topInsight),
             const SizedBox(height: 18),
 
-            // ---- Insights header (우측: 파란 >) ----
+            // ---- Insights header (우측: glass chevron) ----
             Row(
               children: [
                 Expanded(
                   child: Text(
                     '인사이트',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: p.ink,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 17,
-                          letterSpacing: -0.1,
-                        ),
+                      color: p.ink,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 17,
+                      letterSpacing: -0.1,
+                    ),
                   ),
                 ),
-                _HeaderChevronButton(
-                  p: p,
-                  onTap: _openAllInsights,
-                ),
+                GlassChevronButton(accent: p.accent, onTap: _openAllInsights),
               ],
             ),
             const SizedBox(height: 8),
 
-            // 인사이트 리스트
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -238,10 +246,10 @@ class _MainPageState extends State<MainPage> {
                     child: Text(
                       '불러오는 중…',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.muted,
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
-                          ),
+                        color: p.muted,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
                     ),
                   )
                 else if (showError)
@@ -250,22 +258,24 @@ class _MainPageState extends State<MainPage> {
                     child: Text(
                       '연결이 원활하지 않아요.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.muted,
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
-                          ),
+                        color: p.muted,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
                     ),
                   )
                 else if (insights.isEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 6, bottom: 12),
                     child: Text(
-                      (topInsight.signalCount == 0) ? '인사이트를 생성 중이에요' : '신호를 연결하고 있어요',
+                      (topInsight.signalCount == 0)
+                          ? '인사이트를 생성 중이에요'
+                          : '신호를 연결하고 있어요',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.muted.withOpacity(0.7),
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
-                          ),
+                        color: p.muted.withOpacity(0.7),
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
                     ),
                   )
                 else
@@ -275,31 +285,29 @@ class _MainPageState extends State<MainPage> {
                       item: visibleInsights[i],
                       onTap: () => _openInsightDetail(visibleInsights[i]),
                     ),
-                    if (i != visibleInsights.length - 1) const SizedBox(height: 10),
+                    if (i != visibleInsights.length - 1)
+                      const SizedBox(height: 10),
                   ],
               ],
             ),
 
             const SizedBox(height: 20),
 
-            // ---- Logs header (우측: 파란 >) ----
+            // ---- Logs header (우측: glass chevron) ----
             Row(
               children: [
                 Expanded(
                   child: Text(
                     '기록',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: p.ink,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 17,
-                          letterSpacing: -0.1,
-                        ),
+                      color: p.ink,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 17,
+                      letterSpacing: -0.1,
+                    ),
                   ),
                 ),
-                _HeaderChevronButton(
-                  p: p,
-                  onTap: _openAllLogs,
-                ),
+                GlassChevronButton(accent: p.accent, onTap: _openAllLogs),
               ],
             ),
             const SizedBox(height: 8),
@@ -313,10 +321,10 @@ class _MainPageState extends State<MainPage> {
                     child: Text(
                       '불러오는 중…',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.muted,
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
-                          ),
+                        color: p.muted,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
                     ),
                   )
                 else if (showError)
@@ -325,10 +333,10 @@ class _MainPageState extends State<MainPage> {
                     child: Text(
                       '연결이 원활하지 않아요.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.muted,
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
-                          ),
+                        color: p.muted,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
                     ),
                   )
                 else if (logs.isEmpty)
@@ -337,10 +345,10 @@ class _MainPageState extends State<MainPage> {
                     child: Text(
                       '아직 기록이 없어요',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.muted.withOpacity(0.7),
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
-                          ),
+                        color: p.muted.withOpacity(0.7),
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
                     ),
                   )
                 else
@@ -354,49 +362,12 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-class _HeaderChevronButton extends StatelessWidget {
-  final Palette p;
-  final VoidCallback onTap;
-
-  const _HeaderChevronButton({
-    required this.p,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // ✅ 44x44 고정: 좌우 여백/정렬 일관성 확보 (기록/인사이트 동일)
-    return SizedBox(
-      width: 44,
-      height: 44,
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: InkResponse(
-          onTap: onTap,
-          radius: 24,
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          child: Icon(
-            Icons.chevron_right_rounded,
-            color: p.accent,
-            size: 26,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _AiInsightRow extends StatelessWidget {
   final Palette p;
   final InsightPreviewUi item;
   final VoidCallback? onTap;
 
-  const _AiInsightRow({
-    required this.p,
-    required this.item,
-    this.onTap,
-  });
+  const _AiInsightRow({required this.p, required this.item, this.onTap});
 
   String _labelFor(InsightKindUi kind) {
     switch (kind) {
@@ -433,14 +404,7 @@ class _AiInsightRow extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 7),
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: p.accent,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
+              child: GlassDot(size: 6, color: p.accent, active: false),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -453,7 +417,8 @@ class _AiInsightRow extends StatelessWidget {
                       children: [
                         Text(
                           label,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: p.accent.withOpacity(0.9),
                                 fontWeight: FontWeight.w500,
                                 letterSpacing: -0.1,
@@ -465,7 +430,8 @@ class _AiInsightRow extends StatelessWidget {
                             item.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
                                   color: p.ink,
                                   fontWeight: FontWeight.w500,
                                   height: 1.25,
@@ -480,11 +446,11 @@ class _AiInsightRow extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.muted,
-                            fontWeight: FontWeight.w500,
-                            height: 1.55,
-                            fontSize: 16,
-                          ),
+                        color: p.muted,
+                        fontWeight: FontWeight.w500,
+                        height: 1.55,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
@@ -497,75 +463,17 @@ class _AiInsightRow extends StatelessWidget {
   }
 }
 
-class RecordFab extends StatelessWidget {
-  final bool enabled;
-  final VoidCallback onPressed;
-  final Palette p;
-
-  const RecordFab({
-    super.key,
-    required this.enabled,
-    required this.onPressed,
-    required this.p,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    const fg = Color(0xFFFFFFFF);
-
-    final enabledBg = Color.lerp(p.accent, Colors.white, 0.18)!;
-    final disabledBg = enabledBg.withOpacity(0.38);
-
-    return SafeArea(
-      minimum: const EdgeInsets.only(bottom: 24),
-      child: Transform.translate(
-        offset: const Offset(0, -10),
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOut,
-          opacity: enabled ? 1.0 : 0.32,
-          child: IgnorePointer(
-            ignoring: !enabled,
-            child: Material(
-              color: Colors.transparent,
-              shape: const CircleBorder(),
-              child: InkResponse(
-                onTap: onPressed,
-                radius: 40,
-                splashColor: Colors.transparent,
-                highlightColor: Colors.transparent,
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: enabled ? enabledBg : disabledBg,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.edit_rounded,
-                    color: fg,
-                    size: 26,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String subtitle;
   final Palette p;
+  final bool dotActive;
 
   const _SectionHeader({
     required this.title,
     required this.subtitle,
     required this.p,
+    required this.dotActive,
   });
 
   @override
@@ -578,21 +486,14 @@ class _SectionHeader extends StatelessWidget {
             Text(
               title,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: p.ink,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 22,
-                    letterSpacing: -0.2,
-                  ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: p.accent,
-                borderRadius: BorderRadius.circular(99),
+                color: p.ink,
+                fontWeight: FontWeight.w600,
+                fontSize: 22,
+                letterSpacing: -0.2,
               ),
             ),
+            const SizedBox(width: 8),
+            GlassDot(size: 6, color: p.accent, active: dotActive),
           ],
         ),
         if (subtitle.isNotEmpty) ...[
@@ -600,11 +501,11 @@ class _SectionHeader extends StatelessWidget {
           Text(
             subtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: p.muted.withOpacity(0.9),
-                  fontWeight: FontWeight.w500,
-                  height: 1.45,
-                  fontSize: 15,
-                ),
+              color: p.muted.withOpacity(0.9),
+              fontWeight: FontWeight.w500,
+              height: 1.45,
+              fontSize: 15,
+            ),
           ),
         ],
       ],
@@ -632,14 +533,13 @@ class _TopInsightCard extends StatelessWidget {
   final Palette p;
   final _TopInsightPreview items;
 
-  const _TopInsightCard({
-    required this.p,
-    required this.items,
-  });
+  const _TopInsightCard({required this.p, required this.items});
 
   @override
   Widget build(BuildContext context) {
-    final keywordLine = items.axes.isEmpty ? null : items.axes.take(4).join(' · ');
+    final keywordLine = items.axes.isEmpty
+        ? null
+        : items.axes.take(4).join(' · ');
 
     return Padding(
       padding: const EdgeInsets.only(top: 2),
@@ -652,11 +552,11 @@ class _TopInsightCard extends StatelessWidget {
               Text(
                 '${items.signalCount}',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      color: p.ink,
-                      fontWeight: FontWeight.w600,
-                      height: 0.95,
-                      fontSize: 42,
-                    ),
+                  color: p.ink,
+                  fontWeight: FontWeight.w600,
+                  height: 0.95,
+                  fontSize: 42,
+                ),
               ),
               const SizedBox(width: 10),
               Padding(
@@ -664,10 +564,10 @@ class _TopInsightCard extends StatelessWidget {
                 child: Text(
                   '관측된 신호',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
-                      ),
+                    color: p.muted,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                  ),
                 ),
               ),
               const Spacer(),
@@ -676,9 +576,9 @@ class _TopInsightCard extends StatelessWidget {
                 child: Text(
                   items.lastTimeLabel,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    color: p.muted,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -688,10 +588,10 @@ class _TopInsightCard extends StatelessWidget {
             Text(
               keywordLine,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: p.muted,
-                    fontWeight: FontWeight.w500,
-                    height: 1.35,
-                  ),
+                color: p.muted,
+                fontWeight: FontWeight.w500,
+                height: 1.35,
+              ),
             ),
           ],
           const SizedBox(height: 10),
@@ -760,9 +660,9 @@ class _RecentLogRow extends StatelessWidget {
               child: Text(
                 item.timeLabel,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: p.muted,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  color: p.muted,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
             const SizedBox(width: 10),
@@ -772,11 +672,11 @@ class _RecentLogRow extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: p.ink,
-                      fontWeight: FontWeight.w500,
-                      height: 1.45,
-                      fontSize: 16,
-                    ),
+                  color: p.ink,
+                  fontWeight: FontWeight.w500,
+                  height: 1.45,
+                  fontSize: 16,
+                ),
               ),
             ),
           ],
@@ -787,7 +687,6 @@ class _RecentLogRow extends StatelessWidget {
 }
 
 // --- API View-models ---
-
 class _HomeVm {
   final _TopInsightPreview topInsight;
   final List<InsightPreviewUi> insights;
@@ -800,7 +699,9 @@ class _HomeVm {
   });
 
   static _HomeVm fromJson(Map<String, dynamic> map) {
-    final top = (map['topInsight'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    final top =
+        (map['topInsight'] as Map?)?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
 
     final topDateStr = (top['date'] as String?) ?? '';
     DateTime date;
@@ -817,7 +718,8 @@ class _HomeVm {
           : '아직 해석할 신호가 충분하지 않아요',
       signalCount: (top['signalCount'] as num?)?.toInt() ?? 0,
       axes: ((top['axes'] as List?) ?? const []).whereType<String>().toList(),
-      lastTimeLabel: (top['lastTimeLabel'] as String?)?.trim().isNotEmpty == true
+      lastTimeLabel:
+          (top['lastTimeLabel'] as String?)?.trim().isNotEmpty == true
           ? (top['lastTimeLabel'] as String).trim()
           : '—',
     );

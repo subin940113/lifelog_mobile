@@ -17,8 +17,12 @@ class LogPreview {
 
     return LogPreview(
       logId: logId,
-      dateLabel: (m['dateLabel'] as String?)?.trim().isNotEmpty == true ? (m['dateLabel'] as String).trim() : '—',
-      timeLabel: (m['timeLabel'] as String?)?.trim().isNotEmpty == true ? (m['timeLabel'] as String).trim() : '—',
+      dateLabel: (m['dateLabel'] as String?)?.trim().isNotEmpty == true
+          ? (m['dateLabel'] as String).trim()
+          : '—',
+      timeLabel: (m['timeLabel'] as String?)?.trim().isNotEmpty == true
+          ? (m['timeLabel'] as String).trim()
+          : '—',
       preview: (m['preview'] as String?) ?? '',
     );
   }
