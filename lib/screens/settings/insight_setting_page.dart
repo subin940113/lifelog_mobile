@@ -10,6 +10,7 @@ import 'package:lifelog_mobile/models/interest_state.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/screens/settings/settings_routes.dart';
 import 'package:lifelog_mobile/widgets/app_page_header.dart';
+import 'package:lifelog_mobile/widgets/app_safe_area.dart';
 import 'package:lifelog_mobile/widgets/app_toast.dart';
 
 import 'interest_setting_page.dart' hide InterestBadge;
@@ -111,7 +112,7 @@ class _InsightHubPageState extends State<InsightHubPage> {
   Future<void> _openManage() async {
     await Navigator.of(context).push(
       buildSettingsRoute<void>(
-        InterestManagePage(p: widget.p, onLogout: widget.onLogout),
+        InterestSettingPage(p: widget.p, onLogout: widget.onLogout),
       ),
     );
 
@@ -120,10 +121,10 @@ class _InsightHubPageState extends State<InsightHubPage> {
   }
 
   TextStyle? _sectionTitleStyle(BuildContext context, Palette p) {
-    return Theme.of(context).textTheme.titleMedium?.copyWith(
+    return Theme.of(context).textTheme.titleLarge?.copyWith(
       color: p.ink,
       fontWeight: FontWeight.w600,
-      fontSize: 18,
+
       letterSpacing: -0.15,
     );
   }
@@ -140,19 +141,27 @@ class _InsightHubPageState extends State<InsightHubPage> {
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         titleSpacing: 0,
-        title: AppPageHeader(
-          title: '인사이트',
-          titleColor: p.ink,
-          iconColor: p.ink,
-        ),
+        title: AppPageHeader(title: '', titleColor: p.ink, iconColor: p.ink),
       ),
-      body: SafeArea(
+      body: AppSafeArea(
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 10),
+              Text(
+                '인사이트',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: p.ink,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 22,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 40),
+
               if (_loading)
                 Text(
                   '불러오는 중…',
@@ -181,6 +190,9 @@ class _InsightHubPageState extends State<InsightHubPage> {
                         color: p.accent,
                         enabled: !_savingEnabled,
                         blurEnabled: false,
+                        outerPadding: const EdgeInsets.only(
+                          right: 10,
+                        ), // <- 우측 여백을 주면 화면에서 왼쪽으로 당겨짐
                       ),
                     ),
                   ],
@@ -190,14 +202,14 @@ class _InsightHubPageState extends State<InsightHubPage> {
                   _enabled
                       ? '관심사 키워드가 있어야 인사이트가 생성돼요.'
                       : '끄면 기록만 하고 인사이트는 생성하지 않아요.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: p.muted,
                     fontWeight: FontWeight.w500,
                     height: 1.4,
                     letterSpacing: -0.05,
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 40),
 
                 // -------------------------
                 // 관심사 섹션
@@ -216,14 +228,16 @@ class _InsightHubPageState extends State<InsightHubPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
 
                 if (_keywords.isEmpty)
                   Text(
                     '아직 등록된 관심사가 없어요.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: p.muted.withOpacity(0.75),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: p.muted,
                       fontWeight: FontWeight.w500,
+                      height: 1.4,
+                      letterSpacing: -0.05,
                     ),
                   )
                 else

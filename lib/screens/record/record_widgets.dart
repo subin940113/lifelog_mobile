@@ -250,15 +250,11 @@ class RecordingDot extends StatelessWidget {
   }
 }
 
-/// ✅ Done button (FAB-like) — now backed by the shared GlassFab component.
-/// - 기존 호출부 변경 없이 그대로 사용 가능
-/// - “체크 원형 버튼”이 앱 전체에서 동일하게 유지됨
 class DoneFab extends StatelessWidget {
   final bool enabled;
   final VoidCallback onPressed;
   final Palette p;
 
-  /// 필요하면 화면별로 부유감을 켤 수 있도록 열어둠 (기본 false 권장)
   final bool floatEnabled;
 
   const DoneFab({
@@ -279,15 +275,22 @@ class DoneFab extends StatelessWidget {
           onPressed: onPressed,
           enabled: enabled,
           color: p.accent,
-          icon: Icons.check_rounded,
-          size: 72,
-          iconSize: 32,
 
-          // 톤/감도: 기존 스타일과 일치
+          // ✅ check soft 적용: icon 대신 iconWidget 사용
+          iconWidget: SoftCheckIcon(
+            size: 30,
+            color: Colors.white.withOpacity(enabled ? 1.0 : 0.55),
+            stroke: 4.6,
+            rotate: -0.1,
+          ),
+
+          size: 72,
+
+          // iconSize / icon 은 iconWidget 쓰면 무시되므로 제거해도 됨
+          // icon: Icons.check_rounded,
+          // iconSize: 32,
           lighten: 0.06,
           pressedScale: 0.98,
-
-          // 완료 버튼은 안정감 우선
           floatEnabled: floatEnabled,
         ),
       ),

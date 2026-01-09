@@ -10,6 +10,10 @@ class GlassFab extends StatefulWidget {
   final double size;
   final double iconSize;
 
+  /// Optional custom icon widget (e.g. SVG/CustomPaint).
+  /// If provided, `icon` is ignored.
+  final Widget? iconWidget;
+
   /// accent → white 보정 (0.00 = accent 그대로, 0.06~0.10 권장)
   final double lighten;
 
@@ -27,6 +31,7 @@ class GlassFab extends StatefulWidget {
     this.icon = Icons.edit_rounded,
     this.size = 72,
     this.iconSize = 28,
+    this.iconWidget,
     this.lighten = 0.06,
     this.pressedScale = 0.98,
     this.floatEnabled = true,
@@ -61,7 +66,6 @@ class _GlassFabState extends State<GlassFab>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // ✅ 빌드 스코프 충돌 방지: “프레임이 완전히 끝난 뒤” 동기화
     _scheduleSyncFloat();
   }
 
@@ -78,20 +82,15 @@ class _GlassFabState extends State<GlassFab>
     if (_syncScheduled) return;
     _syncScheduled = true;
 
-    // postFrameCallback보다 endOfFrame이 더 안전한 편입니다.
     SchedulerBinding.instance.endOfFrame.then((_) {
       _syncScheduled = false;
       if (!mounted) return;
 
-      final allowTickers = TickerMode.of(
-        context,
-      ); // route 전환/offstage 시 false가 될 수 있음
+      final allowTickers = TickerMode.of(context);
       final shouldFloat = widget.enabled && widget.floatEnabled && allowTickers;
 
       if (shouldFloat) {
-        if (!_floatC.isAnimating) {
-          _floatC.repeat(reverse: true);
-        }
+        if (!_floatC.isAnimating) _floatC.repeat(reverse: true);
       } else {
         if (_floatC.isAnimating) _floatC.stop();
         _floatC.value = 0;
@@ -110,8 +109,6 @@ class _GlassFabState extends State<GlassFab>
     if (_pressed == v) return;
     if (!mounted) return;
 
-    // ✅ pressed setState는 즉시 해도 보통 안전하지만,
-    // route 전환 중 미묘한 타이밍 문제를 피하려면 endOfFrame으로 미루는 것도 안전합니다.
     SchedulerBinding.instance.endOfFrame.then((_) {
       if (!mounted) return;
       if (_pressed == v) return;
@@ -124,29 +121,33 @@ class _GlassFabState extends State<GlassFab>
     final opacity = widget.enabled ? 1.0 : 0.32;
     final base = Color.lerp(widget.color, Colors.white, widget.lighten)!;
 
-    final body = GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => _setPressed(true),
-      onTapUp: (_) => _setPressed(false),
-      onTapCancel: () => _setPressed(false),
-      onTap: widget.enabled ? widget.onPressed : null,
-      child: AnimatedScale(
-        scale: _pressed ? widget.pressedScale : 1.0,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
-        child: _GlassFabBody(
-          size: widget.size,
-          baseColor: base,
-          accent: widget.color,
-          icon: widget.icon,
-          iconColor: Colors.white.withOpacity(0.95),
-          iconSize: widget.iconSize,
-          pressed: _pressed,
+    // ✅ GestureDetector 대신 InkWell 사용 (탭 안정성↑)
+    final body = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        onTap: widget.enabled ? widget.onPressed : null,
+        onHighlightChanged: (v) => _setPressed(v),
+        child: AnimatedScale(
+          scale: _pressed ? widget.pressedScale : 1.0,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          child: _GlassFabBody(
+            size: widget.size,
+            baseColor: base,
+            accent: widget.color,
+            icon: widget.icon,
+            iconColor: Colors.white.withOpacity(0.95),
+            iconSize: widget.iconSize,
+            iconWidget: widget.iconWidget,
+            pressed: _pressed,
+          ),
         ),
       ),
     );
 
-    // ✅ TickerMode가 꺼진 상태(예: 라우트 전환/offstage)에서는 AnimatedBuilder를 안 탑니다.
     final allowTickers = TickerMode.of(context);
     final shouldAnimate = widget.enabled && widget.floatEnabled && allowTickers;
 
@@ -176,6 +177,7 @@ class _GlassFabBody extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final double iconSize;
+  final Widget? iconWidget;
   final bool pressed;
 
   const _GlassFabBody({
@@ -185,6 +187,7 @@ class _GlassFabBody extends StatelessWidget {
     required this.icon,
     required this.iconColor,
     required this.iconSize,
+    required this.iconWidget,
     required this.pressed,
   });
 
@@ -280,7 +283,9 @@ class _GlassFabBody extends StatelessWidget {
                   ),
                   Positioned.fill(child: _GlassRim(baseColor: baseColor)),
                   Center(
-                    child: Icon(icon, color: iconColor, size: iconSize),
+                    child:
+                        iconWidget ??
+                        Icon(icon, color: iconColor, size: iconSize),
                   ),
                 ],
               ),
@@ -361,4 +366,85 @@ class _GlassRimPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _GlassRimPainter oldDelegate) =>
       oldDelegate.base != base;
+}
+
+/// 공통 체크 아이콘 (CustomPaint)
+class SoftCheckIcon extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double stroke;
+  final double rotate;
+
+  const SoftCheckIcon({
+    super.key,
+    required this.size,
+    required this.color,
+    this.stroke = 4.4,
+    this.rotate = 0.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _SoftCheckPainter(color: color, stroke: stroke, rotate: rotate),
+    );
+  }
+}
+
+class _SoftCheckPainter extends CustomPainter {
+  final Color color;
+  final double stroke;
+  final double rotate;
+
+  _SoftCheckPainter({
+    required this.color,
+    required this.stroke,
+    required this.rotate,
+  });
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    canvas.save();
+    canvas.translate(s.width / 2, s.height / 2);
+    canvas.rotate(rotate);
+    canvas.translate(-s.width / 2, -s.height / 2);
+
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
+
+    final path = Path()
+      ..moveTo(s.width * 0.12, s.height * 0.50)
+      ..lineTo(s.width * 0.40, s.height * 0.82)
+      ..lineTo(s.width * 0.90, s.height * 0.40);
+
+    canvas.drawPath(path, p);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _SoftCheckPainter old) {
+    return old.color != color || old.stroke != stroke || old.rotate != rotate;
+  }
+}
+
+class FabPosition extends StatelessWidget {
+  final Widget child;
+  const FabPosition({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      minimum: const EdgeInsets.only(bottom: 0),
+      child: Transform.translate(
+        offset: const Offset(0, -70),
+        child: Center(child: child),
+      ),
+    );
+  }
 }

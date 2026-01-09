@@ -1,4 +1,3 @@
-// lib/screens/insight/insight_all_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -12,7 +11,7 @@ import 'widgets/insight_detail_sheet.dart';
 // ✅ 공통 헤더
 import 'package:lifelog_mobile/widgets/app_page_header.dart';
 
-// ✅ Glass 공통 컴포넌트
+import 'package:lifelog_mobile/widgets/app_safe_area.dart';
 import 'package:lifelog_mobile/widgets/glass_dot.dart';
 
 class InsightsAllPage extends StatefulWidget {
@@ -111,64 +110,65 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
 
     return Scaffold(
       backgroundColor: widget.bg,
-      body: SafeArea(
+      appBar: AppBar(
+        backgroundColor: p.bg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: AppPageHeader(title: '', titleColor: p.ink, iconColor: p.ink),
+      ),
+      body: AppSafeArea(
         child: Column(
           children: [
-            AppPageHeader(title: '인사이트', titleColor: p.ink, iconColor: p.ink),
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: _load,
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
-                  children: [
-                    if (_loading)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          '불러오는 중…',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: p.muted,
-                                fontWeight: FontWeight.w500,
-                              ),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+                children: [
+                  if (_loading)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        '불러오는 중…',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: p.muted,
+                          fontWeight: FontWeight.w500,
                         ),
-                      )
-                    else if (_error != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          _error!,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: p.muted,
-                                fontWeight: FontWeight.w500,
-                              ),
+                      ),
+                    )
+                  else if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        _error!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: p.muted,
+                          fontWeight: FontWeight.w500,
                         ),
-                      )
-                    else if (_items.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          '아직 인사이트가 없어요',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: p.muted.withOpacity(0.7),
-                                fontWeight: FontWeight.w500,
-                              ),
+                      ),
+                    )
+                  else if (_items.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        '아직 인사이트가 없어요',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: p.muted.withOpacity(0.7),
+                          fontWeight: FontWeight.w500,
                         ),
-                      )
-                    else
-                      for (int i = 0; i < _items.length; i++) ...[
-                        _InsightRow(
-                          p: p,
-                          item: _items[i],
-                          label: _labelFor(_items[i].kind),
-                          onTap: () => _openDetail(_items[i]),
-                        ),
-                        if (i != _items.length - 1) const SizedBox(height: 10),
-                      ],
-                  ],
-                ),
+                      ),
+                    )
+                  else
+                    for (int i = 0; i < _items.length; i++) ...[
+                      _InsightRow(
+                        p: p,
+                        item: _items[i],
+                        label: _labelFor(_items[i].kind),
+                        onTap: () => _openDetail(_items[i]),
+                      ),
+                      if (i != _items.length - 1) const SizedBox(height: 10),
+                    ],
+                ],
               ),
             ),
           ],

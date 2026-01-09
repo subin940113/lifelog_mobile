@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:lifelog_mobile/theme/palette.dart';
-import 'widgets/settings_page_header.dart';
+import 'package:lifelog_mobile/widgets/app_page_header.dart';
+import 'package:lifelog_mobile/widgets/app_safe_area.dart';
 
 import 'package:lifelog_mobile/widgets/glass_dot.dart';
 
@@ -14,8 +17,6 @@ const String kSttLocaleStorageKey = 'sttLocaleId';
 /// ✅ 기본은 항상 한국어
 const String _kDefaultLocaleId = 'ko_KR';
 
-/// ✅ (중요) 이제 Future로 결과를 돌려줌.
-/// SettingsHomePage에서 await 가능 -> 복귀 시 리프레시 트리거 가능
 Future<String?> showLanguageSheet(
   BuildContext context, {
   required Color bg,
@@ -48,10 +49,10 @@ Future<String?> showLanguageSheet(
 
 /// ✅ 완전 하드코딩: UI에 노출할 언어 정의
 class _HardcodedLang {
-  final String key; // 내부 식별자
-  final String label; // 화면 표시명(해당 언어로)
-  final List<String> preferredLocaleIds; // 우선순위 localeId 후보들
-  final List<String> preferredPrefixes; // 위 후보가 없을 때 prefix로 보정
+  final String key;
+  final String label;
+  final List<String> preferredLocaleIds;
+  final List<String> preferredPrefixes;
 
   const _HardcodedLang({
     required this.key,
@@ -145,14 +146,12 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
     ),
   ];
 
-  String? _localeId; // 실제 저장되는 값 (STT localeId)
+  String? _localeId;
   bool _loadedStored = false;
 
   @override
   void initState() {
     super.initState();
-    // initialLocaleId는 “표시용 초기값”일 뿐이고,
-    // 실제 선택값 확정은 storage를 기준으로 맞춤
     _localeId = widget.initialLocaleId;
     _loadStoredOrSetDefault();
   }
@@ -170,7 +169,6 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
     return widget.locales.any((l) => _norm(l.localeId) == target);
   }
 
-  /// ✅ 기기 지원 locale 목록에서, 특정 언어에 대해 “대표 localeId”를 하나 고른다.
   String? _pickSupportedLocaleId(_HardcodedLang lang) {
     if (widget.locales.isEmpty) return null;
 
@@ -179,14 +177,12 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
         .where((id) => id.isNotEmpty)
         .toList();
 
-    // 1) localeId exact 우선순위 매칭
     for (final wanted in lang.preferredLocaleIds) {
       final w = _norm(wanted);
       if (w.isEmpty) continue;
       if (all.any((id) => _norm(id) == w)) return w;
     }
 
-    // 2) prefix로 fallback
     for (final pref in lang.preferredPrefixes) {
       final pfx = _norm(pref).toLowerCase();
       for (final id in all) {
@@ -197,7 +193,6 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
     return null;
   }
 
-  /// ✅ UI에 보여줄 언어 리스트(기기 지원되는 것만)
   List<_LangRowVm> _buildRows() {
     final rows = <_LangRowVm>[];
     for (final lang in _langs) {
@@ -208,7 +203,6 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
     return rows;
   }
 
-  /// ✅ 저장값이 없으면 "항상 한국어"를 기본으로 확정해 storage에 써 둠
   Future<void> _loadStoredOrSetDefault() async {
     final savedRaw = await _storage.read(key: kSttLocaleStorageKey);
     final saved = _norm(savedRaw);
@@ -218,14 +212,9 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
     if (saved.isNotEmpty && _deviceSupports(saved)) {
       resolved = saved;
     } else {
-      // 저장값이 없거나, 저장값이 기기 지원 목록에 없으면 -> 한국어로 고정
-      // (기기에서 ko_KR이 없을 수도 있으니, 지원되는 ko를 하나 찾고 없으면 fallback)
       final rows = _buildRows();
-      final koRow =
-          rows.where((r) => r.lang.key == 'ko').cast<_LangRowVm?>().toList();
-      resolved = koRow.isNotEmpty ? koRow.first!.localeId : _kDefaultLocaleId;
-
-      // ✅ 기본값을 storage에 “명시적으로” 저장해 둠
+      final koRow = rows.where((r) => r.lang.key == 'ko').toList();
+      resolved = koRow.isNotEmpty ? koRow.first.localeId : _kDefaultLocaleId;
       await _storage.write(key: kSttLocaleStorageKey, value: resolved);
     }
 
@@ -235,7 +224,6 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
       _loadedStored = true;
     });
 
-    // ✅ 즉시 반영 (RecordScreen 등 즉시 언어 갱신 가능)
     widget.onApply(resolved);
   }
 
@@ -256,54 +244,68 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final p = widget.p;
-
     final rows = _buildRows();
 
-    // 표시상 선택값 보정: 현재 _localeId가 rows 안에 없으면 한국어(있으면) or 첫 항목
     String? effectiveSelected;
     if (rows.any((r) => _norm(r.localeId) == _norm(_localeId))) {
       effectiveSelected = _localeId;
     } else {
       final ko = rows.where((r) => r.lang.key == 'ko').toList();
-      effectiveSelected = ko.isNotEmpty ? ko.first.localeId : (rows.isNotEmpty ? rows.first.localeId : _localeId);
+      effectiveSelected = ko.isNotEmpty
+          ? ko.first.localeId
+          : (rows.isNotEmpty ? rows.first.localeId : _localeId);
     }
 
     return WillPopScope(
       onWillPop: () async {
-        Navigator.of(context).pop(_localeId); // ✅ SettingsHomePage에서 await로 수신 가능
+        Navigator.of(context).pop(_localeId);
         return false;
       },
       child: Scaffold(
         backgroundColor: widget.bg,
-        appBar: null,
-        body: SafeArea(
+        appBar: AppBar(
+          backgroundColor: p.bg,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          automaticallyImplyLeading: false,
+          titleSpacing: 0,
+          title: AppPageHeader(title: '', titleColor: p.ink, iconColor: p.ink),
+        ),
+        body: AppSafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SettingsPageHeader(
-                title: '언어',
-                titleColor: p.ink,
-                iconColor: p.ink,
-              ),
+              const SizedBox(height: 20),
 
-              // ✅ 안내문: 왼쪽 패딩 문제는 Align 제거하고 Row/Expanded로 고정하면 깔끔해짐
+              // ✅ 리스트와 동일한 좌우(18) 라인으로 타이틀/설명 정렬
               Padding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
-                child: Row(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        '선택한 언어는 기록 말하기에서 음성 인식 언어로 사용돼요.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: p.muted.withOpacity(0.8),
-                              fontWeight: FontWeight.w500,
-                              height: 1.4,
-                            ),
+                    Text(
+                      '언어',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: p.ink,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      '선택한 언어로 음성을 인식해요.',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: p.muted.withOpacity(0.8),
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
+
+              const SizedBox(height: 8),
 
               Expanded(
                 child: !_loadedStored
@@ -313,7 +315,8 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
                           alignment: Alignment.topLeft,
                           child: Text(
                             '불러오는 중…',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
                                   color: p.muted,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -377,7 +380,7 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
 
 class _LangRowVm {
   final _HardcodedLang lang;
-  final String localeId; // 실제 STT에 전달/저장되는 값
+  final String localeId;
 
   const _LangRowVm({required this.lang, required this.localeId});
 }

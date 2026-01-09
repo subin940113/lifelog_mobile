@@ -12,7 +12,8 @@ import 'theme_settings_page.dart';
 import 'account_settings_page.dart';
 
 import 'widgets/account_header.dart';
-import 'widgets/settings_page_header.dart';
+import 'package:lifelog_mobile/widgets/app_page_header.dart';
+import 'package:lifelog_mobile/widgets/app_safe_area.dart';
 import 'widgets/settings_row.dart';
 
 import 'package:speech_to_text/speech_to_text.dart';
@@ -122,8 +123,9 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
     if (exact.isNotEmpty) return exact.first.localeId!;
 
     // 2) ko-KR 우선
-    final exactDash =
-        locales.where((l) => (l.localeId ?? '') == 'ko-KR').toList();
+    final exactDash = locales
+        .where((l) => (l.localeId ?? '') == 'ko-KR')
+        .toList();
     if (exactDash.isNotEmpty) return exactDash.first.localeId!;
 
     // 3) ko prefix 중 첫번째
@@ -234,15 +236,15 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
       try {
         final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
         if (!ok && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('링크를 열 수 없어요.')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('링크를 열 수 없어요.')));
         }
       } catch (_) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('링크를 여는 중 오류가 발생했어요.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('링크를 여는 중 오류가 발생했어요.')));
       }
     }
 
@@ -260,14 +262,17 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
 
     return Scaffold(
       backgroundColor: p.bg,
-      body: SafeArea(
+      appBar: AppBar(
+        backgroundColor: p.bg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: AppPageHeader(title: '', titleColor: p.ink, iconColor: p.ink),
+      ),
+      body: AppSafeArea(
         child: Column(
           children: [
-            SettingsPageHeader(
-              title: '설정',
-              titleColor: p.ink,
-              iconColor: p.ink,
-            ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
@@ -276,7 +281,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                     behavior: HitTestBehavior.opaque,
                     onTap: openAccount,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 0),
                       child: FutureBuilder<String?>(
                         future: widget.accountName != null
                             ? Future.value(widget.accountName)
@@ -286,15 +291,15 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                         builder: (context, snapshot) {
                           final name =
                               (snapshot.data != null &&
-                                      snapshot.data!.trim().isNotEmpty)
-                                  ? snapshot.data!.trim()
-                                  : '계정';
+                                  snapshot.data!.trim().isNotEmpty)
+                              ? snapshot.data!.trim()
+                              : '계정';
                           return AccountHeader(p: p, accountName: name);
                         },
                       ),
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 20),
                   _SectionLabel(text: '설정', p: p),
                   SettingsRow(
                     title: '테마',
@@ -322,11 +327,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                     },
                   ),
 
-                  SettingsRow(
-                    title: '인사이트',
-                    onTap: openInsightSettings,
-                    p: p,
-                  ),
+                  SettingsRow(title: '인사이트', onTap: openInsightSettings, p: p),
                   SettingsRow(
                     title: '알림',
                     onTap: () => pushSettingsPage(
@@ -335,7 +336,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                     ),
                     p: p,
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 40),
                   _SectionLabel(text: '정보', p: p),
                   SettingsRow(
                     title: '이용 약관 및 개인정보 처리방침',
@@ -346,7 +347,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                     title: '버전 정보',
                     onTap: () {},
                     p: p,
-                    trailingText: '1.0.0',
+                    trailingText: '1.0.0  ',
                     showChevron: false,
                   ),
                 ],
@@ -370,11 +371,11 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: p.muted,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: p.muted,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
+        ),
       ),
     );
   }
@@ -394,19 +395,15 @@ class _PlaceholderSettingsPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            SettingsPageHeader(
-              title: title,
-              titleColor: p.ink,
-              iconColor: p.ink,
-            ),
+            AppPageHeader(title: title, titleColor: p.ink, iconColor: p.ink),
             Expanded(
               child: Center(
                 child: Text(
                   '준비 중',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: p.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

@@ -89,18 +89,32 @@ class _LoginPageState extends State<LoginPage>
     );
   }
 
-  Future<void> _persistLogin(AuthLoginResult authResult, ProviderKey provider) async {
-    await _secureStorage.write(key: 'accessToken', value: authResult.accessToken);
-    await _secureStorage.write(key: 'refreshToken', value: authResult.refreshToken);
-    await _secureStorage.write(key: 'accountName', value: authResult.displayName);
-    await _secureStorage.write(key: 'isNewUser', value: authResult.isNewUser.toString());
+  Future<void> _persistLogin(
+    AuthLoginResult authResult,
+    ProviderKey provider,
+  ) async {
+    await _secureStorage.write(
+      key: 'accessToken',
+      value: authResult.accessToken,
+    );
+    await _secureStorage.write(
+      key: 'refreshToken',
+      value: authResult.refreshToken,
+    );
+    await _secureStorage.write(
+      key: 'accountName',
+      value: authResult.displayName,
+    );
+    await _secureStorage.write(
+      key: 'isNewUser',
+      value: authResult.isNewUser.toString(),
+    );
 
     await _secureStorage.write(
       key: _kLastLoginProviderKey,
       value: provider.storageValue,
     );
   }
-
 
   void _handleLoginError(String userMessage, Object error, [StackTrace? st]) {
     // Keep detail for debugging, but do not show raw error to users.
@@ -203,7 +217,6 @@ class _LoginPageState extends State<LoginPage>
     try {
       final result = await FlutterNaverLogin.logIn();
 
-
       // Developer-only diagnostics (do not surface to UI)
       debugPrint('[NAVER] login result: $result');
       debugPrint('[NAVER] status: ${result.status}');
@@ -216,11 +229,11 @@ class _LoginPageState extends State<LoginPage>
 
       final accessTokenResult = await FlutterNaverLogin.currentAccessToken;
       final accessToken = accessTokenResult.accessToken;
-debugPrint('[NAVER] status: ${accessToken}');
+      debugPrint('[NAVER] status: ${accessToken}');
 
       // 1.8.0 기준: result.accessToken 타입이 Object?로 잡히는 경우가 있어 String 변환 고정
       //final accessToken = (result.accessToken?.toString() ?? '').trim();
-     debugPrint('[NAVER] accessToken length: ${accessToken.length}');
+      debugPrint('[NAVER] accessToken length: ${accessToken.length}');
       if (accessToken.isEmpty) {
         throw Exception('NAVER_ACCESS_TOKEN_EMPTY');
       }
@@ -273,17 +286,19 @@ debugPrint('[NAVER] status: ${accessToken}');
 
     final bg = widget.bg ?? (isDark ? p.bg : const Color(0xFFFAFAFA));
     final copyStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          height: 1.35,
-          fontSize: 16,
-          letterSpacing: -1,
-        );
+      fontWeight: FontWeight.w600,
+      height: 1.35,
+      fontSize: 16,
+      letterSpacing: -1,
+    );
 
     final panelHeight = MediaQuery.sizeOf(context).height * 0.3;
 
     final hasRecent = _recentProvider != null;
     final bubbleText = hasRecent ? '최근 로그인' : 'SNS 계정으로 이어가기';
-    final bubbleX = hasRecent ? _bubbleOffsetXForProvider(_recentProvider) : 0.0;
+    final bubbleX = hasRecent
+        ? _bubbleOffsetXForProvider(_recentProvider)
+        : 0.0;
 
     // 말풍선 위 마진/아이콘 Y 고정 관련
     const bubbleSlotHeight = 46.0;
@@ -334,7 +349,11 @@ debugPrint('[NAVER] status: ${accessToken}');
                                 child: Text(
                                   '.',
                                   style: copyStyle?.copyWith(
-                                    color: Color.lerp(p.accent, Colors.black, 0.25),
+                                    color: Color.lerp(
+                                      p.accent,
+                                      Colors.black,
+                                      0.25,
+                                    ),
                                     fontWeight: FontWeight.w800,
                                     fontSize: 24,
                                     height: 1.0,
@@ -390,7 +409,8 @@ debugPrint('[NAVER] status: ${accessToken}');
                             animation: _glassSheen,
                             builder: (context, _) {
                               final w = MediaQuery.sizeOf(context).width;
-                              final x = (-w * 0.8) + (w * 1.6 * _glassSheen.value);
+                              final x =
+                                  (-w * 0.8) + (w * 1.6 * _glassSheen.value);
                               return Opacity(
                                 opacity: isDark ? 0.12 : 0.10,
                                 child: Transform.translate(
@@ -413,7 +433,13 @@ debugPrint('[NAVER] status: ${accessToken}');
                                               Colors.white.withOpacity(0.18),
                                               Colors.transparent,
                                             ],
-                                            stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+                                            stops: const [
+                                              0.0,
+                                              0.35,
+                                              0.5,
+                                              0.65,
+                                              1.0,
+                                            ],
                                           ),
                                         ),
                                       ),
@@ -435,13 +461,14 @@ debugPrint('[NAVER] status: ${accessToken}');
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-
                                   SizedBox(
                                     height: bubbleSlotHeight,
                                     child: Center(
                                       child: Transform.translate(
                                         offset: Offset(bubbleX, 0),
-                                        child: InlineBubbleLabel(text: bubbleText),
+                                        child: InlineBubbleLabel(
+                                          text: bubbleText,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -450,30 +477,49 @@ debugPrint('[NAVER] status: ${accessToken}');
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       _IconButton(
-                                        iconAsset: 'assets/icons/signin_with_kakao.png',
+                                        iconAsset:
+                                            'assets/icons/signin_with_kakao.png',
                                         enabled: !_loading,
-                                        pressed: _ctaPressed && _pressedKey == ProviderKey.kakao,
-                                        onPressedStateChanged: (v) => _setPressed(ProviderKey.kakao, v),
-                                        onTap: _loading ? null : _loginWithKakao,
+                                        pressed:
+                                            _ctaPressed &&
+                                            _pressedKey == ProviderKey.kakao,
+                                        onPressedStateChanged: (v) =>
+                                            _setPressed(ProviderKey.kakao, v),
+                                        onTap: _loading
+                                            ? null
+                                            : _loginWithKakao,
                                       ),
                                       const SizedBox(width: 16),
                                       _IconButton(
-                                        iconAsset: 'assets/icons/signin_with_naver.png',
+                                        iconAsset:
+                                            'assets/icons/signin_with_naver.png',
                                         enabled: !_loading,
-                                        pressed: _ctaPressed && _pressedKey == ProviderKey.naver,
-                                        onPressedStateChanged: (v) => _setPressed(ProviderKey.naver, v),
-                                        onTap: _loading ? null : _loginWithNaver,
+                                        pressed:
+                                            _ctaPressed &&
+                                            _pressedKey == ProviderKey.naver,
+                                        onPressedStateChanged: (v) =>
+                                            _setPressed(ProviderKey.naver, v),
+                                        onTap: _loading
+                                            ? null
+                                            : _loginWithNaver,
                                       ),
                                       const SizedBox(width: 16),
                                       _IconButton(
-                                        iconAsset: 'assets/icons/signin_with_google.png',
+                                        iconAsset:
+                                            'assets/icons/signin_with_google.png',
                                         enabled: !_loading,
-                                        pressed: _ctaPressed && _pressedKey == ProviderKey.google,
-                                        onPressedStateChanged: (v) => _setPressed(ProviderKey.google, v),
-                                        onTap: _loading ? null : _loginWithGoogle,
+                                        pressed:
+                                            _ctaPressed &&
+                                            _pressedKey == ProviderKey.google,
+                                        onPressedStateChanged: (v) =>
+                                            _setPressed(ProviderKey.google, v),
+                                        onTap: _loading
+                                            ? null
+                                            : _loginWithGoogle,
                                       ),
                                     ],
                                   ),
@@ -482,12 +528,18 @@ debugPrint('[NAVER] status: ${accessToken}');
                                     Text(
                                       _error!,
                                       textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                            fontSize: 13, // match InlineBubbleLabel text size
-                                            color: Colors.white.withOpacity(0.88),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            fontSize:
+                                                13, // match InlineBubbleLabel text size
+                                            color: Colors.white.withOpacity(
+                                              0.88,
+                                            ),
                                             fontWeight: FontWeight.w600,
                                             height: 1.35,
-                                      ),
+                                          ),
                                     ),
                                   ],
                                 ],
@@ -501,7 +553,8 @@ debugPrint('[NAVER] status: ${accessToken}');
                                 child: Text(
                                   '© ${DateTime.now().year} bluelog. All rights reserved.',
                                   textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
                                         color: Colors.white.withOpacity(0.82),
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.1,

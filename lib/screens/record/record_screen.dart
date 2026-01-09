@@ -12,7 +12,8 @@ import 'package:lifelog_mobile/config/api_config.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/screens/record/record_widgets.dart';
 import 'package:lifelog_mobile/widgets/app_toast.dart';
-
+import 'package:lifelog_mobile/widgets/app_page_header.dart';
+import 'package:lifelog_mobile/widgets/app_safe_area.dart';
 import 'package:lifelog_mobile/widgets/glass_dot.dart';
 
 const String kSttLocaleStorageKey = 'sttLocaleId';
@@ -406,7 +407,7 @@ class _RecordScreenState extends State<RecordScreen> {
   Widget build(BuildContext context) {
     final p = Palette.from(Theme.of(context).colorScheme);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? p.bg : const Color(0xFFFAFAFA);
+    final bg = isDark ? p.bg : Colors.white;
 
     final localTheme = Theme.of(context).copyWith(
       textSelectionTheme: TextSelectionThemeData(
@@ -430,32 +431,20 @@ class _RecordScreenState extends State<RecordScreen> {
           floatEnabled: false,
         ),
       ),
-      body: SafeArea(
+      appBar: AppBar(
+        backgroundColor: p.bg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: AppPageHeader(title: '', titleColor: p.ink, iconColor: p.ink),
+      ),
+      body: AppSafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 2, 20, 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                height: 56,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Transform.translate(
-                    offset: const Offset(-14, 0),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => Navigator.of(context).maybePop(),
-                      child: const Padding(
-                        padding: EdgeInsets.all(6),
-                        child: _DepthIcon(
-                          icon: Icons.chevron_left_rounded,
-                          size: 26,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
               SizedBox(
                 height: 44,
                 child: Row(

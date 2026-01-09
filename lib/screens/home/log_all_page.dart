@@ -10,7 +10,7 @@ import 'package:lifelog_mobile/widgets/app_page_header.dart';
 
 import 'log_models.dart';
 
-// ✅ Glass 공통 컴포넌트
+import 'package:lifelog_mobile/widgets/app_safe_area.dart';
 import 'package:lifelog_mobile/widgets/glass_dot.dart';
 
 class AllLogsPage extends StatefulWidget {
@@ -105,9 +105,9 @@ class _AllLogsPageState extends State<AllLogsPage> {
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         titleSpacing: 0,
-        title: AppPageHeader(title: '기록', titleColor: p.ink, iconColor: p.ink),
+        title: AppPageHeader(title: '', titleColor: p.ink, iconColor: p.ink),
       ),
-      body: SafeArea(
+      body: AppSafeArea(
         top: false,
         child: NotificationListener<ScrollNotification>(
           onNotification: (n) {

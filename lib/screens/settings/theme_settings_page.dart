@@ -1,10 +1,10 @@
-// lib/screens/settings/theme_settings_page.dart (또는 기존 파일)
+// lib/screens/settings/theme_settings_page.dart
 import 'package:flutter/material.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
-import 'widgets/settings_page_header.dart';
-
-// ✅ Glass 공통 컴포넌트
+import 'package:lifelog_mobile/widgets/app_page_header.dart';
+import 'package:lifelog_mobile/widgets/app_safe_area.dart';
 import 'package:lifelog_mobile/widgets/glass_dot.dart';
+import 'package:lifelog_mobile/screens/settings/widgets/settings_layout.dart';
 
 String themeLabel(ThemeMode mode) {
   switch (mode) {
@@ -76,15 +76,37 @@ class _ThemeSettingsPageState extends State<ThemeSettingsPage> {
 
     return Scaffold(
       backgroundColor: p.bg,
-      appBar: null,
-      body: SafeArea(
+      appBar: AppBar(
+        backgroundColor: p.bg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: AppPageHeader(title: '', titleColor: p.ink, iconColor: p.ink),
+      ),
+      body: AppSafeArea(
         child: Column(
+          // ✅ 타이틀을 좌측 정렬로 고정
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SettingsPageHeader(
-              title: '테마',
-              titleColor: p.ink,
-              iconColor: p.ink,
+            const SizedBox(height: 20),
+
+            // ✅ ListView와 같은 좌우 패딩(18)으로 맞춰서 "일직선" 정렬
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Text(
+                '테마',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: p.ink,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 22,
+                  letterSpacing: -0.2,
+                ),
+              ),
             ),
+
+            const SizedBox(height: 10),
+
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),

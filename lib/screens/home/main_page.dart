@@ -20,8 +20,8 @@ import 'log_models.dart';
 
 import 'package:lifelog_mobile/screens/insight/insight_all_page.dart';
 import 'package:lifelog_mobile/screens/insight/widgets/insight_detail_sheet.dart';
+import 'package:lifelog_mobile/widgets/app_safe_area.dart';
 
-// ✅ 공통 glass 컴포넌트
 import 'package:lifelog_mobile/widgets/glass_fab.dart';
 import 'package:lifelog_mobile/widgets/glass_dot.dart';
 import 'package:lifelog_mobile/widgets/glass_chevron_button.dart';
@@ -115,6 +115,16 @@ class _MainPageState extends State<MainPage> {
     await showInsightDetailSheet(context, p: widget.p, item: item);
   }
 
+  Future<void> _openRecord() async {
+    final onLogout = widget.onLogout;
+
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => RecordScreen(onLogout: onLogout)));
+    if (!mounted) return;
+    _loadHome();
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = widget.p;
@@ -153,7 +163,6 @@ class _MainPageState extends State<MainPage> {
 
     final insights = vm?.insights ?? const <InsightPreviewUi>[];
     final visibleInsights = insights.take(2).toList();
-
     final logs = vm?.recentLogs ?? const <LogPreview>[];
 
     // 헤더 점은 “활성 상태일 때만” 은은하게
@@ -162,24 +171,22 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       backgroundColor: bg,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-
-      // ✅ RecordFab -> GlassFab 적용
-      floatingActionButton: SafeArea(
-        minimum: const EdgeInsets.only(bottom: 24),
+      floatingActionButton: AppSafeArea(
+        //minimum: const EdgeInsets.only(bottom: 0),
         child: Transform.translate(
-          offset: const Offset(0, -10),
-          child: GlassFab(
-            enabled: true,
-            color: p.accent,
-            onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => RecordScreen(onLogout: onLogout),
-                ),
-              );
-              if (!mounted) return;
-              _loadHome();
-            },
+          offset: const Offset(0, 351),
+          child: Center(
+            child: GlassFab(
+              onPressed: _openRecord,
+              enabled: true,
+              color: p.accent,
+
+              // ✅ checksoft 감각 통일
+              size: 72,
+              lighten: 0.06,
+              pressedScale: 0.98,
+              floatEnabled: false,
+            ),
           ),
         ),
       ),
@@ -188,22 +195,28 @@ class _MainPageState extends State<MainPage> {
         backgroundColor: bg,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.menu, color: p.ink),
-          tooltip: '설정',
-          onPressed: () {
-            pushSettingsPage<void>(
-              context,
-              SettingsHomePage(
-                onChangeTheme: (m) => context.read<ThemeProvider>().setMode(m),
-                onLogout: onLogout,
-              ),
-              fromLeft: true,
-            );
-          },
+        leadingWidth: 64,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 10),
+          child: IconButton(
+            icon: Icon(Icons.menu, color: p.ink.withOpacity(0.7), size: 30),
+            tooltip: '설정',
+            onPressed: () {
+              pushSettingsPage<void>(
+                context,
+                SettingsHomePage(
+                  onChangeTheme: (m) =>
+                      context.read<ThemeProvider>().setMode(m),
+                  onLogout: onLogout,
+                ),
+                fromLeft: true,
+              );
+            },
+          ),
         ),
       ),
-      body: SafeArea(
+
+      body: AppSafeArea(
         top: false,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 120),

@@ -35,11 +35,7 @@ class ProviderIconOnlyButton extends StatelessWidget {
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 120),
         opacity: onTap == null ? 0.55 : (pressed ? 0.55 : 1.0),
-        child: const SizedBox(
-          width: 64,
-          height: 64,
-          child: Center(),
-        ),
+        child: const SizedBox(width: 64, height: 64, child: Center()),
       ),
     );
   }

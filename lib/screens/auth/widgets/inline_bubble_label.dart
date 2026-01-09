@@ -7,10 +7,7 @@ import 'package:flutter/material.dart';
 class InlineBubbleLabel extends StatelessWidget {
   final String text;
 
-  const InlineBubbleLabel({
-    super.key,
-    required this.text,
-  });
+  const InlineBubbleLabel({super.key, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -55,11 +52,11 @@ class InlineBubbleLabel extends StatelessWidget {
                 text,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Colors.white.withOpacity(0.92),
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.15,
-                      fontSize: 13,
-                    ),
+                  color: Colors.white.withOpacity(0.92),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.15,
+                  fontSize: 13,
+                ),
               ),
             ),
           ),

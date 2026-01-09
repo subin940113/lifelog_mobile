@@ -26,28 +26,28 @@ class AppPageHeader extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
-                padding: const EdgeInsets.only(left: 28),
+                padding: const EdgeInsets.only(left: 35),
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: titleColor,
                     fontWeight: FontWeight.w600,
-                    fontSize: 20,
+                    fontSize: 22,
                   ),
                 ),
               ),
             ),
             Positioned(
-              left: -14,
+              left: -5,
               child: InkWell(
                 onTap: () => Navigator.of(context).maybePop(),
                 borderRadius: BorderRadius.circular(18),
                 child: Padding(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(1),
                   child: Icon(
                     Icons.chevron_left_rounded,
-                    color: iconColor,
-                    size: 28,
+                    color: iconColor?.withOpacity(0.7),
+                    size: 38,
                   ),
                 ),
               ),

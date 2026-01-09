@@ -13,9 +13,7 @@ Future<void> main() async {
 
   final kakaoKey = await AppConfig.kakaoNativeKey;
 
-  KakaoSdk.init(
-    nativeAppKey: kakaoKey,
-  );
+  KakaoSdk.init(nativeAppKey: kakaoKey);
 
   runApp(
     ChangeNotifierProvider(

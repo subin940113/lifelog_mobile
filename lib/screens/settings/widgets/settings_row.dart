@@ -33,7 +33,7 @@ class SettingsRow extends StatelessWidget {
     this.trailingText,
     this.showChevron = true,
     this.rightGap = 6,
-    this.chevronSize = 26,
+    this.chevronSize = 30,
     this.trailingTextSize = 16,
   });
 
@@ -50,7 +50,7 @@ class SettingsRow extends StatelessWidget {
         Text(
           trailingText!,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: showChevron? p.accent : p.muted,
+            color: showChevron ? p.accent : p.muted,
             fontWeight: FontWeight.w500,
             fontSize: trailingTextSize,
           ),
@@ -70,16 +70,16 @@ class SettingsRow extends StatelessWidget {
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 title,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: p.ink,
                   fontWeight: FontWeight.w500,
-                  fontSize: 18,
+                  //fontSize: 18,
                 ),
               ),
             ),

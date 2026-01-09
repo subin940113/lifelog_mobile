@@ -13,14 +13,18 @@ class GlassSwitch extends StatelessWidget {
   final double height;
   final bool blurEnabled;
 
+  /// Optional outer padding (useful when the switch is used as a trailing widget)
+  final EdgeInsetsGeometry outerPadding;
+
   const GlassSwitch({
     super.key,
     required this.value,
     required this.onChanged,
     required this.color,
     this.enabled = true,
-    this.width = 46,
-    this.height = 28,
+    this.width = 51,
+    this.height = 31,
+    this.outerPadding = EdgeInsets.zero,
     this.blurEnabled = false,
   });
 
@@ -93,34 +97,37 @@ class GlassSwitch extends StatelessWidget {
     final thumbSize = height - 6;
     final thumb = _GlassThumb(size: thumbSize, active: value, accent: color);
 
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 160),
-      curve: Curves.easeOut,
-      opacity: opacity,
-      child: IgnorePointer(
-        ignoring: !enabled,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => onChanged(!value),
-          child: SizedBox(
-            width: width,
-            height: height,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Positioned.fill(child: track),
-                Padding(
-                  padding: const EdgeInsets.all(3),
-                  child: AnimatedAlign(
-                    duration: const Duration(milliseconds: 160),
-                    curve: Curves.easeOut,
-                    alignment: value
-                        ? Alignment.centerRight
-                        : Alignment.centerLeft,
-                    child: thumb,
+    return Padding(
+      padding: outerPadding,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        opacity: opacity,
+        child: IgnorePointer(
+          ignoring: !enabled,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => onChanged(!value),
+            child: SizedBox(
+              width: width,
+              height: height,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned.fill(child: track),
+                  Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: AnimatedAlign(
+                      duration: const Duration(milliseconds: 160),
+                      curve: Curves.easeOut,
+                      alignment: value
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: thumb,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

@@ -6,7 +6,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lifelog_mobile/api/user_api_client.dart';
 import 'package:lifelog_mobile/config/api_config.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
-import 'widgets/settings_page_header.dart';
+import 'package:lifelog_mobile/widgets/app_page_header.dart';
+import 'package:lifelog_mobile/widgets/app_safe_area.dart';
+
+import 'account_name_edit_page.dart';
 
 class AccountSettingsPage extends StatefulWidget {
   final Palette p;
@@ -62,9 +65,9 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
 
   String _fmtIsoDate(String iso) {
     final dt = DateTime.parse(iso).toLocal();
-    final y = dt.year.toString().padLeft(4, '0');
-    final m = dt.month.toString().padLeft(2, '0');
-    final d = dt.day.toString().padLeft(2, '0');
+    final y = dt.year.toString();
+    final m = dt.month.toString();
+    final d = dt.day.toString();
     return '$y.$m.$d';
   }
 
@@ -90,7 +93,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             message: Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: p.ink.withOpacity(0.85),
                 fontWeight: FontWeight.w500,
                 height: 1.4,
@@ -102,7 +105,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                 isDestructiveAction: isDestructive,
                 child: Text(
                   actionText,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: isDestructive ? p.danger : p.accent,
                     fontWeight: FontWeight.w600,
                     letterSpacing: -0.1,
@@ -114,7 +117,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               onPressed: () => Navigator.of(sheetContext).pop(false),
               child: Text(
                 '취소',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: p.muted,
                   fontWeight: FontWeight.w600,
                   letterSpacing: -0.1,
@@ -135,7 +138,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       isScrollControlled: false,
       barrierColor: Colors.black.withOpacity(0.18),
       builder: (sheetContext) {
-        return SafeArea(
+        return AppSafeArea(
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -181,221 +184,27 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     return result == true;
   }
 
-  Future<String?> _showEditDisplayNameSheet(
-    BuildContext context, {
-    required String initial,
-  }) async {
-    final platform = Theme.of(context).platform;
-    final isCupertino =
-        platform == TargetPlatform.iOS || platform == TargetPlatform.macOS;
-
-    final controller = TextEditingController(text: initial);
-    String sanitize(String v) => v.trim();
-
-    if (isCupertino) {
-      return showCupertinoModalPopup<String?>(
-        context: context,
-        barrierColor: Colors.black.withOpacity(0.18),
-        builder: (sheetContext) {
-          return SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-                decoration: BoxDecoration(
-                  color: p.bg,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: p.outline.withOpacity(0.10)),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '계정명 변경',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: p.ink,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: p.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: p.outline.withOpacity(0.12)),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: CupertinoTheme(
-                        data: CupertinoThemeData(
-                          // Keep iOS tint consistent (clear button, etc.)
-                          primaryColor: p.accent,
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: TextSelectionTheme(
-                            data: TextSelectionThemeData(
-                              cursorColor: p.accent,
-                              selectionColor: p.accent.withOpacity(0.22),
-                              selectionHandleColor: p.accent,
-                            ),
-                            child: TextField(
-                              controller: controller,
-                              autofocus: true,
-                              maxLength: 50,
-                              cursorColor: p.accent,
-                              textInputAction: TextInputAction.done,
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(
-                                    color: p.ink,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                              decoration: InputDecoration(
-                                hintText: '계정명',
-                                hintStyle: Theme.of(context).textTheme.bodyLarge
-                                    ?.copyWith(
-                                      color: p.muted.withOpacity(0.75),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                counterText: '',
-                                border: InputBorder.none,
-                                isDense: true,
-                              ),
-                              onSubmitted: (_) {
-                                final v = sanitize(controller.text);
-                                Navigator.of(
-                                  sheetContext,
-                                ).pop(v.isEmpty ? null : v);
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: p.outline.withOpacity(0.10),
-                    ),
-                    const SizedBox(height: 6),
-                    // ✅ 하단 좌우 나란히
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _SheetTextAction(
-                            label: '취소',
-                            color: p.muted,
-                            onTap: () => Navigator.of(sheetContext).pop(null),
-                          ),
-                        ),
-                        Expanded(
-                          child: _SheetTextAction(
-                            label: '저장',
-                            color: p.accent,
-                            onTap: () {
-                              final v = sanitize(controller.text);
-                              Navigator.of(
-                                sheetContext,
-                              ).pop(v.isEmpty ? null : v);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      );
-    }
-
-    // Material (Android)
-    return showDialog<String?>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: p.bg,
-          surfaceTintColor: Colors.transparent,
-          title: Text(
-            '계정명 변경',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: p.ink,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          content: TextSelectionTheme(
-            data: TextSelectionThemeData(
-              cursorColor: p.accent,
-              selectionColor: p.accent.withOpacity(0.22),
-              selectionHandleColor: p.accent,
-            ),
-            child: TextField(
-              controller: controller,
-              autofocus: true,
-              maxLength: 50,
-              cursorColor: p.accent,
-              decoration: InputDecoration(
-                hintText: '계정명',
-                counterText: '',
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: p.outline.withOpacity(0.18)),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: p.accent.withOpacity(0.55)),
-                ),
-              ),
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: p.ink,
-                fontWeight: FontWeight.w500,
-              ),
-              onSubmitted: (_) {
-                final v = sanitize(controller.text);
-                Navigator.of(ctx).pop(v.isEmpty ? null : v);
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(null),
-              child: Text(
-                '취소',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: p.muted,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.1,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                final v = sanitize(controller.text);
-                Navigator.of(ctx).pop(v.isEmpty ? null : v);
-              },
-              child: Text(
-                '저장',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: p.accent,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.1,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<void> _editDisplayName(UserMeResponse me) async {
     if (_savingName) return;
 
     final initial = me.displayName.trim();
 
-    final next = await _showEditDisplayNameSheet(context, initial: initial);
+    final next = await Navigator.of(context).push<String?>(
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => AccountNameEditPage(
+          p: p,
+          initialName: initial,
+          onLogout: widget.onLogout,
+        ),
+        transitionsBuilder: (_, animation, __, child) {
+          final offset = Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(animation);
+          return SlideTransition(position: offset, child: child);
+        },
+      ),
+    );
 
     if (!mounted) return;
     if (next == null) return;
@@ -403,40 +212,20 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     final v = next.trim();
     if (v.isEmpty || v == me.displayName) return;
 
-    setState(() => _savingName = true);
+    // ✅ 이 페이지는 유지. 대신, 뒤로갈 때 최신 값 전달용으로 보관.
+    _latestDisplayName = v;
 
-    try {
-      final updated = await _userClient().updateMe(displayName: v);
-
-      // ✅ Settings 헤더용 로컬 캐시 갱신
-      await _storage.write(key: 'accountName', value: updated.displayName);
-
-      // ✅ 이 페이지는 유지. 대신, 뒤로갈 때 최신 값 전달용으로 보관.
-      _latestDisplayName = updated.displayName;
-
-      if (!mounted) return;
-      setState(() {
-        _meFuture = Future.value(updated);
-        _savingName = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _savingName = false);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '계정명 저장에 실패했어요.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          backgroundColor: p.ink.withOpacity(0.90),
-          behavior: SnackBarBehavior.floating,
+    // ✅ UI 즉시 반영
+    setState(() {
+      _meFuture = Future.value(
+        UserMeResponse(
+          id: me.id,
+          displayName: v,
+          createdAt: me.createdAt,
+          lastLoginAt: me.lastLoginAt,
         ),
       );
-    }
+    });
   }
 
   Future<void> _handleLogout(BuildContext context) async {
@@ -490,16 +279,19 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       },
       child: Scaffold(
         backgroundColor: p.bg,
-        body: SafeArea(
+        appBar: AppBar(
+          backgroundColor: p.bg,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          automaticallyImplyLeading: false,
+          titleSpacing: 0,
+          title: AppPageHeader(title: '', titleColor: p.ink, iconColor: p.ink),
+        ),
+        body: AppSafeArea(
           child: Stack(
             children: [
               Column(
                 children: [
-                  SettingsPageHeader(
-                    title: '계정',
-                    titleColor: p.ink,
-                    iconColor: p.ink,
-                  ),
                   Expanded(
                     child: FutureBuilder<UserMeResponse>(
                       future: _meFuture,
@@ -527,6 +319,19 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                         return ListView(
                           padding: const EdgeInsets.fromLTRB(18, 10, 18, 110),
                           children: [
+                            const SizedBox(height: 10),
+                            Text(
+                              '계정',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    color: p.ink,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 22,
+                                    letterSpacing: -0.2,
+                                  ),
+                            ),
+                            const SizedBox(height: 40),
+
                             _EditableInfoRow(
                               label: '계정명',
                               value: displayName,
@@ -535,7 +340,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                               onEdit: me == null
                                   ? null
                                   : () => _editDisplayName(me!),
-                              actionLabel: '편집',
                             ),
                             _InfoRow(label: '가입', value: joinedAt, p: p),
                             _InfoRow(label: '최근 로그인', value: lastLoginAt, p: p),
@@ -613,7 +417,7 @@ class _InfoRow extends StatelessWidget {
     final baseStyle = Theme.of(context).textTheme.bodyLarge;
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
           Expanded(
@@ -622,6 +426,7 @@ class _InfoRow extends StatelessWidget {
               style: baseStyle?.copyWith(
                 color: p.muted,
                 fontWeight: FontWeight.w500,
+                fontSize: 18,
               ),
             ),
           ),
@@ -635,6 +440,7 @@ class _InfoRow extends StatelessWidget {
               style: baseStyle?.copyWith(
                 color: p.ink,
                 fontWeight: FontWeight.w500,
+                fontSize: 18,
               ),
             ),
           ),
@@ -650,7 +456,6 @@ class _EditableInfoRow extends StatelessWidget {
   final Palette p;
   final bool enabled;
   final VoidCallback? onEdit;
-  final String actionLabel;
 
   const _EditableInfoRow({
     required this.label,
@@ -658,7 +463,6 @@ class _EditableInfoRow extends StatelessWidget {
     required this.p,
     required this.enabled,
     required this.onEdit,
-    this.actionLabel = '편집',
   });
 
   @override
@@ -666,10 +470,9 @@ class _EditableInfoRow extends StatelessWidget {
     final baseStyle = Theme.of(context).textTheme.bodyLarge;
 
     const labelWidth = 64.0;
-    const actionWidth = 46.0;
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.symmetric(vertical: 0),
       child: Row(
         children: [
           SizedBox(
@@ -679,13 +482,14 @@ class _EditableInfoRow extends StatelessWidget {
               style: baseStyle?.copyWith(
                 color: p.muted,
                 fontWeight: FontWeight.w500,
+                fontSize: 18,
               ),
             ),
           ),
           const SizedBox(width: 10),
 
-          /// ✅ “값 + 편집”을 우측 그룹으로 묶고,
-          /// 값↔편집 사이 간격을 고정하여 값이 짧아도 과한 공백이 생기지 않게.
+          /// ✅ 값 + chevron 을 우측 그룹으로 묶어서
+          /// 값과 아이콘 사이 간격을 “시각적으로” 줄입니다.
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -696,32 +500,32 @@ class _EditableInfoRow extends StatelessWidget {
                     textAlign: TextAlign.right,
                     maxLines: 1,
                     softWrap: false,
-                    overflow: TextOverflow.fade,
+                    overflow: TextOverflow.ellipsis,
                     style: baseStyle?.copyWith(
-                      color: p.ink,
+                      color: enabled ? p.accent : p.muted.withOpacity(0.65),
                       fontWeight: FontWeight.w500,
+                      fontSize: 18,
                     ),
                   ),
                 ),
+                const SizedBox(width: 4),
                 SizedBox(
-                  width: actionWidth,
+                  width: 28,
+                  height: 44,
                   child: GestureDetector(
                     onTap: enabled ? onEdit : null,
                     behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          actionLabel,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(
-                                color: enabled
-                                    ? p.accent.withOpacity(0.92)
-                                    : p.muted.withOpacity(0.45),
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: -0.1,
-                              ),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      // ✅ 아이콘 glyph 자체의 여백 때문에 살짝 우측으로 밀어 시각적 여백을 줄임
+                      child: Transform.translate(
+                        offset: const Offset(8, 0),
+                        child: Icon(
+                          Icons.chevron_right_rounded,
+                          size: 30,
+                          color: enabled
+                              ? p.muted.withOpacity(0.85)
+                              : p.muted.withOpacity(0.45),
                         ),
                       ),
                     ),
@@ -773,7 +577,7 @@ class _BottomTextActionState extends State<_BottomTextAction> {
             child: Text(
               widget.label,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: widget.color,
                 fontWeight: FontWeight.w600,
                 letterSpacing: -0.1,
