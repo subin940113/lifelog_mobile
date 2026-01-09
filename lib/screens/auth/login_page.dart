@@ -1,7 +1,12 @@
-// lib/screens/auth/login_page.dart
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+
+// ✅ Kakao / Naver
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
+import 'package:flutter_naver_login/flutter_naver_login.dart';
 
 import 'package:lifelog_mobile/api/auth_api_client.dart';
 import 'package:lifelog_mobile/config/api_config.dart';
@@ -74,6 +79,43 @@ class _LoginPageState extends State<LoginPage>
     super.dispose();
   }
 
+  Future<AuthApiClient> _client() async {
+    return AuthApiClient(
+      baseUrl: ApiConfig.baseUrl,
+      storage: _secureStorage,
+      onUnauthorized: () {
+        _secureStorage.deleteAll();
+      },
+    );
+  }
+
+  Future<void> _persistLogin(AuthLoginResult authResult, ProviderKey provider) async {
+    await _secureStorage.write(key: 'accessToken', value: authResult.accessToken);
+    await _secureStorage.write(key: 'refreshToken', value: authResult.refreshToken);
+    await _secureStorage.write(key: 'accountName', value: authResult.displayName);
+    await _secureStorage.write(key: 'isNewUser', value: authResult.isNewUser.toString());
+
+    await _secureStorage.write(
+      key: _kLastLoginProviderKey,
+      value: provider.storageValue,
+    );
+  }
+
+
+  void _handleLoginError(String userMessage, Object error, [StackTrace? st]) {
+    // Keep detail for debugging, but do not show raw error to users.
+    debugPrint('[LOGIN] $userMessage');
+    debugPrint('[LOGIN] error: $error');
+    if (st != null) debugPrint(st.toString());
+
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      // Show only a short, user-friendly message in the UI.
+      _error = userMessage;
+    });
+  }
+
   Future<void> _loginWithGoogle() async {
     setState(() {
       _loading = true;
@@ -94,25 +136,10 @@ class _LoginPageState extends State<LoginPage>
         throw Exception('Google idToken을 가져오지 못했습니다.');
       }
 
-      final client = AuthApiClient(
-        baseUrl: ApiConfig.baseUrl,
-        storage: _secureStorage,
-        onUnauthorized: () {
-          _secureStorage.deleteAll();
-        },
-      );
-
+      final client = await _client();
       final authResult = await client.loginWithGoogleIdToken(idToken);
 
-      await _secureStorage.write(key: 'accessToken', value: authResult.accessToken);
-      await _secureStorage.write(key: 'refreshToken', value: authResult.refreshToken);
-      await _secureStorage.write(key: 'accountName', value: authResult.displayName);
-      await _secureStorage.write(key: 'isNewUser', value: authResult.isNewUser.toString());
-
-      await _secureStorage.write(
-        key: _kLastLoginProviderKey,
-        value: ProviderKey.google.storageValue,
-      );
+      await _persistLogin(authResult, ProviderKey.google);
 
       if (!mounted) return;
       setState(() {
@@ -120,23 +147,101 @@ class _LoginPageState extends State<LoginPage>
         _recentProvider = ProviderKey.google;
       });
       widget.onLoggedIn();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = '로그인에 실패했습니다.\n${e.toString()}';
-      });
+    } catch (e, st) {
+      _handleLoginError('구글 로그인에 문제가 발생했습니다. 다시 시도해주세요.', e, st);
     }
   }
 
   Future<void> _loginWithKakao() async {
-    if (!mounted) return;
-    setState(() => _error = '카카오 로그인은 준비 중입니다.');
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      kakao.OAuthToken token;
+
+      final installed = await kakao.isKakaoTalkInstalled();
+      if (installed) {
+        try {
+          token = await kakao.UserApi.instance.loginWithKakaoTalk();
+        } catch (_) {
+          // 카카오톡 로그인 실패 시 계정 로그인으로 fallback
+          token = await kakao.UserApi.instance.loginWithKakaoAccount();
+        }
+      } else {
+        token = await kakao.UserApi.instance.loginWithKakaoAccount();
+      }
+
+      final accessToken = token.accessToken;
+      if (accessToken.isEmpty) {
+        throw Exception('Kakao accessToken이 비어있습니다.');
+      }
+
+      final client = await _client();
+      final authResult = await client.loginWithKakaoAccessToken(accessToken);
+
+      await _persistLogin(authResult, ProviderKey.kakao);
+
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _recentProvider = ProviderKey.kakao;
+      });
+      widget.onLoggedIn();
+    } catch (e, st) {
+      _handleLoginError('카카오 로그인에 문제가 발생했습니다. 다시 시도해주세요.', e, st);
+    }
   }
 
   Future<void> _loginWithNaver() async {
-    if (!mounted) return;
-    setState(() => _error = '네이버 로그인은 준비 중입니다.');
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final result = await FlutterNaverLogin.logIn();
+
+
+      // Developer-only diagnostics (do not surface to UI)
+      debugPrint('[NAVER] login result: $result');
+      debugPrint('[NAVER] status: ${result.status}');
+
+      // For flutter_naver_login 1.x, status must be checked; accessToken may be empty on cancel/failure.
+      if (result.status != NaverLoginStatus.loggedIn) {
+        // Common cases: cancelledByUser / error
+        throw Exception('NAVER_LOGIN_STATUS_${result.status}');
+      }
+
+      final accessTokenResult = await FlutterNaverLogin.currentAccessToken;
+      final accessToken = accessTokenResult.accessToken;
+debugPrint('[NAVER] status: ${accessToken}');
+
+      // 1.8.0 기준: result.accessToken 타입이 Object?로 잡히는 경우가 있어 String 변환 고정
+      //final accessToken = (result.accessToken?.toString() ?? '').trim();
+     debugPrint('[NAVER] accessToken length: ${accessToken.length}');
+      if (accessToken.isEmpty) {
+        throw Exception('NAVER_ACCESS_TOKEN_EMPTY');
+      }
+
+      final client = await _client();
+      final authResult = await client.loginWithNaverAccessToken(accessToken);
+
+      await _persistLogin(authResult, ProviderKey.naver);
+
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _recentProvider = ProviderKey.naver;
+      });
+      widget.onLoggedIn();
+    } catch (e, st) {
+      final msg = (e.toString().contains('NAVER_LOGIN_STATUS'))
+          ? '네이버 로그인이 취소되었거나 완료되지 않았습니다.'
+          : '네이버 로그인에 문제가 발생했습니다. 다시 시도해주세요.';
+      _handleLoginError(msg, e, st);
+    }
   }
 
   double _bubbleOffsetXForProvider(ProviderKey? provider) {
@@ -330,17 +435,6 @@ class _LoginPageState extends State<LoginPage>
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (_error != null) ...[
-                                    Text(
-                                      _error!,
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                            color: Colors.white.withOpacity(0.92),
-                                            fontWeight: FontWeight.w600,
-                                            height: 1.35,
-                                          ),
-                                    ),
-                                  ],
 
                                   SizedBox(
                                     height: bubbleSlotHeight,
@@ -383,6 +477,19 @@ class _LoginPageState extends State<LoginPage>
                                       ),
                                     ],
                                   ),
+                                  if (_error != null) ...[
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      _error!,
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                            fontSize: 13, // match InlineBubbleLabel text size
+                                            color: Colors.white.withOpacity(0.88),
+                                            fontWeight: FontWeight.w600,
+                                            height: 1.35,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -418,7 +525,6 @@ class _LoginPageState extends State<LoginPage>
 }
 
 /// 페이지 내부에서만 쓰는 “아이콘 표시 + 눌림 피드백”
-/// (파일 분리는 최소화하면서도, 위젯 책임은 작게 유지)
 class _IconButton extends StatelessWidget {
   final String iconAsset;
   final bool enabled;

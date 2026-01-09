@@ -1,8 +1,8 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 
 class AuthLoginResult {
   final String accessToken;
@@ -167,6 +167,68 @@ class AuthApiClient {
       'idToken': idToken,
     });
 
+    return _parseAuthLoginResult(map);
+  }
+
+  Future<AuthLoginResult> loginWithKakaoAccessToken(String accessToken) async {
+    final map = await postJsonUnauthenticated('/api/auth/oauth/kakao', {
+      'accessToken': accessToken,
+    });
+
+    final at = map['accessToken'] as String?;
+    final rt = map['refreshToken'] as String?;
+    final displayName = map['displayName'] as String?;
+    final isNewUser = map['isNewUser'] as bool?;
+
+    if (at == null || at.isEmpty) {
+      throw Exception('서버 응답에 accessToken이 없습니다: ${jsonEncode(map)}');
+    }
+    if (rt == null || rt.isEmpty) {
+      throw Exception('서버 응답에 refreshToken이 없습니다: ${jsonEncode(map)}');
+    }
+
+    final safeName = (displayName != null && displayName.trim().isNotEmpty)
+        ? displayName.trim()
+        : '계정';
+
+    return AuthLoginResult(
+      accessToken: at,
+      refreshToken: rt,
+      displayName: safeName,
+      isNewUser: isNewUser ?? false,
+    );
+  }
+
+  Future<AuthLoginResult> loginWithNaverAccessToken(String accessToken) async {
+    final map = await postJsonUnauthenticated('/api/auth/oauth/naver', {
+      'accessToken': accessToken,
+    });
+
+    final at = map['accessToken'] as String?;
+    final rt = map['refreshToken'] as String?;
+    final displayName = map['displayName'] as String?;
+    final isNewUser = map['isNewUser'] as bool?;
+
+    if (at == null || at.isEmpty) {
+      throw Exception('서버 응답에 accessToken이 없습니다: ${jsonEncode(map)}');
+    }
+    if (rt == null || rt.isEmpty) {
+      throw Exception('서버 응답에 refreshToken이 없습니다: ${jsonEncode(map)}');
+    }
+
+    final safeName = (displayName != null && displayName.trim().isNotEmpty)
+        ? displayName.trim()
+        : '계정';
+
+    return AuthLoginResult(
+      accessToken: at,
+      refreshToken: rt,
+      displayName: safeName,
+      isNewUser: isNewUser ?? false,
+    );
+  }
+
+  AuthLoginResult _parseAuthLoginResult(Map<String, dynamic> map) {
     final accessToken = map['accessToken'] as String?;
     final refreshToken = map['refreshToken'] as String?;
     final displayName = map['displayName'] as String?;

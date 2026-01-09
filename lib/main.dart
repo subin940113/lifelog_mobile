@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'app/app_shell.dart';
+import 'app/app_config.dart';
 import 'theme/theme_provider.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
+import 'package:flutter_naver_login/flutter_naver_login.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final kakaoKey = await AppConfig.kakaoNativeKey;
+
+  KakaoSdk.init(
+    nativeAppKey: kakaoKey,
+  );
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeProvider(),
