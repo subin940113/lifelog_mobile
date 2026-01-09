@@ -22,6 +22,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
   bool _loading = false;
   bool _ctaPressed = false;
+  _ProviderKey? _pressedKey;
   String? _error;
 
   late final GoogleSignIn _googleSignIn;
@@ -100,6 +101,22 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     }
   }
 
+  Future<void> _loginWithKakao() async {
+    // TODO: Kakao OAuth 연동
+    if (!mounted) return;
+    setState(() {
+      _error = '카카오 로그인은 준비 중입니다.';
+    });
+  }
+
+  Future<void> _loginWithNaver() async {
+    // TODO: Naver OAuth 연동
+    if (!mounted) return;
+    setState(() {
+      _error = '네이버 로그인은 준비 중입니다.';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = widget.p ?? Palette.from(Theme.of(context).colorScheme);
@@ -161,7 +178,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                             textBaseline: TextBaseline.alphabetic,
                             children: [
                               _AccentGradientText(
-                                text: '문득 든 생각이 사라지기 전에',
+                                text: '흘러가는 생각이 사라지기 전에',
                                 style: copyStyle?.copyWith(
                                   fontSize: (copyStyle?.fontSize ?? 16) + 2,
                                   fontWeight: FontWeight.w500,
@@ -277,7 +294,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                             // (Chevron icon removed; now included inline with CTA text)
                             // ✅ 중앙: CTA (필요 시 에러도 중앙 블록 위쪽에)
                             Align(
-                              alignment: const Alignment(0.0, -1.05),
+                              alignment: const Alignment(0.0, -0.5),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -293,55 +310,64 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                                     ),
                                     const SizedBox(height: 12),
                                   ],
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
-                                    onTapDown: (_) {
-                                      if (_loading) return;
-                                      setState(() => _ctaPressed = true);
-                                    },
-                                    onTapUp: (_) {
-                                      if (_loading) return;
-                                      setState(() => _ctaPressed = false);
-                                    },
-                                    onTapCancel: () {
-                                      if (_loading) return;
-                                      setState(() => _ctaPressed = false);
-                                    },
-                                    onTap: _loading ? null : _loginWithGoogle,
-                                    child: AnimatedOpacity(
-                                      duration: const Duration(milliseconds: 120),
-                                      opacity: _loading ? 0.65 : 1.0,
-                                      child: ConstrainedBox(
-                                        constraints: const BoxConstraints(minWidth: 350),
-                                        child: Container(
-                                          alignment: Alignment.centerRight,
-                                          padding: const EdgeInsets.fromLTRB(10, 8, 0, 8),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.max,
-                                            mainAxisAlignment: MainAxisAlignment.end,
-                                            crossAxisAlignment: CrossAxisAlignment.center,
-                                            children: [
-                                              AnimatedDefaultTextStyle(
-                                                duration: const Duration(milliseconds: 90),
-                                                style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                                                      color: Colors.white.withOpacity(_ctaPressed ? 0.55 : 1.0),
-                                                      fontWeight: FontWeight.w500,
-                                                      fontSize: ctaFontSize - 1,
-                                                      letterSpacing: -0.3,
-                                                    ),
-                                                child: const Text('Google로 로그인'),
-                                              ),
-                                              const SizedBox(width: 5),
-                                              Icon(
-                                                Icons.chevron_right_rounded,
-                                                size: 30,
-                                                color: Colors.white.withOpacity(_ctaPressed ? 0.55 : 0.88),
-                                              ),
-                                            ],
-                                          ),
+                                  Text(
+                                    'SNS 계정으로 시작하기',
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          color: Colors.white.withOpacity(0.86),
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 15,
+                                          letterSpacing: -0.4,
                                         ),
+                                  ),
+                                  const SizedBox(height: 13),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      _ProviderIconOnlyButton(
+                                        keyId: _ProviderKey.kakao,
+                                        iconAsset: 'assets/icons/signin_with_kakao.png',
+                                        onTap: _loading ? null : _loginWithKakao,
+                                        pressed: _ctaPressed && _pressedKey == _ProviderKey.kakao,
+                                        onPressedStateChanged: (v) {
+                                          if (_loading) return;
+                                          setState(() {
+                                            _ctaPressed = v;
+                                            _pressedKey = v ? _ProviderKey.kakao : null;
+                                          });
+                                        },
                                       ),
-                                    ),
+                                      const SizedBox(width: 16),
+                                      _ProviderIconOnlyButton(
+                                        keyId: _ProviderKey.naver,
+                                        iconAsset: 'assets/icons/signin_with_naver.png',
+                                        onTap: _loading ? null : _loginWithNaver,
+                                        pressed: _ctaPressed && _pressedKey == _ProviderKey.naver,
+                                        onPressedStateChanged: (v) {
+                                          if (_loading) return;
+                                          setState(() {
+                                            _ctaPressed = v;
+                                            _pressedKey = v ? _ProviderKey.naver : null;
+                                          });
+                                        },
+                                      ),
+                                      const SizedBox(width: 16),
+                                      _ProviderIconOnlyButton(
+                                        keyId: _ProviderKey.google,
+                                        iconAsset: 'assets/icons/signin_with_google.png',
+                                        onTap: _loading ? null : _loginWithGoogle,
+                                        pressed: _ctaPressed && _pressedKey == _ProviderKey.google,
+                                        onPressedStateChanged: (v) {
+                                          if (_loading) return;
+                                          setState(() {
+                                            _ctaPressed = v;
+                                            _pressedKey = v ? _ProviderKey.google : null;
+                                          });
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -351,7 +377,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                             Align(
                               alignment: Alignment.bottomCenter,
                               child: Padding(
-                                padding: const EdgeInsets.only(bottom: 30),
+                                padding: const EdgeInsets.only(bottom: 50),
                                 child: Text(
                                   '© ${DateTime.now().year} bluelog. All rights reserved.',
                                   textAlign: TextAlign.center,
@@ -490,6 +516,159 @@ class _AccentGradientText extends StatelessWidget {
         ).createShader(bounds);
       },
       child: child,
+    );
+  }
+}
+
+
+
+
+enum _ProviderKey { google, kakao, naver }
+
+
+class _ProviderIconOnlyButton extends StatelessWidget {
+  final _ProviderKey keyId;
+  final String iconAsset;
+  final VoidCallback? onTap;
+  final bool pressed;
+  final ValueChanged<bool> onPressedStateChanged;
+
+  const _ProviderIconOnlyButton({
+    required this.keyId,
+    required this.iconAsset,
+    required this.onTap,
+    required this.pressed,
+    required this.onPressedStateChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // No background, no splash. Only opacity feedback.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) {
+        if (onTap == null) return;
+        onPressedStateChanged(true);
+      },
+      onTapUp: (_) {
+        if (onTap == null) return;
+        onPressedStateChanged(false);
+      },
+      onTapCancel: () {
+        if (onTap == null) return;
+        onPressedStateChanged(false);
+      },
+      onTap: onTap,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 120),
+        opacity: onTap == null ? 0.55 : (pressed ? 0.55 : 1.0),
+        child: SizedBox(
+          width: 64,
+          height: 64,
+          child: Center(
+            child: Image.asset(
+              iconAsset,
+              width: 57,
+              height: 57,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProviderLoginButton extends StatelessWidget {
+  final String label;
+  final String iconAsset;
+  final VoidCallback? onTap;
+  final bool pressed;
+  final ValueChanged<bool> onPressedStateChanged;
+  final Color backgroundColor;
+  final Color foregroundColor;
+  final Color borderColor;
+  final Color chevronColor;
+
+  const _ProviderLoginButton({
+    required this.label,
+    required this.iconAsset,
+    required this.onTap,
+    required this.pressed,
+    required this.onPressedStateChanged,
+    required this.backgroundColor,
+    required this.foregroundColor,
+    required this.borderColor,
+    required this.chevronColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) {
+        if (onTap == null) return;
+        onPressedStateChanged(true);
+      },
+      onTapUp: (_) {
+        if (onTap == null) return;
+        onPressedStateChanged(false);
+      },
+      onTapCancel: () {
+        if (onTap == null) return;
+        onPressedStateChanged(false);
+      },
+      onTap: onTap,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 120),
+        opacity: onTap == null ? 0.60 : 1.0,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 350),
+          child: Container(
+            height: 46,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(14),
+              border: borderColor == Colors.transparent
+                  ? null
+                  : Border.all(color: borderColor, width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 90),
+                  opacity: pressed ? 0.55 : 1.0,
+                  child: Image.asset(
+                    iconAsset,
+                    width: 18,
+                    height: 18,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 90),
+                  opacity: pressed ? 0.55 : 1.0,
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: foregroundColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          letterSpacing: -0.2,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
