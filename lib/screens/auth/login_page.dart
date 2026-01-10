@@ -7,7 +7,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 // ✅ Kakao / Naver
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
 import 'package:flutter_naver_login/flutter_naver_login.dart';
-
 import 'package:lifelog_mobile/api/auth_api_client.dart';
 import 'package:lifelog_mobile/config/api_config.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
@@ -218,21 +217,47 @@ class _LoginPageState extends State<LoginPage>
       final result = await FlutterNaverLogin.logIn();
 
       // Developer-only diagnostics (do not surface to UI)
-      debugPrint('[NAVER] login result: $result');
       debugPrint('[NAVER] status: ${result.status}');
 
-      // For flutter_naver_login 1.x, status must be checked; accessToken may be empty on cancel/failure.
-      if (result.status != NaverLoginStatus.loggedIn) {
-        // Common cases: cancelledByUser / error
-        throw Exception('NAVER_LOGIN_STATUS_${result.status}');
+      // Status handling per flutter_naver_login 2.x (string-based)
+      final statusStr = result.status.toString();
+      // e.g. "NaverLoginStatus.loggedIn" / "NaverLoginStatus.loggedOut" / "NaverLoginStatus.error"
+      final isLoggedIn = statusStr.endsWith('.loggedIn');
+      final isLoggedOut = statusStr.endsWith('.loggedOut');
+
+      if (isLoggedIn) {
+        // continue
+      } else if (isLoggedOut) {
+        throw Exception('NAVER_LOGIN_STATUS_LOGGED_OUT');
+      } else {
+        throw Exception('NAVER_LOGIN_STATUS_ERROR');
       }
 
-      final accessTokenResult = await FlutterNaverLogin.currentAccessToken;
-      final accessToken = accessTokenResult.accessToken;
-      debugPrint('[NAVER] status: ${accessToken}');
+      // Optional account diagnostics
+      final accountFromResult = result.account;
+      if (accountFromResult != null) {
+        debugPrint(
+          '[NAVER] account(name/email): ${accountFromResult.name} / ${accountFromResult.email}',
+        );
+      } else {
+        // Try to fetch current account only for diagnostics
+        try {
+          final account = await FlutterNaverLogin.getCurrentAccount();
+          debugPrint('[NAVER] currentAccount(name/email): ${account.name} / ${account.email}');
+        } catch (e) {
+          debugPrint('[NAVER] getCurrentAccount failed: $e');
+        }
+      }
 
-      // 1.8.0 기준: result.accessToken 타입이 Object?로 잡히는 경우가 있어 String 변환 고정
-      //final accessToken = (result.accessToken?.toString() ?? '').trim();
+      // Get current token (2.x)
+      final token = await FlutterNaverLogin.getCurrentAccessToken();
+      debugPrint('[NAVER] expiresAt: ${token.expiresAt}');
+
+      if (!token.isValid()) {
+        throw Exception('NAVER_ACCESS_TOKEN_INVALID');
+      }
+
+      final accessToken = token.accessToken.trim();
       debugPrint('[NAVER] accessToken length: ${accessToken.length}');
       if (accessToken.isEmpty) {
         throw Exception('NAVER_ACCESS_TOKEN_EMPTY');
@@ -250,7 +275,7 @@ class _LoginPageState extends State<LoginPage>
       });
       widget.onLoggedIn();
     } catch (e, st) {
-      final msg = (e.toString().contains('NAVER_LOGIN_STATUS'))
+      final msg = (e.toString().contains('NAVER_LOGIN_STATUS_'))
           ? '네이버 로그인이 취소되었거나 완료되지 않았습니다.'
           : '네이버 로그인에 문제가 발생했습니다. 다시 시도해주세요.';
       _handleLoginError(msg, e, st);
