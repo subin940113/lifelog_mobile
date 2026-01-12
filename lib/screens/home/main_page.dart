@@ -25,6 +25,7 @@ import 'package:lifelog_mobile/widgets/app_safe_area.dart';
 import 'package:lifelog_mobile/widgets/glass_fab.dart';
 import 'package:lifelog_mobile/widgets/glass_dot.dart';
 import 'package:lifelog_mobile/widgets/glass_chevron_button.dart';
+import 'package:lifelog_mobile/widgets/glass_menu_button.dart';
 
 String _formatKoreanDate(DateTime dt) => '${dt.month}월 ${dt.day}일';
 
@@ -74,7 +75,7 @@ class _MainPageState extends State<MainPage> {
     });
 
     try {
-      final map = await _homeApi.getHome(limitLogs: 3, limitInsights: 2);
+      final map = await _homeApi.getHome(limitLogs: 4, limitInsights: 2);
 
       final vm = _HomeVm.fromJson(map);
       if (!mounted) return;
@@ -198,20 +199,27 @@ class _MainPageState extends State<MainPage> {
         leadingWidth: 64,
         leading: Padding(
           padding: const EdgeInsets.only(left: 10),
-          child: IconButton(
-            icon: Icon(Icons.menu, color: p.ink.withOpacity(0.7), size: 30),
-            tooltip: '설정',
-            onPressed: () {
-              pushSettingsPage<void>(
-                context,
-                SettingsHomePage(
-                  onChangeTheme: (m) =>
-                      context.read<ThemeProvider>().setMode(m),
-                  onLogout: onLogout,
-                ),
-                fromLeft: true,
-              );
-            },
+          child: Tooltip(
+            message: '설정',
+            child: GlassMenuButton(
+              onTap: () {
+                pushSettingsPage<void>(
+                  context,
+                  SettingsHomePage(
+                    onChangeTheme: (m) =>
+                        context.read<ThemeProvider>().setMode(m),
+                    onLogout: onLogout,
+                  ),
+                  fromLeft: true,
+                );
+              },
+              icon: Icons.menu_rounded,
+              // ✅ 베이스는 연하게, depth는 살아있게
+              accent: p.ink.withOpacity(0.55),
+              iconSize: 30,
+              depth: 0.55,
+              hitSize: 44,
+            ),
           ),
         ),
       ),
@@ -270,7 +278,7 @@ class _MainPageState extends State<MainPage> {
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
                       '연결이 원활하지 않아요.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: p.muted,
                         fontWeight: FontWeight.w500,
                         height: 1.4,
@@ -284,7 +292,7 @@ class _MainPageState extends State<MainPage> {
                       (topInsight.signalCount == 0)
                           ? '인사이트를 생성 중이에요'
                           : '신호를 연결하고 있어요',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: p.muted.withOpacity(0.7),
                         fontWeight: FontWeight.w500,
                         height: 1.4,
@@ -333,7 +341,7 @@ class _MainPageState extends State<MainPage> {
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
                       '불러오는 중…',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: p.muted,
                         fontWeight: FontWeight.w500,
                         height: 1.4,
@@ -345,7 +353,7 @@ class _MainPageState extends State<MainPage> {
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
                       '연결이 원활하지 않아요.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: p.muted,
                         fontWeight: FontWeight.w500,
                         height: 1.4,
@@ -357,7 +365,7 @@ class _MainPageState extends State<MainPage> {
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
                       '아직 기록이 없어요',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: p.muted.withOpacity(0.7),
                         fontWeight: FontWeight.w500,
                         height: 1.4,
@@ -580,17 +588,6 @@ class _TopInsightCard extends StatelessWidget {
                     color: p.muted,
                     fontWeight: FontWeight.w500,
                     fontSize: 16,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  items.lastTimeLabel,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: p.muted,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
