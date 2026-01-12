@@ -354,9 +354,19 @@ class AuthApiClient {
       );
     });
 
-    final decoded = jsonDecode(res.body);
+    if (res.statusCode == 204) {
+      return <String, dynamic>{};
+    }
+
+    final body = res.body.trim();
+    if (body.isEmpty) {
+      return <String, dynamic>{};
+    }
+
+    final decoded = jsonDecode(body);
     if (decoded is Map<String, dynamic>) return decoded;
-    throw Exception('서버 응답 JSON이 객체가 아닙니다: ${res.body}');
+
+    throw Exception('서버 응답 JSON이 객체가 아닙니다: $body');
   }
 
   Future<Map<String, dynamic>> patchJson(
@@ -379,5 +389,38 @@ class AuthApiClient {
     final decoded = jsonDecode(res.body);
     if (decoded is Map<String, dynamic>) return decoded;
     throw Exception('서버 응답 JSON이 객체가 아닙니다: ${res.body}');
+  }
+
+  Future<Map<String, dynamic>> putJson(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    final res = await _sendWithRefresh(() async {
+      final token = await _requireAccessToken();
+      return http.put(
+        _uri(path),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+    });
+
+    // 204 No Content 대응 (일부 PUT이 204로 끝날 수 있음)
+    if (res.statusCode == 204) {
+      return <String, dynamic>{};
+    }
+
+    final raw = res.body.trim();
+    if (raw.isEmpty) {
+      return <String, dynamic>{};
+    }
+
+    final decoded = jsonDecode(raw);
+    if (decoded is Map<String, dynamic>) return decoded;
+
+    throw Exception('서버 응답 JSON이 객체가 아닙니다: $raw');
   }
 }

@@ -1,11 +1,24 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'glass_back_chevron_button.dart';
 
-/// SettingsPageHeader와 별개로 쓰는 공통 헤더(좌측 정렬, < + 타이틀)
-/// + 모든 플랫폼에서 "왼쪽 edge에서 우측 스와이프"로 뒤로가기 지원(헤더 영역 내)
+/// 좌측 리딩 아이콘 타입
+enum AppPageHeaderLeading {
+  back, // <
+  close, // X
+}
+
+/// SettingsPageHeader와 별개로 쓰는 공통 헤더
+/// - 좌측 정렬
+/// - < 또는 X 아이콘
+/// - 헤더 영역에서 "왼쪽 edge → 우측 스와이프" 뒤로가기 지원
 class AppPageHeader extends StatelessWidget {
   final String title;
   final Color? titleColor;
   final Color? iconColor;
+
+  /// 리딩 아이콘 타입 (< / X)
+  final AppPageHeaderLeading leading;
 
   /// 스와이프 시작을 허용할 왼쪽 edge 폭(px)
   final double backSwipeEdgeWidth;
@@ -24,6 +37,7 @@ class AppPageHeader extends StatelessWidget {
     required this.title,
     this.titleColor,
     this.iconColor,
+    this.leading = AppPageHeaderLeading.back,
     this.backSwipeEdgeWidth = 24,
     this.backSwipeTriggerDistance = 80,
     this.backSwipeTriggerVelocity = 900,
@@ -41,19 +55,22 @@ class AppPageHeader extends StatelessWidget {
       tracking = false;
     }
 
+    final baseIconColor =
+        (iconColor ?? Theme.of(context).iconTheme.color ?? Colors.black)
+            .withOpacity(0.52);
+
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onHorizontalDragStart: enableBackSwipe
           ? (details) {
               final startX = details.localPosition.dx;
-              tracking = startX <= backSwipeEdgeWidth; // 왼쪽 edge에서 시작해야만
+              tracking = startX <= backSwipeEdgeWidth;
               dx = 0;
             }
           : null,
       onHorizontalDragUpdate: enableBackSwipe
           ? (details) {
               if (!tracking) return;
-              // 오른쪽(+) 방향만 누적
               final delta = details.delta.dx;
               if (delta > 0) dx += delta;
             }
@@ -62,9 +79,10 @@ class AppPageHeader extends StatelessWidget {
           ? (details) {
               if (!tracking) return;
 
-              final velocityX = details.primaryVelocity ?? 0; // +면 오른쪽
+              final velocityX = details.primaryVelocity ?? 0;
               final shouldPop =
-                  (dx >= backSwipeTriggerDistance) || (velocityX >= backSwipeTriggerVelocity);
+                  (dx >= backSwipeTriggerDistance) ||
+                  (velocityX >= backSwipeTriggerVelocity);
 
               reset();
 
@@ -82,6 +100,7 @@ class AppPageHeader extends StatelessWidget {
             clipBehavior: Clip.none,
             alignment: Alignment.centerLeft,
             children: [
+              /// Title
               Align(
                 alignment: Alignment.centerLeft,
                 child: Padding(
@@ -89,29 +108,119 @@ class AppPageHeader extends StatelessWidget {
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: titleColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 22,
-                        ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: -5,
-                child: InkWell(
-                  onTap: () => Navigator.of(context).maybePop(),
-                  borderRadius: BorderRadius.circular(18),
-                  child: Padding(
-                    padding: const EdgeInsets.all(1),
-                    child: Icon(
-                      Icons.chevron_left_rounded,
-                      color: iconColor?.withOpacity(0.7),
-                      size: 38,
+                      color: titleColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 22,
                     ),
                   ),
                 ),
               ),
+
+              /// Leading icon (< or X)
+              Positioned(
+                left: -5,
+                child: leading == AppPageHeaderLeading.back
+                    ? GlassBackChevronButton(
+                        onTap: () => Navigator.of(context).maybePop(),
+                        baseColor: baseIconColor,
+                        depth: 0.55,
+                        iconSize: 38,
+                        hitSize: 44,
+                      )
+                    : _GlassCloseButton(
+                        color: baseIconColor,
+                        onTap: () => Navigator.of(context).maybePop(),
+                      ),
+              ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 내부 전용: Glass 느낌의 X 버튼
+class _GlassCloseButton extends StatefulWidget {
+  final Color color;
+  final VoidCallback onTap;
+
+  const _GlassCloseButton({required this.color, required this.onTap});
+
+  @override
+  State<_GlassCloseButton> createState() => _GlassCloseButtonState();
+}
+
+class _GlassCloseButtonState extends State<_GlassCloseButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    const double depth = 0.52;
+    const double iconSize = 34;
+
+    // Softer glass values
+    final shadowOpacity = 0.16 * depth;
+    final shadowBlur = 5.0 * depth;
+    final shadowDy = 2.2 * depth;
+
+    final highlightOpacity = 0.12 * depth;
+    final highlightBlur = 1.6 * depth;
+    final highlightDy = -0.6 * depth;
+
+    final icon = Stack(
+      alignment: Alignment.center,
+      children: [
+        Transform.translate(
+          offset: Offset(0, shadowDy),
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(
+              sigmaX: shadowBlur,
+              sigmaY: shadowBlur,
+            ),
+            child: Icon(
+              Icons.clear_rounded,
+              color: Colors.black.withOpacity(shadowOpacity),
+              size: iconSize,
+            ),
+          ),
+        ),
+        Icon(Icons.clear_rounded, color: widget.color, size: iconSize),
+        Transform.translate(
+          offset: Offset(0, highlightDy),
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(
+              sigmaX: highlightBlur,
+              sigmaY: highlightBlur,
+            ),
+            child: Icon(
+              Icons.clear_rounded,
+              color: Colors.white.withOpacity(highlightOpacity),
+              size: iconSize,
+            ),
+          ),
+        ),
+      ],
+    );
+
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _pressed ? 0.97 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          child: AnimatedOpacity(
+            opacity: _pressed ? 0.88 : 1.0,
+            duration: const Duration(milliseconds: 120),
+            curve: Curves.easeOut,
+            child: icon,
           ),
         ),
       ),

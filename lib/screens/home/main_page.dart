@@ -243,13 +243,41 @@ class _MainPageState extends State<MainPage> {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    '인사이트',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: p.ink,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 20,
-                      letterSpacing: -0.1,
+                  child: InkWell(
+                    onTap: _openAllInsights,
+                    borderRadius: BorderRadius.circular(12),
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '인사이트',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: p.ink,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 20,
+                                  letterSpacing: -0.1,
+                                ),
+                          ),
+                          const SizedBox(width: 6),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: Text(
+                              'AI',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: p.muted.withOpacity(0.6),
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: -0.1,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -258,58 +286,63 @@ class _MainPageState extends State<MainPage> {
             ),
             const SizedBox(height: 8),
 
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (showInitialLoading)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      '불러오는 중…',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
+            // Keep the vertical rhythm consistent even when insights are empty.
+            // This reserves roughly the same height as 2 insight rows (+ spacing).
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 180.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (showInitialLoading)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        '불러오는 중…',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: p.muted,
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
+                        ),
                       ),
-                    ),
-                  )
-                else if (showError)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      '연결이 원활하지 않아요.',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
+                    )
+                  else if (showError)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        '연결이 원활하지 않아요.',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: p.muted,
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
+                        ),
                       ),
-                    ),
-                  )
-                else if (insights.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6, bottom: 12),
-                    child: Text(
-                      (topInsight.signalCount == 0)
-                          ? '인사이트를 생성 중이에요'
-                          : '신호를 연결하고 있어요',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: p.muted.withOpacity(0.7),
-                        fontWeight: FontWeight.w500,
-                        height: 1.4,
+                    )
+                  else if (insights.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        (topInsight.signalCount == 0)
+                            ? '인사이트를 생성 중이에요'
+                            : '신호를 연결하고 있어요',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: p.muted.withOpacity(0.7),
+                          fontWeight: FontWeight.w500,
+                          height: 1.4,
+                        ),
                       ),
-                    ),
-                  )
-                else
-                  for (int i = 0; i < visibleInsights.length; i++) ...[
-                    _AiInsightRow(
-                      p: p,
-                      item: visibleInsights[i],
-                      onTap: () => _openInsightDetail(visibleInsights[i]),
-                    ),
-                    if (i != visibleInsights.length - 1)
-                      const SizedBox(height: 10),
-                  ],
-              ],
+                    )
+                  else
+                    for (int i = 0; i < visibleInsights.length; i++) ...[
+                      _AiInsightRow(
+                        p: p,
+                        item: visibleInsights[i],
+                        onTap: () => _openInsightDetail(visibleInsights[i]),
+                      ),
+                      if (i != visibleInsights.length - 1)
+                        const SizedBox(height: 10),
+                    ],
+                ],
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -318,13 +351,23 @@ class _MainPageState extends State<MainPage> {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    '기록',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: p.ink,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 20,
-                      letterSpacing: -0.1,
+                  child: InkWell(
+                    onTap: _openAllLogs,
+                    borderRadius: BorderRadius.circular(12),
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Text(
+                        '기록',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: p.ink,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 20,
+                              letterSpacing: -0.1,
+                            ),
+                      ),
                     ),
                   ),
                 ),

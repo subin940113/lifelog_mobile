@@ -1,4 +1,4 @@
-// lib/screens/settings/theme_settings_page.dart
+// lib/screens/settings/theme_setting_page.dart
 import 'package:flutter/material.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/widgets/app_page_header.dart';

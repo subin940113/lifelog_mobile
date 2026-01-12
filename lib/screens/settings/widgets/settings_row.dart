@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
+import 'package:lifelog_mobile/widgets/glass_chevron_button.dart';
 
 class SettingsRow extends StatelessWidget {
   final String title;
@@ -34,7 +35,7 @@ class SettingsRow extends StatelessWidget {
     this.showChevron = true,
     this.rightGap = 6,
     this.chevronSize = 30,
-    this.trailingTextSize = 16,
+    this.trailingTextSize = 18,
   });
 
   @override
@@ -58,10 +59,15 @@ class SettingsRow extends StatelessWidget {
       );
     }
 
-    // chevron
+    // chevron (glass style, lighter base) — '>' 아이콘
     if (showChevron) {
       rightItems.add(
-        Icon(Icons.chevron_right_rounded, color: p.muted, size: chevronSize),
+        GlassChevronButton(
+          onTap: onTap,
+          accent: p.muted.withOpacity(0.55),
+          iconSize: chevronSize,
+          depth: 0.55,
+        ),
       );
     }
 
@@ -70,7 +76,7 @@ class SettingsRow extends StatelessWidget {
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
           children: [
             Expanded(
@@ -79,7 +85,6 @@ class SettingsRow extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: p.ink,
                   fontWeight: FontWeight.w500,
-                  //fontSize: 18,
                 ),
               ),
             ),

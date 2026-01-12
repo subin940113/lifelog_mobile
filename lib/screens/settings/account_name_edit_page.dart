@@ -167,7 +167,7 @@ class _AccountNameEditPageState extends State<AccountNameEditPage> {
         _saving = false;
         _errorText = '저장에 실패했어요. 네트워크를 확인해주세요.';
       });
-      _showToast('저장 실패');
+      //_showToast('저장 실패');
     }
   }
 

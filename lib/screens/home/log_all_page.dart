@@ -70,7 +70,6 @@ class _AllLogsPageState extends State<AllLogsPage> {
 
     try {
       final res = await _logApi.getAllLogs(limit: _pageSize, cursor: _cursor);
-
       final next = res.items.map((m) => LogPreview.fromJson(m)).toList();
 
       if (!mounted) return;
@@ -141,7 +140,7 @@ class _AllLogsPageState extends State<AllLogsPage> {
                       ),
                       child: Text(
                         '더 보기',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: p.accent,
                           fontWeight: FontWeight.w600,
                         ),
@@ -165,23 +164,50 @@ class _GroupedTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String? lastDate;
+    int? lastYear; // ✅ 직전 아이템의 연도
+    String? lastDayKey; // ✅ yyyy-M-d 비교용
 
     final children = <Widget>[];
 
     for (final item in logs) {
-      final date = item.dateLabel;
+      final dt = _parseDateLabel(item.dateLabel);
 
-      final isNewGroup = (lastDate == null || lastDate != date);
-      if (isNewGroup) {
-        if (children.isNotEmpty) children.add(const SizedBox(height: 14));
-        children.add(_DateHeader(p: p, dateLabel: date));
+      // 파싱 실패해도 화면은 깨지지 않게 최소 표시
+      if (dt == null) {
+        children.add(_TimelineLogRow(p: p, item: item));
         children.add(const SizedBox(height: 10));
-        lastDate = date;
+        continue;
+      }
+
+      final year = dt.year;
+
+      // ✅ 연도 경계(첫 아이템 제외)에서만: accent 구분선 + yyyy년
+      final isYearChanged = (lastYear != null && lastYear != year);
+      if (isYearChanged) {
+        // 이전 연도의 마지막 로그와 너무 붙지 않게
+        children.add(const SizedBox(height: 30));
+        children.add(_YearHeader(p: p, year: year));
+        children.add(const SizedBox(height: 0));
+
+        // 연도가 바뀌면 날짜 그룹도 리셋
+        lastDayKey = null;
+      }
+
+      final dayKey = '${dt.year}-${dt.month}-${dt.day}';
+      final isNewDay = lastDayKey == null || lastDayKey != dayKey;
+
+      // ✅ 날짜 헤더: M.d (0패딩 없음)
+      if (isNewDay) {
+        if (children.isNotEmpty) children.add(const SizedBox(height: 14));
+        children.add(_DateHeader(p: p, dateLabel: '${dt.month}.${dt.day}'));
+        children.add(const SizedBox(height: 10));
+        lastDayKey = dayKey;
       }
 
       children.add(_TimelineLogRow(p: p, item: item));
       children.add(const SizedBox(height: 10));
+
+      lastYear = year;
     }
 
     if (children.isNotEmpty) children.removeLast();
@@ -189,6 +215,52 @@ class _GroupedTimeline extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: children,
+    );
+  }
+
+  /// "2026.01.05" 또는 "2026-01-05" 대응
+  DateTime? _parseDateLabel(String s) {
+    final raw = s.trim();
+    if (raw.isEmpty || raw == '—') return null;
+
+    final normalized = raw.replaceAll('-', '.');
+    final parts = normalized.split('.');
+    if (parts.length < 3) return null;
+
+    final y = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    final d = int.tryParse(parts[2]);
+    if (y == null || m == null || d == null) return null;
+    if (m < 1 || m > 12) return null;
+    if (d < 1 || d > 31) return null;
+
+    return DateTime(y, m, d);
+  }
+}
+
+class _YearHeader extends StatelessWidget {
+  final Palette p;
+  final int year;
+
+  const _YearHeader({required this.p, required this.year});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(right: 2),
+          child: Text(
+            '$year년',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: p.accent,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.1,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -213,13 +285,7 @@ class _DateHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-
-        // ✅ 기존 단색 점 → GlassDot
-        GlassDot(
-          size: 8,
-          color: p.accent,
-          active: false, // 날짜 헤더는 애니메이션 없이 “질감”만
-        ),
+        GlassDot(size: 8, color: p.accent, active: false),
       ],
     );
   }
@@ -237,7 +303,7 @@ class _StatusText extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
           color: p.muted.withOpacity(0.75),
           fontWeight: FontWeight.w500,
           height: 1.4,

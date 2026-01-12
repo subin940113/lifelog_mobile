@@ -50,4 +50,8 @@ class UserApiClient {
     });
     return UserMeResponse.fromJson(map);
   }
+
+  Future<void> deleteMe() async {
+    await _auth.deleteJson('/api/users/me');
+  }
 }

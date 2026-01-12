@@ -6,22 +6,15 @@ class InterestApiClient {
   InterestApiClient(this._api);
 
   /// GET /api/interests
+  /// { "keywords": ["발이", "운동", ...] }
   Future<InterestState> getInterests() async {
     final map = await _api.getJson('/api/interests');
     return InterestState.fromJson(map);
   }
 
-  /// POST /api/interests/enabled
-  /// body: { "enabled": true/false }
-  Future<InterestState> setEnabled(bool enabled) async {
-    final map = await _api.postJson('/api/interests/enabled', {
-      'enabled': enabled,
-    });
-    return InterestState.fromJson(map);
-  }
-
   /// POST /api/interests
   /// body: { "keyword": "..." }
+  /// res:  { "keywords": [...] }
   Future<InterestState> addKeyword(String keyword) async {
     final map = await _api.postJson('/api/interests', {'keyword': keyword});
     return InterestState.fromJson(map);
@@ -29,6 +22,7 @@ class InterestApiClient {
 
   /// POST /api/interests/remove
   /// body: { "keyword": "..." }
+  /// res:  { "keywords": [...] }
   Future<InterestState> removeKeyword(String keyword) async {
     final map = await _api.postJson('/api/interests/remove', {
       'keyword': keyword,

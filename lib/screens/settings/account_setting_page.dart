@@ -1,4 +1,4 @@
-// lib/screens/settings/account_settings_page.dart
+// lib/screens/settings/account_setting_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -8,6 +8,7 @@ import 'package:lifelog_mobile/config/api_config.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/widgets/app_page_header.dart';
 import 'package:lifelog_mobile/widgets/app_safe_area.dart';
+import 'package:lifelog_mobile/widgets/glass_chevron_button.dart';
 
 import 'account_name_edit_page.dart';
 
@@ -237,15 +238,11 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     );
     if (!ok) return;
 
-    await _storage.delete(key: 'accessToken');
-    await _storage.delete(key: 'refreshToken');
-    await _storage.delete(key: 'accountName');
-    await _storage.delete(key: 'isNewUser');
+    widget.onLogout?.call();
 
     if (context.mounted) {
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
-    widget.onLogout?.call();
   }
 
   Future<void> _handleDeleteAccount(BuildContext context) async {
@@ -256,6 +253,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       actionColor: p.danger,
     );
     if (!ok) return;
+
+    await _userClient().deleteMe();
 
     // 서버 삭제 로직은 기존 흐름 유지(원하면 여기 연결)
     await _storage.delete(key: 'accessToken');
@@ -330,7 +329,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                                     letterSpacing: -0.2,
                                   ),
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 20),
 
                             _EditableInfoRow(
                               label: '계정명',
@@ -424,7 +423,7 @@ class _InfoRow extends StatelessWidget {
             child: Text(
               label,
               style: baseStyle?.copyWith(
-                color: p.muted,
+                color: p.ink,
                 fontWeight: FontWeight.w500,
                 fontSize: 18,
               ),
@@ -480,7 +479,7 @@ class _EditableInfoRow extends StatelessWidget {
             child: Text(
               label,
               style: baseStyle?.copyWith(
-                color: p.muted,
+                color: p.ink,
                 fontWeight: FontWeight.w500,
                 fontSize: 18,
               ),
@@ -491,47 +490,43 @@ class _EditableInfoRow extends StatelessWidget {
           /// ✅ 값 + chevron 을 우측 그룹으로 묶어서
           /// 값과 아이콘 사이 간격을 “시각적으로” 줄입니다.
           Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Flexible(
-                  child: Text(
-                    value,
-                    textAlign: TextAlign.right,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: baseStyle?.copyWith(
-                      color: enabled ? p.accent : p.muted.withOpacity(0.65),
-                      fontWeight: FontWeight.w500,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                SizedBox(
-                  width: 28,
-                  height: 44,
-                  child: GestureDetector(
-                    onTap: enabled ? onEdit : null,
-                    behavior: HitTestBehavior.opaque,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      // ✅ 아이콘 glyph 자체의 여백 때문에 살짝 우측으로 밀어 시각적 여백을 줄임
-                      child: Transform.translate(
-                        offset: const Offset(8, 0),
-                        child: Icon(
-                          Icons.chevron_right_rounded,
-                          size: 30,
-                          color: enabled
-                              ? p.muted.withOpacity(0.85)
-                              : p.muted.withOpacity(0.45),
-                        ),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: enabled ? onEdit : null,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Flexible(
+                    child: Text(
+                      value,
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      style: baseStyle?.copyWith(
+                        color: enabled ? p.accent : p.muted.withOpacity(0.65),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 18,
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  // ✅ '>' 아이콘에 glass 스타일 적용 (배경판 없이 아이콘만)
+                  Transform.translate(
+                    offset: const Offset(8, 0),
+                    child: GlassChevronButton(
+                      onTap: enabled ? (onEdit ?? () {}) : () {},
+                      accent:
+                          (enabled
+                                  ? p.muted.withOpacity(0.85)
+                                  : p.muted.withOpacity(0.45))
+                              .withOpacity(enabled ? 0.55 : 0.40),
+                      iconSize: 30,
+                      depth: 0.55,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

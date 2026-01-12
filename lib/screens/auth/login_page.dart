@@ -243,7 +243,9 @@ class _LoginPageState extends State<LoginPage>
         // Try to fetch current account only for diagnostics
         try {
           final account = await FlutterNaverLogin.getCurrentAccount();
-          debugPrint('[NAVER] currentAccount(name/email): ${account.name} / ${account.email}');
+          debugPrint(
+            '[NAVER] currentAccount(name/email): ${account.name} / ${account.email}',
+          );
         } catch (e) {
           debugPrint('[NAVER] getCurrentAccount failed: $e');
         }
@@ -310,6 +312,24 @@ class _LoginPageState extends State<LoginPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bg = widget.bg ?? (isDark ? p.bg : const Color(0xFFFAFAFA));
+
+    // Tuned to feel natural: most of the canvas stays white,
+    // then gently warms into a very light (slightly gray, vintage) blue toward the right.
+    // We avoid blending too much of `p.accent` here to prevent a saturated edge.
+    const vintageBlue = Color(
+      0xFFD7E0EA,
+    ); // vintage blue: slightly gray, less saturated
+    // Visible but natural: start a faint tint from the left and ramp smoothly.
+    final bgSoft0 = Color.lerp(
+      bg,
+      vintageBlue,
+      0.06,
+    )!; // near-white, slight vintage tint
+    final bgSoft1 = Color.lerp(bg, vintageBlue, 0.16)!;
+    final bgSoft2 = Color.lerp(bg, vintageBlue, 0.28)!;
+    final bgSoft3 = Color.lerp(bg, vintageBlue, 0.40)!;
+    final bgRight = Color.lerp(bg, vintageBlue, 0.52)!;
+
     final copyStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
       fontWeight: FontWeight.w600,
       height: 1.35,
@@ -330,273 +350,370 @@ class _LoginPageState extends State<LoginPage>
     const bubbleToIconsGap = 10.0;
 
     return Scaffold(
-      backgroundColor: bg,
-      body: SafeArea(
-        bottom: false,
-        child: Stack(
-          children: [
-            Align(
-              alignment: Alignment.topLeft,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(28, 0, 20, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 120),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 460),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          BrandLogo(
-                            p: p,
-                            style: BrandLogoStyle.wordmark,
-                            scale: 1.6,
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
+      backgroundColor: isDark ? bg : Colors.transparent,
+      body: Stack(
+        children: [
+          // ✅ Background should extend into the status bar area (SafeArea must not clip it)
+          if (!isDark)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [bgSoft0, bgSoft1, bgSoft2, bgSoft3, bgRight],
+                      stops: const [0.0, 0.28, 0.55, 0.80, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // ✅ Content respects safe areas
+          SafeArea(
+            bottom: false,
+            child: Stack(
+              children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(28, 0, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const SizedBox(height: 120),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 460),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              AccentGradientText(
-                                text: '흘러가는 생각이 사라지기 전에',
-                                style: copyStyle?.copyWith(
-                                  fontSize: (copyStyle?.fontSize ?? 16) + 2,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                accent: p.accent,
-                                textAlign: TextAlign.left,
+                              BrandLogo(
+                                p: p,
+                                style: BrandLogoStyle.wordmark,
+                                scale: 1.7,
                               ),
-                              const SizedBox(width: 2),
-                              Transform.translate(
-                                offset: const Offset(0, 1),
-                                child: Text(
-                                  '.',
-                                  style: copyStyle?.copyWith(
-                                    color: Color.lerp(
-                                      p.accent,
-                                      Colors.black,
-                                      0.25,
-                                    ),
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 24,
-                                    height: 1.0,
+                              const SizedBox(height: 90),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: IntrinsicWidth(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      // ✅ Right-aligned
+                                      AccentGradientText(
+                                        text: '흘러가는 생각이',
+                                        style: copyStyle?.copyWith(
+                                          fontSize:
+                                              (copyStyle?.fontSize ?? 16) + 2,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        accent: p.accent,
+                                        textAlign: TextAlign.right,
+                                      ),
+                                      const SizedBox(height: 60),
+
+                                      // ✅ Only this line is left-aligned, but its start matches the first line
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: AccentGradientText(
+                                          text: '사라지기',
+                                          style: copyStyle?.copyWith(
+                                            fontSize:
+                                                (copyStyle?.fontSize ?? 16) + 2,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          accent: p.accent,
+                                          textAlign: TextAlign.left,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 50),
+
+                                      // ✅ Right-aligned with dot effect
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.baseline,
+                                          textBaseline: TextBaseline.alphabetic,
+                                          children: [
+                                            AccentGradientText(
+                                              text: '전에',
+                                              style: copyStyle?.copyWith(
+                                                fontSize:
+                                                    (copyStyle?.fontSize ??
+                                                        16) +
+                                                    2,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              accent: p.accent,
+                                              textAlign: TextAlign.right,
+                                            ),
+                                            const SizedBox(width: 2),
+                                            Transform.translate(
+                                              offset: const Offset(0, 1),
+                                              child: Text(
+                                                '.',
+                                                style: copyStyle?.copyWith(
+                                                  color: Color.lerp(
+                                                    p.accent,
+                                                    Colors.black,
+                                                    0.25,
+                                                  ),
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 24,
+                                                  height: 1.0,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
                             ],
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: SizedBox(
+                    height: panelHeight,
+                    child: Container(
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(26),
+                          topRight: Radius.circular(26),
+                        ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color.lerp(p.accent, Colors.white, 0.10)!,
+                            p.accent,
+                            Color.lerp(p.accent, Colors.black, 0.12)!,
+                          ],
+                          stops: const [0.0, 0.55, 1.0],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(
+                              isDark ? 0.28 : 0.10,
+                            ),
+                            blurRadius: 18,
+                            offset: const Offset(0, -6),
+                          ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: SizedBox(
-                height: panelHeight,
-                child: Container(
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(26),
-                      topRight: Radius.circular(26),
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color.lerp(p.accent, Colors.white, 0.10)!,
-                        p.accent,
-                        Color.lerp(p.accent, Colors.black, 0.12)!,
-                      ],
-                      stops: const [0.0, 0.55, 1.0],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.28 : 0.10),
-                        blurRadius: 18,
-                        offset: const Offset(0, -6),
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: AnimatedBuilder(
-                            animation: _glassSheen,
-                            builder: (context, _) {
-                              final w = MediaQuery.sizeOf(context).width;
-                              final x =
-                                  (-w * 0.8) + (w * 1.6 * _glassSheen.value);
-                              return Opacity(
-                                opacity: isDark ? 0.12 : 0.10,
-                                child: Transform.translate(
-                                  offset: Offset(x, 0),
-                                  child: Transform.rotate(
-                                    angle: -0.22,
-                                    child: Align(
-                                      alignment: Alignment.center,
-                                      child: Container(
-                                        width: w * 0.38,
-                                        height: double.infinity,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.centerLeft,
-                                            end: Alignment.centerRight,
-                                            colors: [
-                                              Colors.transparent,
-                                              Colors.white.withOpacity(0.18),
-                                              Colors.white.withOpacity(0.32),
-                                              Colors.white.withOpacity(0.18),
-                                              Colors.transparent,
-                                            ],
-                                            stops: const [
-                                              0.0,
-                                              0.35,
-                                              0.5,
-                                              0.65,
-                                              1.0,
-                                            ],
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: AnimatedBuilder(
+                                animation: _glassSheen,
+                                builder: (context, _) {
+                                  final w = MediaQuery.sizeOf(context).width;
+                                  final x =
+                                      (-w * 0.8) +
+                                      (w * 1.6 * _glassSheen.value);
+                                  return Opacity(
+                                    opacity: isDark ? 0.12 : 0.10,
+                                    child: Transform.translate(
+                                      offset: Offset(x, 0),
+                                      child: Transform.rotate(
+                                        angle: -0.22,
+                                        child: Align(
+                                          alignment: Alignment.center,
+                                          child: Container(
+                                            width: w * 0.38,
+                                            height: double.infinity,
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.centerLeft,
+                                                end: Alignment.centerRight,
+                                                colors: [
+                                                  Colors.transparent,
+                                                  Colors.white.withOpacity(
+                                                    0.18,
+                                                  ),
+                                                  Colors.white.withOpacity(
+                                                    0.32,
+                                                  ),
+                                                  Colors.white.withOpacity(
+                                                    0.18,
+                                                  ),
+                                                  Colors.transparent,
+                                                ],
+                                                stops: const [
+                                                  0.0,
+                                                  0.35,
+                                                  0.5,
+                                                  0.65,
+                                                  1.0,
+                                                ],
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ),
-                              );
-                            },
+                                  );
+                                },
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
 
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                        child: Stack(
-                          children: [
-                            Align(
-                              alignment: const Alignment(0.0, -0.9),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(
-                                    height: bubbleSlotHeight,
-                                    child: Center(
-                                      child: Transform.translate(
-                                        offset: Offset(bubbleX, 0),
-                                        child: InlineBubbleLabel(
-                                          text: bubbleText,
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                            child: Stack(
+                              children: [
+                                Align(
+                                  alignment: const Alignment(0.0, -0.9),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(
+                                        height: bubbleSlotHeight,
+                                        child: Center(
+                                          child: Transform.translate(
+                                            offset: Offset(bubbleX, 0),
+                                            child: InlineBubbleLabel(
+                                              text: bubbleText,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: bubbleToIconsGap),
+                                      const SizedBox(height: bubbleToIconsGap),
 
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      _IconButton(
-                                        iconAsset:
-                                            'assets/icons/signin_with_kakao.png',
-                                        enabled: !_loading,
-                                        pressed:
-                                            _ctaPressed &&
-                                            _pressedKey == ProviderKey.kakao,
-                                        onPressedStateChanged: (v) =>
-                                            _setPressed(ProviderKey.kakao, v),
-                                        onTap: _loading
-                                            ? null
-                                            : _loginWithKakao,
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          _IconButton(
+                                            iconAsset:
+                                                'assets/icons/signin_with_kakao.png',
+                                            enabled: !_loading,
+                                            pressed:
+                                                _ctaPressed &&
+                                                _pressedKey ==
+                                                    ProviderKey.kakao,
+                                            onPressedStateChanged: (v) =>
+                                                _setPressed(
+                                                  ProviderKey.kakao,
+                                                  v,
+                                                ),
+                                            onTap: _loading
+                                                ? null
+                                                : _loginWithKakao,
+                                          ),
+                                          const SizedBox(width: 16),
+                                          _IconButton(
+                                            iconAsset:
+                                                'assets/icons/signin_with_naver.png',
+                                            enabled: !_loading,
+                                            pressed:
+                                                _ctaPressed &&
+                                                _pressedKey ==
+                                                    ProviderKey.naver,
+                                            onPressedStateChanged: (v) =>
+                                                _setPressed(
+                                                  ProviderKey.naver,
+                                                  v,
+                                                ),
+                                            onTap: _loading
+                                                ? null
+                                                : _loginWithNaver,
+                                          ),
+                                          const SizedBox(width: 16),
+                                          _IconButton(
+                                            iconAsset:
+                                                'assets/icons/signin_with_google.png',
+                                            enabled: !_loading,
+                                            pressed:
+                                                _ctaPressed &&
+                                                _pressedKey ==
+                                                    ProviderKey.google,
+                                            onPressedStateChanged: (v) =>
+                                                _setPressed(
+                                                  ProviderKey.google,
+                                                  v,
+                                                ),
+                                            onTap: _loading
+                                                ? null
+                                                : _loginWithGoogle,
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 16),
-                                      _IconButton(
-                                        iconAsset:
-                                            'assets/icons/signin_with_naver.png',
-                                        enabled: !_loading,
-                                        pressed:
-                                            _ctaPressed &&
-                                            _pressedKey == ProviderKey.naver,
-                                        onPressedStateChanged: (v) =>
-                                            _setPressed(ProviderKey.naver, v),
-                                        onTap: _loading
-                                            ? null
-                                            : _loginWithNaver,
-                                      ),
-                                      const SizedBox(width: 16),
-                                      _IconButton(
-                                        iconAsset:
-                                            'assets/icons/signin_with_google.png',
-                                        enabled: !_loading,
-                                        pressed:
-                                            _ctaPressed &&
-                                            _pressedKey == ProviderKey.google,
-                                        onPressedStateChanged: (v) =>
-                                            _setPressed(ProviderKey.google, v),
-                                        onTap: _loading
-                                            ? null
-                                            : _loginWithGoogle,
-                                      ),
+                                      if (_error != null) ...[
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          _error!,
+                                          textAlign: TextAlign.center,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                fontSize:
+                                                    13, // match InlineBubbleLabel text size
+                                                color: Colors.white.withOpacity(
+                                                  0.88,
+                                                ),
+                                                fontWeight: FontWeight.w600,
+                                                height: 1.35,
+                                              ),
+                                        ),
+                                      ],
                                     ],
                                   ),
-                                  if (_error != null) ...[
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      _error!,
+                                ),
+
+                                Align(
+                                  alignment: Alignment.bottomCenter,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 30),
+                                    child: Text(
+                                      '© ${DateTime.now().year} bluelog. All rights reserved.',
                                       textAlign: TextAlign.center,
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
                                           ?.copyWith(
-                                            fontSize:
-                                                13, // match InlineBubbleLabel text size
                                             color: Colors.white.withOpacity(
-                                              0.88,
+                                              0.82,
                                             ),
-                                            fontWeight: FontWeight.w600,
-                                            height: 1.35,
+                                            fontWeight: FontWeight.w500,
+                                            letterSpacing: 0.1,
                                           ),
                                     ),
-                                  ],
-                                ],
-                              ),
-                            ),
-
-                            Align(
-                              alignment: Alignment.bottomCenter,
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 30),
-                                child: Text(
-                                  '© ${DateTime.now().year} bluelog. All rights reserved.',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: Colors.white.withOpacity(0.82),
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.1,
-                                      ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

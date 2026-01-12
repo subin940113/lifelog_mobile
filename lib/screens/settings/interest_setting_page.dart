@@ -26,7 +26,7 @@ class InterestSettingPage extends StatefulWidget {
 
 class _InterestSettingPageState extends State<InterestSettingPage> {
   static const int _maxKeywords = 5;
-  static const int _maxKeywordLen = 100;
+  static const int _maxKeywordLen = 80;
 
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   late final AuthApiClient _authApi;
@@ -178,7 +178,7 @@ class _InterestSettingPageState extends State<InterestSettingPage> {
       FocusScope.of(context).requestFocus(_focusNode);
     } catch (_) {
       if (!mounted) return;
-      _showToastAboveFab('저장에 실패했어요. 네트워크를 확인해주세요');
+      //_showToastAboveFab('저장에 실패했어요. 네트워크를 확인해주세요');
     } finally {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -204,7 +204,7 @@ class _InterestSettingPageState extends State<InterestSettingPage> {
       // ✅ X 삭제 시 “저장했습니다.” 토스트 없음 (요구사항)
     } catch (_) {
       if (!mounted) return;
-      _showToastAboveFab('저장에 실패했어요. 네트워크를 확인해주세요');
+      //_showToastAboveFab('저장에 실패했어요. 네트워크를 확인해주세요');
     } finally {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -374,7 +374,7 @@ class _InterestSettingPageState extends State<InterestSettingPage> {
                   const SizedBox(height: 8),
                   Text(
                     _errorText!,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: p.muted,
                       fontWeight: FontWeight.w500,
                       height: 1.35,
@@ -387,7 +387,7 @@ class _InterestSettingPageState extends State<InterestSettingPage> {
                 if (_keywords.isEmpty)
                   Text(
                     '아직 등록된 관심사가 없어요.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: p.muted.withOpacity(0.75),
                       fontWeight: FontWeight.w500,
                       height: 1.4,

@@ -98,11 +98,11 @@ class _InsightHubPageState extends State<InsightHubPage> {
     try {
       await _insightApi.setEnabled(v);
       if (!mounted) return;
-      _showToast('저장했습니다.');
+      //_showToast('저장했습니다.');
     } catch (_) {
       if (!mounted) return;
       setState(() => _enabled = prev);
-      _showToast('저장에 실패했어요. 네트워크를 확인해주세요');
+      // _showToast('저장에 실패했어요. 네트워크를 확인해주세요');
     } finally {
       if (!mounted) return;
       setState(() => _savingEnabled = false);
@@ -121,10 +121,9 @@ class _InsightHubPageState extends State<InsightHubPage> {
   }
 
   TextStyle? _sectionTitleStyle(BuildContext context, Palette p) {
-    return Theme.of(context).textTheme.titleLarge?.copyWith(
+    return Theme.of(context).textTheme.titleMedium?.copyWith(
       color: p.ink,
       fontWeight: FontWeight.w600,
-
       letterSpacing: -0.15,
     );
   }
@@ -197,7 +196,7 @@ class _InsightHubPageState extends State<InsightHubPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 9),
                 Text(
                   _enabled
                       ? '관심사 키워드가 있어야 인사이트가 생성돼요.'

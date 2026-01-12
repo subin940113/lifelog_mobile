@@ -118,62 +118,26 @@ class HoldToTalkPill extends StatefulWidget {
 }
 
 class _HoldToTalkPillState extends State<HoldToTalkPill> {
-  Timer? _holdTimer;
-  bool _pressed = false;
-  bool _started = false;
-
-  static const _intentDelay = Duration(milliseconds: 50);
-
-  void _onDown(PointerDownEvent _) {
-    if (!widget.enabled) return;
-
-    _pressed = true;
-    _started = false;
-
-    _holdTimer?.cancel();
-    _holdTimer = Timer(_intentDelay, () {
-      if (!mounted) return;
-      if (_pressed) {
-        _started = true;
-        widget.onHoldStart();
-      }
-    });
-  }
-
-  void _finishPress({required bool canceled}) {
-    if (!widget.enabled) return;
-
-    _holdTimer?.cancel();
-    _holdTimer = null;
-
-    final started = _started;
-    _pressed = false;
-    _started = false;
-
-    if (started) {
-      widget.onHoldEnd();
-      return;
-    }
-
-    if (!canceled) widget.onTapHint();
-  }
-
-  @override
-  void dispose() {
-    _holdTimer?.cancel();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final fg = !widget.enabled
         ? widget.p.muted
         : (widget.active ? widget.p.accent : widget.p.ink);
 
-    return Listener(
-      onPointerDown: _onDown,
-      onPointerUp: (_) => _finishPress(canceled: false),
-      onPointerCancel: (_) => _finishPress(canceled: true),
+    return InkWell(
+      onTap: !widget.enabled
+          ? null
+          : () {
+              if (widget.active) {
+                widget.onHoldEnd(); // ✅ 녹음 중 → 중단
+              } else {
+                widget.onHoldStart(); // ✅ 대기 → 시작
+              }
+            },
+      borderRadius: widget.borderRadius,
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      hoverColor: Colors.transparent,
       child: Semantics(
         button: true,
         enabled: widget.enabled,

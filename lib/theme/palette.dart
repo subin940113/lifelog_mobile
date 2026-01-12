@@ -25,11 +25,9 @@ class Palette {
     required this.dangerSoft,
   });
 
-  /// Compatibility with earlier code
   Color get card => surface;
   Color get inkSoft => accentSoft;
 
-  /// Convenience helpers
   static Palette light() => Palette.from(const ColorScheme.light());
   static Palette dark() => Palette.from(const ColorScheme.dark());
 
@@ -37,23 +35,35 @@ class Palette {
     final isDark = scheme.brightness == Brightness.dark;
 
     if (isDark) {
-      // Dark: muted, wine-like red (not neon, not alarmist)
       return const Palette(
-        bg: Color(0xFF121212),
-        surface: Color(0xFF171717),
-        ink: Color(0xFFEAEAEA),
-        muted: Color(0xFF9B9B9B),
-        outline: Color(0xFF2A2A2A),
-        accent: Color(0xFF2E6BE6),
-        accentSoft: Color(0xFFE9F0FF),
+        // Base background: cooler, deeper charcoal
+        bg: Color(0xFF212024),
 
-        // 🔴 danger
-        danger: Color(0xFFCF3F3F), // deep muted red
-        dangerSoft: Color(0xFFFFE8E8), // very soft red tint
+        // Surface slightly lifted from bg for cards/sheets
+        surface: Color(0xFF2A2930),
+
+        // Primary text: soft white with reduced glare
+        ink: Color(0xFFECECF0),
+
+        // Secondary text: cooler gray
+        muted: Color(0xFFB2B1B8),
+
+        // Hairline borders: subtle contrast against bg/surface
+        outline: Color(0xFF3A3942),
+
+        // Brand accent remains consistent
+        accent: Color(0xFF2E6BE6),
+
+        // Soft accent adapted for dark background
+        accentSoft: Color(0xFF1F2F52),
+
+        // Danger colors slightly cooled for dark mode
+        danger: Color(0xFFD14A4A),
+        dangerSoft: Color(0xFF4A2628),
       );
     }
 
-    // Light: calm brick-red (서비스 톤 유지)
+    // Light: 기존 그대로
     return const Palette(
       bg: Color(0xFFFFFFFF),
       surface: Color(0xFFFFFFFF),
@@ -62,10 +72,8 @@ class Palette {
       outline: Color(0xFFE6E3DC),
       accent: Color(0xFF2E6BE6),
       accentSoft: Color(0xFFE9F0FF),
-
-      // 🔴 danger
-      danger: Color(0xFFD64545), // warm brick red
-      dangerSoft: Color(0xFFFFE9E9), // paper-like red tint
+      danger: Color(0xFFD64545),
+      dangerSoft: Color(0xFFFFE9E9),
     );
   }
 }

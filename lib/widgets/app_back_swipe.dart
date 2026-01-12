@@ -70,7 +70,8 @@ class _AppBackSwipeState extends State<AppBackSwipe> {
 
         final velocityX = details.primaryVelocity ?? 0; // +면 오른쪽
         final shouldPop =
-            (_dx >= widget.triggerDistance) || (velocityX >= widget.triggerVelocity);
+            (_dx >= widget.triggerDistance) ||
+            (velocityX >= widget.triggerVelocity);
 
         _reset();
 
