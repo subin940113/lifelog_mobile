@@ -252,7 +252,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                 },
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
             _SectionLabel(text: '설정', p: p),
             SettingsRow(
               title: '테마',
@@ -293,7 +293,7 @@ class _SettingsHomePageState extends State<SettingsHomePage> {
                 NotificationSettingPage(p: p, onLogout: widget.onLogout),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
             _SectionLabel(text: '정보', p: p),
             SettingsRow(title: '이용 약관 및 개인정보 처리방침', p: p, onTap: openTerms),
             const SizedBox(height: 10),
@@ -323,7 +323,7 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: p.muted,
+          color: p.muted.withOpacity(0.7),
           fontWeight: FontWeight.w700,
         ),
       ),

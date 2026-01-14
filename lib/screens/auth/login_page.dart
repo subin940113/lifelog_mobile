@@ -1,5 +1,3 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -7,13 +5,13 @@ import 'package:google_sign_in/google_sign_in.dart';
 // ✅ Kakao / Naver
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
 import 'package:flutter_naver_login/flutter_naver_login.dart';
+
 import 'package:lifelog_mobile/api/auth_api_client.dart';
 import 'package:lifelog_mobile/config/api_config.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/widgets/brand_logo.dart';
 
 import 'models/provider_key.dart';
-import 'widgets/accent_gradient_text.dart';
 import 'widgets/inline_bubble_label.dart';
 
 class LoginPage extends StatefulWidget {
@@ -30,15 +28,14 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage>
     with SingleTickerProviderStateMixin {
   bool _loading = false;
-  bool _ctaPressed = false;
-  ProviderKey? _pressedKey;
   String? _error;
-
   ProviderKey? _recentProvider;
+
+  late final AnimationController _arrowController;
+  late final Animation<double> _arrowDy;
 
   late final GoogleSignIn _googleSignIn;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-  late final AnimationController _glassSheen;
 
   static const _kLastLoginProviderKey = 'last_login_provider';
 
@@ -52,12 +49,24 @@ class _LoginPageState extends State<LoginPage>
       serverClientId: webClientId.isNotEmpty ? webClientId : null,
     );
 
-    _glassSheen = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3200),
-    )..repeat();
-
     _loadRecentProvider();
+
+    _arrowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+
+    _arrowDy = Tween<double>(begin: 0.0, end: 10.0).animate(
+      CurvedAnimation(parent: _arrowController, curve: Curves.easeInOut),
+    );
+
+    _arrowController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _arrowController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadRecentProvider() async {
@@ -70,12 +79,6 @@ class _LoginPageState extends State<LoginPage>
     } catch (_) {
       // ignore
     }
-  }
-
-  @override
-  void dispose() {
-    _glassSheen.dispose();
-    super.dispose();
   }
 
   Future<AuthApiClient> _client() async {
@@ -116,7 +119,6 @@ class _LoginPageState extends State<LoginPage>
   }
 
   void _handleLoginError(String userMessage, Object error, [StackTrace? st]) {
-    // Keep detail for debugging, but do not show raw error to users.
     debugPrint('[LOGIN] $userMessage');
     debugPrint('[LOGIN] error: $error');
     if (st != null) debugPrint(st.toString());
@@ -124,7 +126,6 @@ class _LoginPageState extends State<LoginPage>
     if (!mounted) return;
     setState(() {
       _loading = false;
-      // Show only a short, user-friendly message in the UI.
       _error = userMessage;
     });
   }
@@ -179,7 +180,6 @@ class _LoginPageState extends State<LoginPage>
         try {
           token = await kakao.UserApi.instance.loginWithKakaoTalk();
         } catch (_) {
-          // 카카오톡 로그인 실패 시 계정 로그인으로 fallback
           token = await kakao.UserApi.instance.loginWithKakaoAccount();
         }
       } else {
@@ -215,13 +215,9 @@ class _LoginPageState extends State<LoginPage>
 
     try {
       final result = await FlutterNaverLogin.logIn();
-
-      // Developer-only diagnostics (do not surface to UI)
       debugPrint('[NAVER] status: ${result.status}');
 
-      // Status handling per flutter_naver_login 2.x (string-based)
       final statusStr = result.status.toString();
-      // e.g. "NaverLoginStatus.loggedIn" / "NaverLoginStatus.loggedOut" / "NaverLoginStatus.error"
       final isLoggedIn = statusStr.endsWith('.loggedIn');
       final isLoggedOut = statusStr.endsWith('.loggedOut');
 
@@ -233,34 +229,12 @@ class _LoginPageState extends State<LoginPage>
         throw Exception('NAVER_LOGIN_STATUS_ERROR');
       }
 
-      // Optional account diagnostics
-      final accountFromResult = result.account;
-      if (accountFromResult != null) {
-        debugPrint(
-          '[NAVER] account(name/email): ${accountFromResult.name} / ${accountFromResult.email}',
-        );
-      } else {
-        // Try to fetch current account only for diagnostics
-        try {
-          final account = await FlutterNaverLogin.getCurrentAccount();
-          debugPrint(
-            '[NAVER] currentAccount(name/email): ${account.name} / ${account.email}',
-          );
-        } catch (e) {
-          debugPrint('[NAVER] getCurrentAccount failed: $e');
-        }
-      }
-
-      // Get current token (2.x)
       final token = await FlutterNaverLogin.getCurrentAccessToken();
-      debugPrint('[NAVER] expiresAt: ${token.expiresAt}');
-
       if (!token.isValid()) {
         throw Exception('NAVER_ACCESS_TOKEN_INVALID');
       }
 
       final accessToken = token.accessToken.trim();
-      debugPrint('[NAVER] accessToken length: ${accessToken.length}');
       if (accessToken.isEmpty) {
         throw Exception('NAVER_ACCESS_TOKEN_EMPTY');
       }
@@ -284,433 +258,193 @@ class _LoginPageState extends State<LoginPage>
     }
   }
 
-  double _bubbleOffsetXForProvider(ProviderKey? provider) {
-    const step = 80.0; // icon(64) + gap(16) 기준
-    switch (provider) {
-      case ProviderKey.kakao:
-        return -step;
-      case ProviderKey.naver:
-        return 0.0;
-      case ProviderKey.google:
-        return step;
-      default:
-        return 0.0;
-    }
-  }
-
-  void _setPressed(ProviderKey? key, bool v) {
-    if (_loading) return;
-    setState(() {
-      _ctaPressed = v;
-      _pressedKey = v ? key : null;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final p = widget.p ?? Palette.from(Theme.of(context).colorScheme);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final bg = widget.bg ?? (isDark ? p.bg : const Color(0xFFFAFAFA));
-
-    // Tuned to feel natural: most of the canvas stays white,
-    // then gently warms into a very light (slightly gray, vintage) blue toward the right.
-    // We avoid blending too much of `p.accent` here to prevent a saturated edge.
-    const vintageBlue = Color(
-      0xFFD7E0EA,
-    ); // vintage blue: slightly gray, less saturated
-    // Visible but natural: start a faint tint from the left and ramp smoothly.
-    final bgSoft0 = Color.lerp(
-      bg,
-      vintageBlue,
-      0.06,
-    )!; // near-white, slight vintage tint
-    final bgSoft1 = Color.lerp(bg, vintageBlue, 0.16)!;
-    final bgSoft2 = Color.lerp(bg, vintageBlue, 0.28)!;
-    final bgSoft3 = Color.lerp(bg, vintageBlue, 0.40)!;
-    final bgRight = Color.lerp(bg, vintageBlue, 0.52)!;
+    final bg = Colors.white;
 
     final copyStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
       fontWeight: FontWeight.w600,
       height: 1.35,
       fontSize: 16,
-      letterSpacing: -1,
+      letterSpacing: -0.8,
     );
-
-    final panelHeight = MediaQuery.sizeOf(context).height * 0.3;
 
     final hasRecent = _recentProvider != null;
     final bubbleText = hasRecent ? '최근 로그인' : 'SNS 계정으로 이어가기';
-    final bubbleX = hasRecent
-        ? _bubbleOffsetXForProvider(_recentProvider)
-        : 0.0;
 
-    // 말풍선 위 마진/아이콘 Y 고정 관련
-    const bubbleSlotHeight = 46.0;
-    const bubbleToIconsGap = 10.0;
+    final w = MediaQuery.sizeOf(context).width;
+    // ✅ “가로 꽉 차지 않게” + “우측 정렬”을 위한 최대 폭 (수정됨)
+    final buttonMaxWidth = (w * 0.62).clamp(240.0, 320.0);
 
     return Scaffold(
-      backgroundColor: isDark ? bg : Colors.transparent,
+      backgroundColor: bg,
       body: Stack(
         children: [
-          // ✅ Background should extend into the status bar area (SafeArea must not clip it)
-          if (!isDark)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [bgSoft0, bgSoft1, bgSoft2, bgSoft3, bgRight],
-                      stops: const [0.0, 0.28, 0.55, 0.80, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-          // ✅ Content respects safe areas
           SafeArea(
-            bottom: false,
-            child: Stack(
-              children: [
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(28, 0, 20, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const SizedBox(height: 120),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 460),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final h = constraints.maxHeight;
+
+                  // ✅ 여기 값만 바꾸면 "아래에서 몇 % 올라오게" 조절 가능
+                  final ctaBottom = h * 0.10; // 소셜 로그인 블록: 아래에서 10% 위
+                  final footerBottom = h * 0.005; // 맨 아래 문구: 아래에서 4% 위
+
+                  return Stack(
+                    children: [
+                      // ✅ Brand block (top-center)
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 90),
+                          child: Stack(
                             children: [
-                              BrandLogo(
-                                p: p,
-                                style: BrandLogoStyle.wordmark,
-                                scale: 1.7,
-                              ),
-                              const SizedBox(height: 90),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: IntrinsicWidth(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      // ✅ Right-aligned
-                                      AccentGradientText(
-                                        text: '흘러가는 생각이',
-                                        style: copyStyle?.copyWith(
-                                          fontSize:
-                                              (copyStyle?.fontSize ?? 16) + 2,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        accent: p.accent,
-                                        textAlign: TextAlign.right,
-                                      ),
-                                      const SizedBox(height: 60),
-
-                                      // ✅ Only this line is left-aligned, but its start matches the first line
-                                      Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: AccentGradientText(
-                                          text: '사라지기',
-                                          style: copyStyle?.copyWith(
-                                            fontSize:
-                                                (copyStyle?.fontSize ?? 16) + 2,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          accent: p.accent,
-                                          textAlign: TextAlign.left,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 50),
-
-                                      // ✅ Right-aligned with dot effect
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.baseline,
-                                          textBaseline: TextBaseline.alphabetic,
-                                          children: [
-                                            AccentGradientText(
-                                              text: '전에',
-                                              style: copyStyle?.copyWith(
-                                                fontSize:
-                                                    (copyStyle?.fontSize ??
-                                                        16) +
-                                                    2,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                              accent: p.accent,
-                                              textAlign: TextAlign.right,
-                                            ),
-                                            const SizedBox(width: 2),
-                                            Transform.translate(
-                                              offset: const Offset(0, 1),
-                                              child: Text(
-                                                '.',
-                                                style: copyStyle?.copyWith(
-                                                  color: Color.lerp(
-                                                    p.accent,
-                                                    Colors.black,
-                                                    0.25,
-                                                  ),
-                                                  fontWeight: FontWeight.w800,
-                                                  fontSize: 24,
-                                                  height: 1.0,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  const SizedBox(height: 40),
+                                  Image.asset(
+                                    'assets/icons/brand_logo.png',
+                                    width: 240,
+                                    fit: BoxFit.contain,
+                                    filterQuality: FilterQuality.high,
                                   ),
-                                ),
+                                ],
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: SizedBox(
-                    height: panelHeight,
-                    child: Container(
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(26),
-                          topRight: Radius.circular(26),
-                        ),
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.lerp(p.accent, Colors.white, 0.10)!,
-                            p.accent,
-                            Color.lerp(p.accent, Colors.black, 0.12)!,
-                          ],
-                          stops: const [0.0, 0.55, 1.0],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(
-                              isDark ? 0.28 : 0.10,
-                            ),
-                            blurRadius: 18,
-                            offset: const Offset(0, -6),
-                          ),
-                        ],
                       ),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: AnimatedBuilder(
-                                animation: _glassSheen,
-                                builder: (context, _) {
-                                  final w = MediaQuery.sizeOf(context).width;
-                                  final x =
-                                      (-w * 0.8) +
-                                      (w * 1.6 * _glassSheen.value);
-                                  return Opacity(
-                                    opacity: isDark ? 0.12 : 0.10,
-                                    child: Transform.translate(
-                                      offset: Offset(x, 0),
-                                      child: Transform.rotate(
-                                        angle: -0.22,
-                                        child: Align(
-                                          alignment: Alignment.center,
-                                          child: Container(
-                                            width: w * 0.38,
-                                            height: double.infinity,
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                begin: Alignment.centerLeft,
-                                                end: Alignment.centerRight,
-                                                colors: [
-                                                  Colors.transparent,
-                                                  Colors.white.withOpacity(
-                                                    0.18,
-                                                  ),
-                                                  Colors.white.withOpacity(
-                                                    0.32,
-                                                  ),
-                                                  Colors.white.withOpacity(
-                                                    0.18,
-                                                  ),
-                                                  Colors.transparent,
-                                                ],
-                                                stops: const [
-                                                  0.0,
-                                                  0.35,
-                                                  0.5,
-                                                  0.65,
-                                                  1.0,
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
+
+                      // ✅ Social login CTA block (positioned by % from bottom)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: ctaBottom,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(height: 20),
+                            AnimatedBuilder(
+                              animation: _arrowDy,
+                              builder: (context, child) {
+                                return Transform.translate(
+                                  offset: Offset(0, _arrowDy.value),
+                                  child: child,
+                                );
+                              },
+                              child: ShaderMask(
+                                shaderCallback: (Rect bounds) {
+                                  return const RadialGradient(
+                                    center: Alignment(0.55, -0.65), // 우상단 하이라이트
+                                    radius: 1.25,
+                                    colors: [
+                                      Color(0xFFCFEFFF),
+                                      Color(0xFF8FD3F7),
+                                      Color(0xFF5FAFE8),
+                                      Color(0xFF4A9FE0),
+                                    ],
+                                    stops: [0.0, 0.35, 0.70, 1.0],
+                                  ).createShader(bounds);
                                 },
+                                blendMode: BlendMode.srcIn,
+                                child: const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 50,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          ),
+                            const SizedBox(height: 30),
 
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                            child: Stack(
-                              children: [
-                                Align(
-                                  alignment: const Alignment(0.0, -0.9),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      SizedBox(
-                                        height: bubbleSlotHeight,
-                                        child: Center(
-                                          child: Transform.translate(
-                                            offset: Offset(bubbleX, 0),
-                                            child: InlineBubbleLabel(
-                                              text: bubbleText,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: bubbleToIconsGap),
+                            _SocialLoginButton(
+                              label: '카카오로 시작하기',
+                              iconAsset: 'assets/icons/kakao_logo.png',
+                              enabled: !_loading,
+                              background: const Color(0xFFFEE500),
+                              foreground: const Color(0xFF191600),
+                              onTap: _loading ? null : _loginWithKakao,
+                              badgeText: _recentProvider == ProviderKey.kakao
+                                  ? '최근'
+                                  : null,
+                            ),
+                            const SizedBox(height: 10),
 
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        children: [
-                                          _IconButton(
-                                            iconAsset:
-                                                'assets/icons/signin_with_kakao.png',
-                                            enabled: !_loading,
-                                            pressed:
-                                                _ctaPressed &&
-                                                _pressedKey ==
-                                                    ProviderKey.kakao,
-                                            onPressedStateChanged: (v) =>
-                                                _setPressed(
-                                                  ProviderKey.kakao,
-                                                  v,
-                                                ),
-                                            onTap: _loading
-                                                ? null
-                                                : _loginWithKakao,
-                                          ),
-                                          const SizedBox(width: 16),
-                                          _IconButton(
-                                            iconAsset:
-                                                'assets/icons/signin_with_naver.png',
-                                            enabled: !_loading,
-                                            pressed:
-                                                _ctaPressed &&
-                                                _pressedKey ==
-                                                    ProviderKey.naver,
-                                            onPressedStateChanged: (v) =>
-                                                _setPressed(
-                                                  ProviderKey.naver,
-                                                  v,
-                                                ),
-                                            onTap: _loading
-                                                ? null
-                                                : _loginWithNaver,
-                                          ),
-                                          const SizedBox(width: 16),
-                                          _IconButton(
-                                            iconAsset:
-                                                'assets/icons/signin_with_google.png',
-                                            enabled: !_loading,
-                                            pressed:
-                                                _ctaPressed &&
-                                                _pressedKey ==
-                                                    ProviderKey.google,
-                                            onPressedStateChanged: (v) =>
-                                                _setPressed(
-                                                  ProviderKey.google,
-                                                  v,
-                                                ),
-                                            onTap: _loading
-                                                ? null
-                                                : _loginWithGoogle,
-                                          ),
-                                        ],
-                                      ),
-                                      if (_error != null) ...[
-                                        const SizedBox(height: 10),
-                                        Text(
-                                          _error!,
-                                          textAlign: TextAlign.center,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                fontSize:
-                                                    13, // match InlineBubbleLabel text size
-                                                color: Colors.white.withOpacity(
-                                                  0.88,
-                                                ),
-                                                fontWeight: FontWeight.w600,
-                                                height: 1.35,
-                                              ),
-                                        ),
-                                      ],
-                                    ],
+                            _SocialLoginButton(
+                              label: '네이버로 시작하기',
+                              iconAsset: 'assets/icons/naver_logo.png',
+                              enabled: !_loading,
+                              background: const Color(0xFF03A94D),
+                              foreground: Colors.white,
+                              onTap: _loading ? null : _loginWithNaver,
+                              badgeText: _recentProvider == ProviderKey.naver
+                                  ? '최근'
+                                  : null,
+                            ),
+                            const SizedBox(height: 10),
+
+                            _SocialLoginButton(
+                              label: '구글로 시작하기',
+                              iconAsset: 'assets/icons/google_logo.png',
+                              enabled: !_loading,
+                              background: Colors.white,
+                              foreground: const Color(0xFF1A1A1A),
+                              onTap: _loading ? null : _loginWithGoogle,
+                              badgeText: _recentProvider == ProviderKey.google
+                                  ? '최근'
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // ✅ Footer (positioned by % from bottom)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: footerBottom,
+                        child: Text(
+                          '© ${DateTime.now().year} bluelog. All rights reserved.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: const Color(0xFF5FAFE8).withOpacity(0.7),
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                      ),
+
+                      // ✅ Error message stays above footer, but below CTA (optional)
+                      if (_error != null)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: footerBottom + 34,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Text(
+                              _error!,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    fontSize: 13,
+                                    color: isDark
+                                        ? Colors.white.withOpacity(0.80)
+                                        : Colors.black.withOpacity(0.55),
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.35,
                                   ),
-                                ),
-
-                                Align(
-                                  alignment: Alignment.bottomCenter,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 30),
-                                    child: Text(
-                                      '© ${DateTime.now().year} bluelog. All rights reserved.',
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: Colors.white.withOpacity(
-                                              0.82,
-                                            ),
-                                            fontWeight: FontWeight.w500,
-                                            letterSpacing: 0.1,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                        ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -719,51 +453,140 @@ class _LoginPageState extends State<LoginPage>
   }
 }
 
-/// 페이지 내부에서만 쓰는 “아이콘 표시 + 눌림 피드백”
-class _IconButton extends StatelessWidget {
+class _SocialLoginButton extends StatelessWidget {
+  final String label;
   final String iconAsset;
   final bool enabled;
-  final bool pressed;
-  final ValueChanged<bool> onPressedStateChanged;
+  final Color background;
+  final Color foreground;
   final VoidCallback? onTap;
 
-  const _IconButton({
+  /// 최근 로그인 배지 (ex: '최근'), 없으면 null
+  final String? badgeText;
+
+  /// 로고 PNG 여백 보정을 위한 X축 미세 이동 (Google용)
+  final double iconNudgeX;
+
+  const _SocialLoginButton({
+    required this.label,
     required this.iconAsset,
     required this.enabled,
-    required this.pressed,
-    required this.onPressedStateChanged,
+    required this.background,
+    required this.foreground,
     required this.onTap,
+    this.badgeText,
+    this.iconNudgeX = 0,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) {
-        if (!enabled || onTap == null) return;
-        onPressedStateChanged(true);
-      },
-      onTapUp: (_) {
-        if (!enabled || onTap == null) return;
-        onPressedStateChanged(false);
-      },
-      onTapCancel: () {
-        if (!enabled || onTap == null) return;
-        onPressedStateChanged(false);
-      },
-      onTap: onTap,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 120),
-        opacity: !enabled ? 0.55 : (pressed ? 0.55 : 1.0),
-        child: SizedBox(
-          width: 64,
-          height: 64,
-          child: Center(
-            child: Image.asset(
-              iconAsset,
-              width: 57,
-              height: 57,
-              fit: BoxFit.contain,
+    final radius = BorderRadius.circular(14);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 120),
+      opacity: enabled ? 1.0 : 0.55,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          boxShadow: [
+            // 메인 소프트 그림자 (강도 감소)
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.14 : 0.05),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+            // 하단 퍼짐 그림자 (존재감만 유지)
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.08 : 0.03),
+              blurRadius: 22,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: radius,
+          child: InkWell(
+            onTap: enabled ? onTap : null,
+            borderRadius: radius,
+            child: Ink(
+              height: 54,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: background,
+                borderRadius: radius,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    /// ✅ 중앙 컨텐츠 (배지와 완전히 분리)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: Center(
+                            child: Transform.translate(
+                              offset: Offset(iconNudgeX, 0),
+                              child: Image.asset(
+                                iconAsset,
+                                width: 20,
+                                height: 20,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(
+                                color: foreground,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.2,
+                              ),
+                        ),
+                      ],
+                    ),
+
+                    /// ✅ 최근 로그인 배지 (레이아웃에 영향 없음)
+                    if (badgeText != null)
+                      Positioned(
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(
+                              isDark ? 0.20 : 0.06,
+                            ),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            badgeText!,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: foreground.withOpacity(
+                                    isDark ? 0.92 : 0.78,
+                                  ),
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.1,
+                                ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
