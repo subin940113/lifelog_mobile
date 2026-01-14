@@ -298,7 +298,7 @@ class _MainPageState extends State<MainPage> {
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
                         '불러오는 중…',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: p.muted,
                           fontWeight: FontWeight.w500,
                           height: 1.4,

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -285,14 +286,14 @@ class _LoginPageState extends State<LoginPage>
         children: [
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final h = constraints.maxHeight;
 
                   // ✅ 여기 값만 바꾸면 "아래에서 몇 % 올라오게" 조절 가능
                   final ctaBottom = h * 0.10; // 소셜 로그인 블록: 아래에서 10% 위
-                  final footerBottom = h * 0.005; // 맨 아래 문구: 아래에서 4% 위
+                  final footerBottom = 0.0; // 맨 아래 문구: SafeArea 하단에 최대한 붙임
 
                   return Stack(
                     children: [
@@ -307,11 +308,47 @@ class _LoginPageState extends State<LoginPage>
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   const SizedBox(height: 40),
-                                  Image.asset(
-                                    'assets/icons/brand_logo.png',
+                                  SizedBox(
                                     width: 240,
-                                    fit: BoxFit.contain,
-                                    filterQuality: FilterQuality.high,
+                                    height: 240,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        Image.asset(
+                                          'assets/icons/brand_logo.png',
+                                          width: 240,
+                                          height: 240,
+                                          fit: BoxFit.contain,
+                                          filterQuality: FilterQuality.high,
+                                        ),
+                                        // ✅ 우하단 원 가장자리를 따라 "bluelog" (B안: 실제 원호 텍스트)
+                                        IgnorePointer(
+                                          child: CustomPaint(
+                                            size: const Size(240, 240),
+                                            painter: _ArcTextPainter(
+                                              text: 'bluelog',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w500,
+                                                letterSpacing: -0.9,
+                                                color: const Color(
+                                                  0xFF5FAFE8,
+                                                ).withOpacity(0.55),
+                                              ),
+                                              // 이미지에 투명 패딩이 있어도 "원 위"에 보이도록 살짝 위로 보정
+                                              centerYOffset: -8,
+                                              centerXOffset: 6,
+                                              // 240 기준: 원 밖으로 내려가지 않게 충분히 안쪽으로
+                                              radius: 100,
+                                              // 우하단(4~5시) 쪽에서 오른쪽으로 읽히게: 시작 각을 끝점으로 두고, sweep를 음수로
+                                              startAngle: 1.23,
+                                              // 글자 길이에 맞춘 원호 폭 (방향 반전)
+                                              sweepAngle: -0.65,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -359,7 +396,7 @@ class _LoginPageState extends State<LoginPage>
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 30),
+                            const SizedBox(height: 40),
 
                             _SocialLoginButton(
                               label: '카카오로 시작하기',
@@ -412,35 +449,12 @@ class _LoginPageState extends State<LoginPage>
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
+                                fontSize: 11,
                                 color: const Color(0xFF5FAFE8).withOpacity(0.7),
                                 fontWeight: FontWeight.w500,
                               ),
                         ),
                       ),
-
-                      // ✅ Error message stays above footer, but below CTA (optional)
-                      if (_error != null)
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: footerBottom + 34,
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: Text(
-                              _error!,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    fontSize: 13,
-                                    color: isDark
-                                        ? Colors.white.withOpacity(0.80)
-                                        : Colors.black.withOpacity(0.55),
-                                    fontWeight: FontWeight.w600,
-                                    height: 1.35,
-                                  ),
-                            ),
-                          ),
-                        ),
                     ],
                   );
                 },
@@ -592,5 +606,118 @@ class _SocialLoginButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _ArcTextPainter extends CustomPainter {
+  final String text;
+  final TextStyle style;
+  final double radius;
+  final double startAngle; // radians (0=right, pi/2=down)
+  final double sweepAngle; // radians
+  final double centerYOffset;
+  final double centerXOffset;
+
+  _ArcTextPainter({
+    required this.text,
+    required this.style,
+    required this.radius,
+    required this.startAngle,
+    required this.sweepAngle,
+    this.centerYOffset = 0,
+    this.centerXOffset = 0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(
+      size.width / 2 + centerXOffset,
+      size.height / 2 + centerYOffset,
+    );
+
+    // Measure each glyph width so spacing feels natural on the arc.
+    final glyphPainters = <TextPainter>[];
+    final glyphWidths = <double>[];
+    double totalWidth = 0;
+
+    for (final rune in text.runes) {
+      final ch = String.fromCharCode(rune);
+      final tp = TextPainter(
+        text: TextSpan(text: ch, style: style),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      glyphPainters.add(tp);
+      glyphWidths.add(tp.width);
+      totalWidth += tp.width;
+    }
+
+    double angle = startAngle;
+
+    for (int i = 0; i < glyphPainters.length; i++) {
+      final w = glyphWidths[i];
+      final portion = (totalWidth == 0) ? 0 : (w / totalWidth);
+      final delta = sweepAngle * portion;
+
+      final mid = angle + delta / 2;
+
+      final pos = Offset(
+        center.dx + radius * math.cos(mid),
+        center.dy + radius * math.sin(mid),
+      );
+
+      canvas.save();
+      canvas.translate(pos.dx, pos.dy);
+
+      // Tangent rotation so glyphs follow the circle.
+      // If the glyph would be upside down (on the lower half), flip by π to keep it readable.
+      var rot = mid + math.pi / 2;
+
+      // Normalize to [0, 2π)
+      rot = rot % (2 * math.pi);
+
+      // When the tangent points left (i.e., upside-down text), flip.
+      if (rot > math.pi / 2 && rot < 3 * math.pi / 2) {
+        rot += math.pi;
+      }
+
+      canvas.rotate(rot);
+
+      final tp = glyphPainters[i];
+      final ch = text[i];
+
+      // 글자별 미세 보정: g는 위로, b는 아래로
+      double nudgeY = 0.0;
+      if (ch == 'g') {
+        nudgeY = -1.5;
+      } else if (ch == 'b') {
+        nudgeY = 1.5;
+      } else if (ch == 'l') {
+        nudgeY = 1.2;
+      } else if (ch == 'u') {
+        nudgeY = 1.2;
+      } else if (ch == 'e') {
+        nudgeY = 1.35;
+      }
+
+      tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2 + nudgeY));
+
+      canvas.restore();
+      // 'e' 뒤에만 살짝 간격을 추가 (우측 여백)
+      final extraAfter = (ch == 'e')
+          ? -0.015
+          : 0.0; // radians, 필요시 0.02~0.05 조정
+      angle += delta + extraAfter;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ArcTextPainter oldDelegate) {
+    return oldDelegate.text != text ||
+        oldDelegate.style != style ||
+        oldDelegate.radius != radius ||
+        oldDelegate.startAngle != startAngle ||
+        oldDelegate.sweepAngle != sweepAngle ||
+        oldDelegate.centerYOffset != centerYOffset ||
+        oldDelegate.centerXOffset != centerXOffset;
   }
 }
