@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:lifelog_mobile/api/auth_api_client.dart';
 import 'package:lifelog_mobile/models/ai_insight_item.dart';
 
@@ -40,12 +41,27 @@ class InsightApiClient {
 
     final map = await _api.getJson(qs.toString());
 
-    final list = (map['insights'] as List?) ?? const [];
+    // Some servers return {insights:[...]} while others return {items:[...]}.
+    final dynamic rawList = map['insights'] ?? map['items'] ?? const [];
+    final List<dynamic> list = rawList is List ? rawList : const <dynamic>[];
+
+    debugPrint(
+      '[InsightApiClient] getInsightsPage keys=${map.keys.toList()} listLen=${list.length} nextCursor=${map['nextCursor']}',
+    );
+
+    // Map API model -> app model.
+    // NOTE: Avoid aggressive filtering here; it can hide valid server data when
+    // title/body are optional or generated asynchronously.
     final items = list
-        .whereType<Map>()
-        .map((m) => AiInsightItem.fromJson(m.cast<String, dynamic>()))
-        .where((x) => x.title.trim().isNotEmpty && x.body.trim().isNotEmpty)
-        .toList();
+        .whereType<Map<String, dynamic>>()
+        .map((m) => AiInsightItem.fromJson(m))
+        .toList(growable: false);
+
+    if (items.isEmpty && list.isNotEmpty) {
+      debugPrint(
+        '[InsightApiClient] mapping produced 0 items; firstRawType=${list.first.runtimeType} firstRaw=${list.first}',
+      );
+    }
 
     final nextCursor = (map['nextCursor'] as String?)?.trim();
     return InsightsPage(

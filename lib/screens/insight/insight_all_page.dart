@@ -4,7 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/config/api_config.dart';
 import 'package:lifelog_mobile/api/auth_api_client.dart';
-import 'package:lifelog_mobile/api/home_api_client.dart';
+import 'package:lifelog_mobile/api/insight_api_client.dart';
+import 'package:lifelog_mobile/api/insight_feedback_api_client.dart';
 
 import 'widgets/insight_detail_sheet.dart';
 
@@ -33,11 +34,15 @@ class InsightsAllPage extends StatefulWidget {
 class _InsightsAllPageState extends State<InsightsAllPage> {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   late final AuthApiClient _authApi;
-  late final HomeApiClient _homeApi;
+  late final InsightApiClient _insightApi;
+  late final InsightFeedbackApiClient _feedbackApi;
+
+  String? _cursor;
+  bool _hasMore = true;
 
   bool _loading = false;
   String? _error;
-  List<InsightPreviewUi> _items = const [];
+  List<InsightPreviewUi> _items = <InsightPreviewUi>[];
 
   @override
   void initState() {
@@ -47,32 +52,53 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
       storage: _secureStorage,
       onUnauthorized: widget.onLogout,
     );
-    _homeApi = HomeApiClient(_authApi);
+    _insightApi = InsightApiClient(_authApi);
+    _feedbackApi = InsightFeedbackApiClient(_authApi);
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool loadMore = false}) async {
     if (_loading) return;
+    if (loadMore && !_hasMore) return;
+
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      final map = await _homeApi.getHome(limitLogs: 0, limitInsights: 50);
+      final page = await _insightApi.getInsightsPage(limit: 50, cursor: loadMore ? _cursor : null);
+      debugPrint('[InsightsAllPage] _load(loadMore=$loadMore) page.items=${page.items.length} nextCursor=${page.nextCursor} hasMore=${page.hasMore}');
 
-      final insightsRaw = (map['insights'] as List?) ?? const [];
-      final items = insightsRaw
-          .whereType<Map>()
-          .map((m) => InsightPreviewUi.fromJson(m.cast<String, dynamic>()))
-          .toList();
+      // Map API model -> UI model (keep id)
+      final nextItems = page.items
+          .map<InsightPreviewUi>((it) => InsightPreviewUi(
+                id: it.id,
+                kind: _kindFromServer(it.kind),
+                title: it.title,
+                body: it.body,
+                evidence: it.evidence,
+              ))
+          .toList(growable: false);
+      debugPrint('[InsightsAllPage] mapped nextItems=${nextItems.length}');
+      if (nextItems.isNotEmpty) {
+        debugPrint('[InsightsAllPage] firstItem id=${nextItems.first.id} kind=${nextItems.first.kind} title=${nextItems.first.title}');
+      }
 
       if (!mounted) return;
       setState(() {
-        _items = items;
+        if (loadMore) {
+          _items = [..._items, ...nextItems];
+        } else {
+          _items = nextItems;
+        }
+        _cursor = page.nextCursor;
+        _hasMore = page.hasMore;
         _loading = false;
+        debugPrint('[InsightsAllPage] setState done: _items=${_items.length} _cursor=$_cursor _hasMore=$_hasMore');
       });
     } catch (_) {
+      debugPrint('[InsightsAllPage] _load failed: $loadMore');
       if (!mounted) return;
       setState(() {
         _error = '불러오지 못했어요';
@@ -82,7 +108,12 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
   }
 
   void _openDetail(InsightPreviewUi item) {
-    showInsightDetailSheet(context, p: widget.p, item: item);
+    showInsightDetailSheet(
+      context,
+      p: widget.p,
+      item: item,
+      feedbackApi: _feedbackApi,
+    );
   }
 
   String _labelFor(InsightKindUi kind) {
@@ -104,9 +135,31 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
     }
   }
 
+  InsightKindUi _kindFromServer(String raw) {
+    switch (raw.trim().toUpperCase()) {
+      case 'TENDENCY':
+        return InsightKindUi.tendency;
+      case 'PATTERN':
+        return InsightKindUi.pattern;
+      case 'HIGHLIGHT':
+        return InsightKindUi.highlight;
+      case 'WARNING':
+        return InsightKindUi.warning;
+      case 'REFLECTION':
+        return InsightKindUi.reflection;
+      case 'CONTRAST':
+        return InsightKindUi.contrast;
+      case 'QUESTION':
+        return InsightKindUi.question;
+      default:
+        return InsightKindUi.pattern;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = widget.p;
+    debugPrint('[InsightsAllPage] build: _items=${_items.length} _loading=$_loading _error=$_error _hasMore=$_hasMore');
 
     return Scaffold(
       backgroundColor: widget.bg,
@@ -125,7 +178,19 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
                 children: [
-                  if (_loading)
+                  // 1) If we already have items, always render them first.
+                  if (_items.isNotEmpty)
+                    for (int i = 0; i < _items.length; i++) ...[
+                      _InsightRow(
+                        p: p,
+                        item: _items[i],
+                        label: _labelFor(_items[i].kind),
+                        onTap: () => _openDetail(_items[i]),
+                      ),
+                      if (i != _items.length - 1) const SizedBox(height: 10),
+                    ]
+                  // 2) Otherwise render empty/loading/error states.
+                  else if (_loading)
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
@@ -147,7 +212,7 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
                         ),
                       ),
                     )
-                  else if (_items.isEmpty)
+                  else
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
@@ -157,17 +222,25 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                    )
-                  else
-                    for (int i = 0; i < _items.length; i++) ...[
-                      _InsightRow(
-                        p: p,
-                        item: _items[i],
-                        label: _labelFor(_items[i].kind),
-                        onTap: () => _openDetail(_items[i]),
+                    ),
+                  if (!_loading && _hasMore) ...[
+                    const SizedBox(height: 14),
+                    InkWell(
+                      onTap: () => _load(loadMore: true),
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Text(
+                          '더 불러오기',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: p.muted,
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
                       ),
-                      if (i != _items.length - 1) const SizedBox(height: 10),
-                    ],
+                    ),
+                  ],
                 ],
               ),
             ),
