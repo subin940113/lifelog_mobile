@@ -449,7 +449,6 @@ class _LoginPageState extends State<LoginPage>
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                fontSize: 11,
                                 color: const Color(0xFF5FAFE8).withOpacity(0.7),
                                 fontWeight: FontWeight.w500,
                               ),
