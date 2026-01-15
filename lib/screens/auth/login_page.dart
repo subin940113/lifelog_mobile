@@ -321,29 +321,20 @@ class _LoginPageState extends State<LoginPage>
                                           fit: BoxFit.contain,
                                           filterQuality: FilterQuality.high,
                                         ),
-                                        // ✅ 우하단 원 가장자리를 따라 "bluelog" (B안: 실제 원호 텍스트)
-                                        IgnorePointer(
-                                          child: CustomPaint(
-                                            size: const Size(240, 240),
-                                            painter: _ArcTextPainter(
-                                              text: 'bluelog',
+                                        // ✅ 우하단 가장자리 느낌: 연결된 단일 텍스트 + 살짝 기울임
+                                        Positioned(
+                                          right: 55,
+                                          bottom: 26,
+                                          child: Transform.rotate(
+                                            angle: -0.49, // 살짝 기울임 (원하면 -0.45 ~ -0.70 사이 조정)
+                                            child: Text(
+                                              'bluelog',
                                               style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w500,
-                                                letterSpacing: -0.9,
-                                                color: const Color(
-                                                  0xFF5FAFE8,
-                                                ).withOpacity(0.55),
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                letterSpacing: 0.8,
+                                                color: const Color(0xFF5FAFE8).withOpacity(0.55),
                                               ),
-                                              // 이미지에 투명 패딩이 있어도 "원 위"에 보이도록 살짝 위로 보정
-                                              centerYOffset: -8,
-                                              centerXOffset: 6,
-                                              // 240 기준: 원 밖으로 내려가지 않게 충분히 안쪽으로
-                                              radius: 100,
-                                              // 우하단(4~5시) 쪽에서 오른쪽으로 읽히게: 시작 각을 끝점으로 두고, sweep를 음수로
-                                              startAngle: 1.23,
-                                              // 글자 길이에 맞춘 원호 폭 (방향 반전)
-                                              sweepAngle: -0.65,
                                             ),
                                           ),
                                         ),
