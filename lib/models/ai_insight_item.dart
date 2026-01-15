@@ -1,4 +1,5 @@
 class AiInsightItem {
+  final int id;
   final String kind; // TENDENCY/PATTERN/HIGHLIGHT/WARNING/REFLECTION etc
   final String title;
   final String body;
@@ -6,6 +7,7 @@ class AiInsightItem {
   final String? keyword; // optional grouping key
 
   const AiInsightItem({
+    required this.id,
     required this.kind,
     required this.title,
     required this.body,
@@ -15,6 +17,7 @@ class AiInsightItem {
 
   factory AiInsightItem.fromJson(Map<String, dynamic> m) {
     return AiInsightItem(
+      id: (m['id'] as num?)?.toInt() ?? 0,
       kind: (m['kind'] as String?) ?? 'TENDENCY',
       title: (m['title'] as String?) ?? '',
       body: (m['body'] as String?) ?? '',
