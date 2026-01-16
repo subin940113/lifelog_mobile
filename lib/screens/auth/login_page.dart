@@ -292,7 +292,7 @@ class _LoginPageState extends State<LoginPage>
                   final h = constraints.maxHeight;
 
                   // ✅ 여기 값만 바꾸면 "아래에서 몇 % 올라오게" 조절 가능
-                  final ctaBottom = h * 0.10; // 소셜 로그인 블록: 아래에서 10% 위
+                  final ctaBottom = h * 0.10; // 소셜 로그인 블록: 아래에서 14% 위 (로고-화살표 간격 축소)
                   final footerBottom = 0.0; // 맨 아래 문구: SafeArea 하단에 최대한 붙임
 
                   return Stack(
@@ -315,7 +315,7 @@ class _LoginPageState extends State<LoginPage>
                                       alignment: Alignment.center,
                                       children: [
                                         Image.asset(
-                                          'assets/icons/brand_logo.png',
+                                          'assets/icons/brand_logo_stroke.png',
                                           width: 240,
                                           height: 240,
                                           fit: BoxFit.contain,
@@ -324,16 +324,16 @@ class _LoginPageState extends State<LoginPage>
                                         // ✅ 우하단 가장자리 느낌: 연결된 단일 텍스트 + 살짝 기울임
                                         Positioned(
                                           right: 55,
-                                          bottom: 26,
+                                          bottom: 23,
                                           child: Transform.rotate(
-                                            angle: -0.49, // 살짝 기울임 (원하면 -0.45 ~ -0.70 사이 조정)
+                                            angle: -0.46, // 살짝 기울임 (원하면 -0.45 ~ -0.70 사이 조정)
                                             child: Text(
                                               'bluelog',
                                               style: TextStyle(
                                                 fontSize: 11,
-                                                fontWeight: FontWeight.w600,
+                                                fontWeight: FontWeight.w500,
                                                 letterSpacing: 0.8,
-                                                color: const Color(0xFF5FAFE8).withOpacity(0.55),
+                                                color: const Color(0xFF224D86).withOpacity(0.8),
                                               ),
                                             ),
                                           ),
@@ -356,7 +356,7 @@ class _LoginPageState extends State<LoginPage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 15),
                             AnimatedBuilder(
                               animation: _arrowDy,
                               builder: (context, child) {
@@ -365,29 +365,15 @@ class _LoginPageState extends State<LoginPage>
                                   child: child,
                                 );
                               },
-                              child: ShaderMask(
-                                shaderCallback: (Rect bounds) {
-                                  return const RadialGradient(
-                                    center: Alignment(0.55, -0.65), // 우상단 하이라이트
-                                    radius: 1.25,
-                                    colors: [
-                                      Color(0xFFCFEFFF),
-                                      Color(0xFF8FD3F7),
-                                      Color(0xFF5FAFE8),
-                                      Color(0xFF4A9FE0),
-                                    ],
-                                    stops: [0.0, 0.35, 0.70, 1.0],
-                                  ).createShader(bounds);
-                                },
-                                blendMode: BlendMode.srcIn,
-                                child: const Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                  size: 50,
-                                  color: Colors.white,
-                                ),
+                              child: Image.asset(
+                                'assets/icons/chevron.png',
+                                width: 28,
+                                height: 28,
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.high,
                               ),
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 50),
 
                             _SocialLoginButton(
                               label: '카카오로 시작하기',
@@ -440,7 +426,7 @@ class _LoginPageState extends State<LoginPage>
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
-                                color: const Color(0xFF5FAFE8).withOpacity(0.7),
+                                color: const Color(0xFF224D86).withOpacity(0.8),
                                 fontWeight: FontWeight.w500,
                               ),
                         ),
