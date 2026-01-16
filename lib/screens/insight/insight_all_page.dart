@@ -68,7 +68,6 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
 
     try {
       final page = await _insightApi.getInsightsPage(limit: 50, cursor: loadMore ? _cursor : null);
-      debugPrint('[InsightsAllPage] _load(loadMore=$loadMore) page.items=${page.items.length} nextCursor=${page.nextCursor} hasMore=${page.hasMore}');
 
       // Map API model -> UI model (keep id)
       final nextItems = page.items
@@ -80,10 +79,6 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
                 evidence: it.evidence,
               ))
           .toList(growable: false);
-      debugPrint('[InsightsAllPage] mapped nextItems=${nextItems.length}');
-      if (nextItems.isNotEmpty) {
-        debugPrint('[InsightsAllPage] firstItem id=${nextItems.first.id} kind=${nextItems.first.kind} title=${nextItems.first.title}');
-      }
 
       if (!mounted) return;
       setState(() {
@@ -95,10 +90,8 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
         _cursor = page.nextCursor;
         _hasMore = page.hasMore;
         _loading = false;
-        debugPrint('[InsightsAllPage] setState done: _items=${_items.length} _cursor=$_cursor _hasMore=$_hasMore');
       });
     } catch (_) {
-      debugPrint('[InsightsAllPage] _load failed: $loadMore');
       if (!mounted) return;
       setState(() {
         _error = '불러오지 못했어요';
@@ -159,7 +152,6 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
   @override
   Widget build(BuildContext context) {
     final p = widget.p;
-    debugPrint('[InsightsAllPage] build: _items=${_items.length} _loading=$_loading _error=$_error _hasMore=$_hasMore');
 
     return Scaffold(
       backgroundColor: widget.bg,
