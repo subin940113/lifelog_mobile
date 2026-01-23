@@ -15,6 +15,8 @@ import 'push/push_intent.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
+  debugPrint('[PUSH] background message received: ${message.messageId}');
+  debugPrint('[PUSH] data: ${message.data}');
 }
 
 Future<void> main() async {
@@ -96,6 +98,17 @@ class _MyAppState extends State<MyApp> {
       _handlePushTap(initial);
     }
 
+    // 포그라운드에서 메시지 수신 (앱이 열려있을 때)
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      debugPrint('[PUSH] foreground message received: ${message.messageId}');
+      debugPrint('[PUSH] notification: ${message.notification?.title}');
+      debugPrint('[PUSH] data: ${message.data}');
+      
+      // 포그라운드 메시지도 처리
+      _handlePushTap(message);
+    });
+
+    // 앱이 백그라운드에서 열릴 때
     FirebaseMessaging.onMessageOpenedApp.listen(_handlePushTap);
   }
 
