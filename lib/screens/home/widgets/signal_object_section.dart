@@ -121,7 +121,9 @@ class _SignalObjectSectionState extends State<SignalObjectSection> {
               .toList(growable: false);
 
     // ✅ insightText가 있는 물방울만 표시
-    final filteredDrops = drops.where((d) => d.insightText?.trim().isNotEmpty == true).toList(growable: false);
+    final filteredDrops = drops
+        .where((d) => d.insightText?.trim().isNotEmpty == true)
+        .toList(growable: false);
 
     final totalCandy = objects?.totalCandyCount ?? 0;
     final effectiveTop = widget.top;

@@ -13,11 +13,7 @@ class HandDrawnWaveDivider extends StatelessWidget {
   /// 파동 패턴 변형을 위한 시드값 (0~2 사이의 값)
   final int waveSeed;
 
-  const HandDrawnWaveDivider({
-    super.key,
-    this.height = 20,
-    this.waveSeed = 0,
-  });
+  const HandDrawnWaveDivider({super.key, this.height = 20, this.waveSeed = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -107,15 +103,20 @@ class _HandDrawnWavePainter extends CustomPainter {
       final t = i / numPoints;
       final x = -bleed + t * drawWidth;
 
-      final wavePhase = t * math.pi * 2.0 * (drawWidth / baseWavelength) + phaseOffset;
+      final wavePhase =
+          t * math.pi * 2.0 * (drawWidth / baseWavelength) + phaseOffset;
       final freqMod =
-          1.0 + (0.08 + waveSeed * 0.02) * math.sin(t * math.pi * 2.0 + seedOffset);
+          1.0 +
+          (0.08 + waveSeed * 0.02) * math.sin(t * math.pi * 2.0 + seedOffset);
       final ampMod =
-          1.0 + (0.12 + waveSeed * 0.03) * math.sin(t * math.pi * 1.5 + seedOffset * 0.7);
+          1.0 +
+          (0.12 + waveSeed * 0.03) *
+              math.sin(t * math.pi * 1.5 + seedOffset * 0.7);
 
       final baseWave = math.sin(wavePhase * freqMod);
       final detailWave =
-          (0.22 + waveSeed * 0.05) * math.sin(wavePhase * (2.0 + waveSeed * 0.1));
+          (0.22 + waveSeed * 0.05) *
+          math.sin(wavePhase * (2.0 + waveSeed * 0.1));
 
       final y = centerY + baseAmplitude * baseWave * ampMod + detailWave;
       points.add(Offset(x, y));
@@ -142,7 +143,7 @@ class _HandDrawnWavePainter extends CustomPainter {
       }
     }
 
-/*
+    /*
     // 아래쪽만 그림자 (카드 경계처럼 보이도록)
     final clipBelow = Path()
       ..addPath(path, Offset.zero)

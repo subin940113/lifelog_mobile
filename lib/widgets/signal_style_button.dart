@@ -44,9 +44,7 @@ class SignalStyleButton extends StatelessWidget {
           children: [
             CustomPaint(
               size: Size(size, size),
-              painter: _SignalButtonPainter(
-                isDark: isDark,
-              ),
+              painter: _SignalButtonPainter(isDark: isDark),
             ),
             if (iconWidget != null)
               SizedBox(
@@ -55,11 +53,7 @@ class SignalStyleButton extends StatelessWidget {
                 child: Center(child: iconWidget!),
               )
             else
-              Icon(
-                icon,
-                color: iconColor,
-                size: size * 0.5,
-              ),
+              Icon(icon, color: iconColor, size: size * 0.5),
           ],
         ),
       ),
@@ -70,9 +64,7 @@ class SignalStyleButton extends StatelessWidget {
 class _SignalButtonPainter extends CustomPainter {
   final bool isDark;
 
-  _SignalButtonPainter({
-    required this.isDark,
-  });
+  _SignalButtonPainter({required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -180,8 +172,8 @@ class _SignalButtonPainter extends CustomPainter {
       final rDot = 2.6 + (i % 4) * 1.1;
       final o = 0.020 + (i % 3) * 0.008;
 
-      tex.color =
-          (i.isEven ? Colors.white : const Color(0xFF8BC9F3)).withOpacity(o);
+      tex.color = (i.isEven ? Colors.white : const Color(0xFF8BC9F3))
+          .withOpacity(o);
       canvas.drawCircle(Offset(center.dx + dx, center.dy + dy), rDot, tex);
     }
 

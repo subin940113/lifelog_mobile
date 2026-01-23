@@ -40,7 +40,10 @@ class KeywordInsightSheet extends StatelessWidget {
         );
       },
       transitionBuilder: (ctx, anim, sec, child) {
-        final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+        final curved = CurvedAnimation(
+          parent: anim,
+          curve: Curves.easeOutCubic,
+        );
         return FadeTransition(
           opacity: curved,
           child: ScaleTransition(
@@ -79,11 +82,11 @@ class KeywordInsightSheet extends StatelessWidget {
                     keywordKey,
                     textAlign: TextAlign.right,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: p.ink,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.4,
-                          height: 1.12,
-                        ),
+                      color: p.ink,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.4,
+                      height: 1.12,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Container(
@@ -103,7 +106,10 @@ class KeywordInsightSheet extends StatelessWidget {
           // Body (scrollable with max height)
           ConstrainedBox(
             constraints: BoxConstraints(
-              maxHeight: (MediaQuery.of(context).size.height * 0.55).clamp(220.0, 420.0),
+              maxHeight: (MediaQuery.of(context).size.height * 0.55).clamp(
+                220.0,
+                420.0,
+              ),
             ),
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -114,11 +120,11 @@ class KeywordInsightSheet extends StatelessWidget {
                 softWrap: true,
                 textAlign: TextAlign.start,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: p.ink.withOpacity(0.88),
-                      height: 1.62,
-                      letterSpacing: -0.1,
-                      fontSize: 16.5,
-                    ),
+                  color: p.ink.withOpacity(0.88),
+                  height: 1.62,
+                  letterSpacing: -0.1,
+                  fontSize: 16.5,
+                ),
               ),
             ),
           ),
@@ -132,10 +138,7 @@ class _ModalScaffold extends StatelessWidget {
   final Palette p;
   final Widget child;
 
-  const _ModalScaffold({
-    required this.p,
-    required this.child,
-  });
+  const _ModalScaffold({required this.p, required this.child});
 
   @override
   Widget build(BuildContext context) {

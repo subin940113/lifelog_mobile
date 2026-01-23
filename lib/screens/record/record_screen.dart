@@ -454,8 +454,10 @@ class _RecordScreenState extends State<RecordScreen> {
       });
     } else {
       setState(() {
+        // User may have edited the text while STT was running.
+        // Do not overwrite the editor content with stale committed/partial merge.
+        _committedText = _controller.text;
         _partialText = '';
-        _applyDisplayTextToEditor();
       });
     }
 
@@ -644,6 +646,9 @@ class _RecordScreenState extends State<RecordScreen> {
                       child: TextField(
                         focusNode: _editorFocus,
                         controller: _controller,
+                        onTap: () {
+                          if (_isListening) _stopListening();
+                        },
                         keyboardType: TextInputType.multiline,
                         maxLines: null,
                         expands: true,
@@ -656,7 +661,11 @@ class _RecordScreenState extends State<RecordScreen> {
                           border: InputBorder.none,
                           hintText: '예) 아침에 일찍 일어나 산책을 했다. 커피를 마시며 하루를 정리했다…',
                           hintStyle: Theme.of(context).textTheme.bodyLarge
-                              ?.copyWith(color: p.muted, height: 1.6, fontSize: 20),
+                              ?.copyWith(
+                                color: p.muted,
+                                height: 1.6,
+                                fontSize: 20,
+                              ),
                         ),
                       ),
                     ),
@@ -679,7 +688,8 @@ class _RecordScreenState extends State<RecordScreen> {
                       size: 72,
                       iconWidget: Text(
                         '확인',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
                               color: isDark
                                   ? Colors.white.withOpacity(0.86)
                                   : Colors.white,

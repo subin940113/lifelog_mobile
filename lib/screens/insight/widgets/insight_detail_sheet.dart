@@ -3,11 +3,12 @@ import 'package:lifelog_mobile/theme/palette.dart';
 import 'package:lifelog_mobile/widgets/glass_dot.dart';
 import 'package:lifelog_mobile/api/insight_feedback_api_client.dart' as fb_api;
 
-typedef InsightFeedbackSubmit = Future<void> Function(
-  InsightFeedbackVote vote, {
-  InsightFeedbackReason? reason,
-  String? comment,
-});
+typedef InsightFeedbackSubmit =
+    Future<void> Function(
+      InsightFeedbackVote vote, {
+      InsightFeedbackReason? reason,
+      String? comment,
+    });
 
 enum InsightFeedbackVote { like, dislike }
 
@@ -32,7 +33,8 @@ enum InsightKindUi {
 
 // In-memory cache for last feedback per insight
 class _InsightFeedbackCache {
-  static final Map<int, _CachedFeedback> _byInsightId = <int, _CachedFeedback>{};
+  static final Map<int, _CachedFeedback> _byInsightId =
+      <int, _CachedFeedback>{};
 
   static _CachedFeedback? get(int insightId) => _byInsightId[insightId];
 
@@ -47,11 +49,7 @@ class _CachedFeedback {
   final InsightFeedbackReason? reason;
   final String? comment;
 
-  const _CachedFeedback({
-    required this.vote,
-    this.reason,
-    this.comment,
-  });
+  const _CachedFeedback({required this.vote, this.reason, this.comment});
 
   bool sameAs(InsightFeedbackVote v, InsightFeedbackReason? r, String? c) {
     final cc = (c ?? '').trim();
@@ -159,7 +157,9 @@ class _InsightDetailSheetState extends State<InsightDetailSheet> {
       if (remote == null) return;
 
       final localVote = _mapVoteFromApi(remote.vote);
-      final localReason = remote.reason == null ? null : _mapReasonFromApi(remote.reason!);
+      final localReason = remote.reason == null
+          ? null
+          : _mapReasonFromApi(remote.reason!);
       final localComment = (remote.comment ?? '').trim();
 
       _InsightFeedbackCache.set(
@@ -235,7 +235,12 @@ class _InsightDetailSheetState extends State<InsightDetailSheet> {
     final cached = _InsightFeedbackCache.get(insightId);
     final normalizedComment = (comment ?? '').trim();
     // If the same feedback was already recorded, do nothing (no re-submit).
-    if (cached != null && cached.sameAs(vote, reason, normalizedComment.isEmpty ? null : normalizedComment)) {
+    if (cached != null &&
+        cached.sameAs(
+          vote,
+          reason,
+          normalizedComment.isEmpty ? null : normalizedComment,
+        )) {
       return;
     }
 
@@ -309,8 +314,12 @@ class _InsightDetailSheetState extends State<InsightDetailSheet> {
     final res = await _showDislikeReasonSheet(
       context,
       p: widget.p,
-      initialReason: cached?.vote == InsightFeedbackVote.dislike ? cached?.reason : null,
-      initialComment: cached?.vote == InsightFeedbackVote.dislike ? cached?.comment : null,
+      initialReason: cached?.vote == InsightFeedbackVote.dislike
+          ? cached?.reason
+          : null,
+      initialComment: cached?.vote == InsightFeedbackVote.dislike
+          ? cached?.comment
+          : null,
     );
     if (!mounted) return;
 
@@ -350,9 +359,9 @@ class _InsightDetailSheetState extends State<InsightDetailSheet> {
                   Text(
                     label,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: p.accent.withOpacity(0.95),
-                          fontWeight: FontWeight.w500,
-                        ),
+                      color: p.accent.withOpacity(0.95),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -360,20 +369,20 @@ class _InsightDetailSheetState extends State<InsightDetailSheet> {
               Text(
                 item.title,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: p.ink,
-                      fontWeight: FontWeight.w600,
-                      height: 1.2,
-                    ),
+                  color: p.ink,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 item.body,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: p.muted,
-                      fontWeight: FontWeight.w500,
-                      height: 1.55,
-                      fontSize: 16,
-                    ),
+                  color: p.muted,
+                  fontWeight: FontWeight.w500,
+                  height: 1.55,
+                  fontSize: 16,
+                ),
               ),
               // Feedback
               const SizedBox(height: 6),
@@ -432,7 +441,9 @@ class _FeedbackBar extends StatelessWidget {
             child: Icon(
               icon,
               size: 26,
-              color: active ? p.accent.withOpacity(0.95) : p.muted.withOpacity(0.55),
+              color: active
+                  ? p.accent.withOpacity(0.95)
+                  : p.muted.withOpacity(0.55),
             ),
           ),
         ),
@@ -442,11 +453,7 @@ class _FeedbackBar extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        iconButton(
-          active: isLike,
-          icon: Icons.done_rounded,
-          onTap: onLike,
-        ),
+        iconButton(active: isLike, icon: Icons.done_rounded, onTap: onLike),
         const SizedBox(width: 10),
         iconButton(
           active: isDislike,
@@ -565,19 +572,15 @@ class _DislikeReasonSheetState extends State<_DislikeReasonSheet> {
                 child: Text(
                   _label(r),
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: p.ink,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    color: p.ink,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: selected
-                    ? GlassDot(
-                        size: 12,
-                        color: p.accent,
-                        active: false,
-                      )
+                    ? GlassDot(size: 12, color: p.accent, active: false)
                     : const SizedBox(width: 12),
               ),
             ],
@@ -589,7 +592,12 @@ class _DislikeReasonSheetState extends State<_DislikeReasonSheet> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(18, 6, 18, 18 + MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.fromLTRB(
+          18,
+          6,
+          18,
+          18 + MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -599,11 +607,11 @@ class _DislikeReasonSheetState extends State<_DislikeReasonSheet> {
               child: Text(
                 '어떤 점이 아쉬웠나요?',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: p.ink,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 20,
-                      letterSpacing: -0.2,
-                    ),
+                  color: p.ink,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 20,
+                  letterSpacing: -0.2,
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -632,26 +640,35 @@ class _DislikeReasonSheetState extends State<_DislikeReasonSheet> {
                   );
                 },
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: p.ink.withOpacity(0.92),
-                      fontWeight: FontWeight.w500,
-                    ),
+                  color: p.ink.withOpacity(0.92),
+                  fontWeight: FontWeight.w500,
+                ),
                 decoration: InputDecoration(
                   isDense: true,
                   contentPadding: const EdgeInsets.only(top: 6, bottom: 6),
                   border: UnderlineInputBorder(
-                    borderSide: BorderSide(color: p.outline.withOpacity(0.85), width: 1),
+                    borderSide: BorderSide(
+                      color: p.outline.withOpacity(0.85),
+                      width: 1,
+                    ),
                   ),
                   enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: p.outline.withOpacity(0.85), width: 1),
+                    borderSide: BorderSide(
+                      color: p.outline.withOpacity(0.85),
+                      width: 1,
+                    ),
                   ),
                   focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: p.accent.withOpacity(0.9), width: 1),
+                    borderSide: BorderSide(
+                      color: p.accent.withOpacity(0.9),
+                      width: 1,
+                    ),
                   ),
                   hintText: '남겨주면 다음 인사이트가 더 정확해져요',
                   hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: p.muted.withOpacity(0.65),
-                        fontWeight: FontWeight.w500,
-                      ),
+                    color: p.muted.withOpacity(0.65),
+                    fontWeight: FontWeight.w500,
+                  ),
                   counterText: '',
                 ),
               ),

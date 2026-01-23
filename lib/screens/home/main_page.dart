@@ -117,7 +117,8 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _wasInBackground = true;
     } else if (state == AppLifecycleState.resumed && _wasInBackground) {
       _wasInBackground = false;
@@ -160,7 +161,7 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
     });
 
     try {
-      final map = await _homeApi.getHome(limitLogs: 5, limitInsights: 3);
+      final map = await _homeApi.getHome(limitLogs: 4, limitInsights: 3);
       final vm = _HomeVm.fromJson(map);
       if (!mounted) return;
 
@@ -228,9 +229,9 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
 
   Future<void> _openRecord() async {
     final onLogout = widget.onLogout;
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => RecordScreen(onLogout: onLogout)),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => RecordScreen(onLogout: onLogout)));
 
     if (!mounted) return;
     _loadHome();
@@ -283,7 +284,8 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
                 await pushSettingsPage<void>(
                   context,
                   SettingsHomePage(
-                    onChangeTheme: (m) => context.read<ThemeProvider>().setMode(m),
+                    onChangeTheme: (m) =>
+                        context.read<ThemeProvider>().setMode(m),
                     onLogout: onLogout,
                   ),
                   fromLeft: true,
@@ -332,7 +334,8 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
                                   p: p,
                                   api: _signalClient,
                                   top: topInsight,
-                                  onTapObject: _openRecord, // ✅ 중앙 시그널 오브젝트 탭만 기록하기로
+                                  onTapObject:
+                                      _openRecord, // ✅ 중앙 시그널 오브젝트 탭만 기록하기로
                                 ),
                               ),
                             ),
@@ -384,7 +387,10 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
                                   if (showInitialLoading) {
                                     return Text(
                                       '불러오는 중…',
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
                                             color: p.muted,
                                             fontWeight: FontWeight.w500,
                                             height: 1.4,
@@ -394,7 +400,10 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
                                   if (showError) {
                                     return Text(
                                       '연결이 원활하지 않아요.',
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
                                             color: p.muted,
                                             fontWeight: FontWeight.w500,
                                             height: 1.4,
@@ -404,7 +413,10 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
                                   if (logs.isEmpty) {
                                     return Text(
                                       '아직 기록이 없어요',
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
                                             color: p.muted.withOpacity(0.7),
                                             fontWeight: FontWeight.w500,
                                             height: 1.4,
@@ -428,7 +440,10 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
                                   if (showInitialLoading) {
                                     return Text(
                                       '불러오는 중…',
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
                                             color: p.muted,
                                             fontWeight: FontWeight.w500,
                                             height: 1.4,
@@ -438,7 +453,10 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
                                   if (showError) {
                                     return Text(
                                       '연결이 원활하지 않아요.',
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
                                             color: p.muted,
                                             fontWeight: FontWeight.w500,
                                             height: 1.4,
@@ -457,7 +475,10 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
 
                                     return Text(
                                       message,
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
                                             color: p.muted.withOpacity(0.7),
                                             fontWeight: FontWeight.w500,
                                             height: 1.4,
@@ -466,13 +487,20 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
                                   }
 
                                   return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      for (int i = 0; i < visibleInsights.length; i++) ...[
+                                      for (
+                                        int i = 0;
+                                        i < visibleInsights.length;
+                                        i++
+                                      ) ...[
                                         _AiInsightRow(
                                           p: p,
                                           item: visibleInsights[i],
-                                          onTap: () => _openInsightDetail(visibleInsights[i]),
+                                          onTap: () => _openInsightDetail(
+                                            visibleInsights[i],
+                                          ),
                                         ),
                                         if (i != visibleInsights.length - 1)
                                           const SizedBox(height: 10),
@@ -496,10 +524,13 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
                               },
                               child: Text(
                                 '전체보기',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      color: (Theme.of(context).brightness == Brightness.dark
-                                              ? Palette.strokeDark
-                                              : Palette.strokeLight),
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color:
+                                          (Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Palette.strokeDark
+                                          : Palette.strokeLight),
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: -0.1,
                                     ),
@@ -574,7 +605,8 @@ class _AiInsightRow extends StatelessWidget {
                       children: [
                         Text(
                           label,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: p.accent.withOpacity(0.9),
                                 fontWeight: FontWeight.w500,
                                 letterSpacing: -0.1,
@@ -586,7 +618,8 @@ class _AiInsightRow extends StatelessWidget {
                             item.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
                                   color: p.ink,
                                   fontWeight: FontWeight.w500,
                                   height: 1.25,
@@ -601,11 +634,11 @@ class _AiInsightRow extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: p.muted,
-                            fontWeight: FontWeight.w500,
-                            height: 1.55,
-                            fontSize: 16,
-                          ),
+                        color: p.muted,
+                        fontWeight: FontWeight.w500,
+                        height: 1.55,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
@@ -675,9 +708,9 @@ class _RecentLogRow extends StatelessWidget {
               child: Text(
                 item.timeLabel,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: p.muted,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  color: p.muted,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
             const SizedBox(width: 10),
@@ -687,11 +720,11 @@ class _RecentLogRow extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: p.ink,
-                      fontWeight: FontWeight.w500,
-                      height: 1.45,
-                      fontSize: 18,
-                    ),
+                  color: p.ink,
+                  fontWeight: FontWeight.w500,
+                  height: 1.45,
+                  fontSize: 18,
+                ),
               ),
             ),
           ],
@@ -716,7 +749,7 @@ class _HomeVm {
   static _HomeVm fromJson(Map<String, dynamic> map) {
     final top =
         (map['topInsight'] as Map?)?.cast<String, dynamic>() ??
-            const <String, dynamic>{};
+        const <String, dynamic>{};
 
     final topDateStr = (top['date'] as String?) ?? '';
     DateTime date;
@@ -733,7 +766,8 @@ class _HomeVm {
           : '아직 해석할 기록이 충분하지 않아요',
       signalCount: (top['signalCount'] as num?)?.toInt() ?? 0,
       axes: ((top['axes'] as List?) ?? const []).whereType<String>().toList(),
-      lastTimeLabel: (top['lastTimeLabel'] as String?)?.trim().isNotEmpty == true
+      lastTimeLabel:
+          (top['lastTimeLabel'] as String?)?.trim().isNotEmpty == true
           ? (top['lastTimeLabel'] as String).trim()
           : '—',
     );
@@ -774,19 +808,20 @@ class _MainTabSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: (Theme.of(context).brightness == Brightness.dark
+      color:
+          (Theme.of(context).brightness == Brightness.dark
                   ? Palette.strokeDark
                   : Palette.strokeLight)
               .withOpacity(0.92),
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.2,
-        );
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.2,
+    );
 
     final inactiveStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: p.muted.withOpacity(0.75),
-          fontWeight: FontWeight.w600,
-          letterSpacing: -0.2,
-        );
+      color: p.muted.withOpacity(0.75),
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.2,
+    );
 
     Widget tabItem(String label, _MainTab value) {
       return GestureDetector(
@@ -794,10 +829,7 @@ class _MainTabSwitch extends StatelessWidget {
         onTap: () => onChanged(value),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-          child: Text(
-            label,
-            style: tab == value ? activeStyle : inactiveStyle,
-          ),
+          child: Text(label, style: tab == value ? activeStyle : inactiveStyle),
         ),
       );
     }

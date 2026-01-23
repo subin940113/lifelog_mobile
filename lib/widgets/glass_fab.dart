@@ -302,7 +302,8 @@ class _GlassFabBody extends StatelessWidget {
                   ),
                   Positioned.fill(child: _GlassRim(baseColor: baseColor)),
                   Center(
-                    child: iconWidget ??
+                    child:
+                        iconWidget ??
                         Icon(icon, color: iconColor, size: iconSize),
                   ),
                 ],
@@ -397,10 +398,7 @@ class FabPosition extends StatelessWidget {
       minimum: const EdgeInsets.only(right: 16, bottom: 0),
       child: Transform.translate(
         offset: const Offset(0, -70),
-        child: Align(
-          alignment: Alignment.bottomRight,
-          child: child,
-        ),
+        child: Align(alignment: Alignment.bottomRight, child: child),
       ),
     );
   }

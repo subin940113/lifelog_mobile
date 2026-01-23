@@ -10,11 +10,7 @@ class WatercolorFab extends StatelessWidget {
   final VoidCallback onTap;
   final double size;
 
-  const WatercolorFab({
-    super.key,
-    required this.onTap,
-    this.size = 72,
-  });
+  const WatercolorFab({super.key, required this.onTap, this.size = 72});
 
   @override
   Widget build(BuildContext context) {
@@ -27,18 +23,12 @@ class WatercolorFab extends StatelessWidget {
         width: size,
         height: size,
         child: CustomPaint(
-          painter: _WatercolorFabPainter(
-            isDark: isDark,
-          ),
+          painter: _WatercolorFabPainter(isDark: isDark),
 
           // ⚠️ 아이콘은 선택 사항
           // 완전히 제거하면 더 추상적인 “알” 느낌
           child: const Center(
-            child: Icon(
-              Icons.add_rounded,
-              size: 26,
-              color: Color(0xFF224D86),
-            ),
+            child: Icon(Icons.add_rounded, size: 26, color: Color(0xFF224D86)),
           ),
         ),
       ),
@@ -49,9 +39,7 @@ class WatercolorFab extends StatelessWidget {
 class _WatercolorFabPainter extends CustomPainter {
   final bool isDark;
 
-  _WatercolorFabPainter({
-    required this.isDark,
-  });
+  _WatercolorFabPainter({required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -86,11 +74,7 @@ class _WatercolorFabPainter extends CustomPainter {
       final dy = center.dy + math.sin(a * 1.15) * r * 0.42;
 
       tex.color = Colors.white.withOpacity(0.03);
-      canvas.drawCircle(
-        Offset(dx, dy),
-        2.2,
-        tex,
-      );
+      canvas.drawCircle(Offset(dx, dy), 2.2, tex);
     }
 
     // ===== Outline =====

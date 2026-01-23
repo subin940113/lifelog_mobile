@@ -258,7 +258,16 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
 
     return WillPopScope(
       onWillPop: () async {
-        Navigator.of(context).pop(_localeId);
+        // Persist the last effective selection on exit, to survive app restarts.
+        final toSave = _norm(effectiveSelected).isNotEmpty
+            ? _norm(effectiveSelected)
+            : (_norm(_localeId).isNotEmpty ? _norm(_localeId) : _kDefaultLocaleId);
+        try {
+          await _storage.write(key: kSttLocaleStorageKey, value: toSave);
+        } catch (_) {
+          // ignore persistence failures
+        }
+        Navigator.of(context).pop(toSave);
         return false;
       },
       child: Scaffold(

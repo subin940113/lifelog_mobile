@@ -249,13 +249,13 @@ class _InterestSettingPageState extends State<InterestSettingPage> {
                 iconWidget: Text(
                   '확인',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        // 라이트는 완전 흰색, 다크는 살짝 눌러서(너무 번쩍이지 않게)
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white.withOpacity(0.86)
-                            : Colors.white,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: -0.2,
-                      ),
+                    // 라이트는 완전 흰색, 다크는 살짝 눌러서(너무 번쩍이지 않게)
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white.withOpacity(0.86)
+                        : Colors.white,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.2,
+                  ),
                 ),
                 lighten: 0.06,
                 pressedScale: 0.98,

@@ -150,7 +150,9 @@ class _SignalObjectCardState extends State<SignalObjectCard>
                                       ),
 
                                       // ✅ totalCandy 중앙 숫자 (0이면 숨김)
-                                      if (!widget.isLoading && !widget.hasError && widget.totalCandy > 0)
+                                      if (!widget.isLoading &&
+                                          !widget.hasError &&
+                                          widget.totalCandy > 0)
                                         _CandyCountCenterLabel(
                                           p: widget.p,
                                           value: widget.totalCandy,
@@ -435,10 +437,7 @@ class _CandyCountCenterLabel extends StatefulWidget {
   final Palette p;
   final int value;
 
-  const _CandyCountCenterLabel({
-    required this.p,
-    required this.value,
-  });
+  const _CandyCountCenterLabel({required this.p, required this.value});
 
   @override
   State<_CandyCountCenterLabel> createState() => _CandyCountCenterLabelState();
@@ -542,7 +541,6 @@ class _CandyCountCenterLabelState extends State<_CandyCountCenterLabel>
     );
   }
 
-
   bool _showMark(int v) => v == 1 || _isMilestone(v);
 
   @override
@@ -571,16 +569,17 @@ class _CandyCountCenterLabelState extends State<_CandyCountCenterLabel>
           final s = 1.0 + 0.008 * math.sin(t * 0.95 + 0.4);
 
           final text = _format(widget.value);
-          final baseTextStyle = (Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: textColor,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 20,
-                    fontFamily: 'MuseoModerno',
-                    height: 1.0,
-                    letterSpacing: -0.4,
-                    // ✅ 숫자 주변 “하얀 막(글로우)” 제거
-                    shadows: const <Shadow>[],
-                  )) ??
+          final baseTextStyle =
+              (Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.w500,
+                fontSize: 20,
+                fontFamily: 'MuseoModerno',
+                height: 1.0,
+                letterSpacing: -0.4,
+                // ✅ 숫자 주변 “하얀 막(글로우)” 제거
+                shadows: const <Shadow>[],
+              )) ??
               TextStyle(
                 color: textColor,
                 fontWeight: FontWeight.w500,

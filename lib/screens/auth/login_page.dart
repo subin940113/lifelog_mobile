@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
 import 'package:flutter_naver_login/flutter_naver_login.dart';
@@ -100,11 +101,26 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     AuthLoginResult authResult,
     ProviderKey provider,
   ) async {
-    await _secureStorage.write(key: 'accessToken', value: authResult.accessToken);
-    await _secureStorage.write(key: 'refreshToken', value: authResult.refreshToken);
-    await _secureStorage.write(key: 'accountName', value: authResult.displayName);
-    await _secureStorage.write(key: 'isNewUser', value: authResult.isNewUser.toString());
-    await _secureStorage.write(key: _kLastLoginProviderKey, value: provider.storageValue);
+    await _secureStorage.write(
+      key: 'accessToken',
+      value: authResult.accessToken,
+    );
+    await _secureStorage.write(
+      key: 'refreshToken',
+      value: authResult.refreshToken,
+    );
+    await _secureStorage.write(
+      key: 'accountName',
+      value: authResult.displayName,
+    );
+    await _secureStorage.write(
+      key: 'isNewUser',
+      value: authResult.isNewUser.toString(),
+    );
+    await _secureStorage.write(
+      key: _kLastLoginProviderKey,
+      value: provider.storageValue,
+    );
   }
 
   void _handleLoginError(String userMessage, Object error, [StackTrace? st]) {
@@ -244,6 +260,49 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     }
   }
 
+  Future<void> _loginWithApple() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      // Request Apple ID credential (App-side only; server validation will be added next)
+      final credential = await SignInWithApple.getAppleIDCredential(
+        // Do not request email/fullName (we don't collect or send them).
+        scopes: const <AppleIDAuthorizationScopes>[],
+      );
+
+      final authCode = credential.authorizationCode;
+
+      // Send to server immediately (we do not request/collect name or email).
+      final client = await _client();
+      final authResult = await client.loginWithAppleAuthorizationCode(
+        authorizationCode: authCode,
+      );
+      await _persistLogin(authResult, ProviderKey.apple);
+
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _recentProvider = ProviderKey.apple;
+      });
+      widget.onLoggedIn();
+
+      // Optional: keep only a debug log (no SnackBar on login screen).
+      debugPrint('[LOGIN] Apple credential received and sent to server');
+    } catch (e, st) {
+      String msg;
+      if (e is SignInWithAppleAuthorizationException &&
+          e.code == AuthorizationErrorCode.canceled) {
+        msg = '애플 로그인이 취소되었습니다.';
+      } else {
+        msg = '애플 로그인에 문제가 발생했습니다. 다시 시도해주세요.';
+      }
+      _handleLoginError(msg, e, st);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bg = Colors.white;
@@ -269,21 +328,23 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     // - shortest 기준 0.60로 상향
     // - max도 조금 올림
     final blobSize = (shortest * 0.68).clamp(260.0, 440.0);
-    
+
     // Chevron size (slightly increased to balance larger blob)
     final chevronSize = (shortest * 0.076).clamp(28.0, 50.0);
 
     // Social buttons sizing
     final btnH = (shortest * 0.115).clamp(50.0, 66.0);
     final btnGap = (shortest * 0.022).clamp(8.0, 14.0);
-    const int btnCount = 3;
+
+    // Visible social buttons (currently Google + Apple; Kakao/Naver are commented)
+    const int btnCount = 4;
 
     // Button corner radius: slightly less rounded on small devices
     final btnRadius = (shortest * 0.032).clamp(10.0, 16.0);
     final iconBox = (shortest * 0.060).clamp(18.0, 24.0);
     final iconSize = (shortest * 0.058).clamp(18.0, 24.0);
-    // Social button label: slightly smaller than before
-    final labelFontSize = (shortest * 0.043).clamp(13.5, 17.5);
+    // Social button label: slightly smaller than before (reduced a bit more)
+    final labelFontSize = (shortest * 0.040).clamp(13.0, 17.0);
     final double labelSpacing = -0.2; // restore tighter letter spacing
 
     final footerFontSize = (shortest * 0.030).clamp(10.5, 12.5);
@@ -302,204 +363,294 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           children: [
             SafeArea(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(sidePad, 0, sidePad, bottomSafePad),
+                padding: EdgeInsets.fromLTRB(
+                  sidePad,
+                  0,
+                  sidePad,
+                  bottomSafePad,
+                ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Brand block (top-center)
-                      Align(
-                        alignment: Alignment.topCenter,
-                        child: Padding(
-                          padding: EdgeInsets.only(top: brandTopPad),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              SizedBox(height: (shortest * 0.050).clamp(14.0, 44.0)),
-                              SizedBox(
-                                width: blobSize,
-                                height: blobSize,
-                                child: AnimatedBuilder(
-                                  animation: _blobController,
-                                  builder: (context, _) {
-                                    return Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        MainSignalBlob(
-                                          t: _blobController.value,
-                                          size: blobSize,
-                                          hasSignal: false,
-                                        ),
-                                        Positioned.fill(
-                                          child: IgnorePointer(
-                                            child: FloatingWordInBlob(
-                                              t: _blobController.value,
-                                              word: 'bluegol',
-                                              color: stroke,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Brand block (top-center)
+                        Align(
+                          alignment: Alignment.topCenter,
+                          child: Padding(
+                            padding: EdgeInsets.only(top: brandTopPad),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  height: (shortest * 0.050).clamp(14.0, 44.0),
+                                ),
+                                SizedBox(
+                                  width: blobSize,
+                                  height: blobSize,
+                                  child: AnimatedBuilder(
+                                    animation: _blobController,
+                                    builder: (context, _) {
+                                      return Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          MainSignalBlob(
+                                            t: _blobController.value,
+                                            size: blobSize,
+                                            hasSignal: false,
+                                          ),
+                                          Positioned.fill(
+                                            child: IgnorePointer(
+                                              child: FloatingWordInBlob(
+                                                t: _blobController.value,
+                                                word: 'bluegol',
+                                                color: stroke,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Middle area
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, midCs) {
-                            final midH = midCs.maxHeight;
-
-                            // 아래로부터 10% 올리기 (요구 유지) + clamp
-                            final bottomLift = (midH * 0.10).clamp(12.0, 120.0);
-
-                            final buttonsTopY =
-                                (midH - bottomLift - buttonsH).clamp(0.0, midH);
-                            final availableForChevron = buttonsTopY;
-
-                            final chevronTop = ((availableForChevron - chevronH) / 2.0)
-                                .clamp(0.0, math.max(0.0, availableForChevron - chevronH))
-                                .toDouble();
-
-                            return Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                // Chevron (independent)
-                                Positioned(
-                                  top: chevronTop,
-                                  left: 0,
-                                  right: 0,
-                                  child: Center(
-                                    child: AnimatedBuilder(
-                                      animation: _arrowDy,
-                                      builder: (context, child) {
-                                        final floatAmp = (shortest * 0.016).clamp(6.0, 12.0);
-                                        final dy = (_arrowDy.value / 10.0) * floatAmp;
-                                        return Transform.translate(
-                                          offset: Offset(0, dy),
-                                          child: child,
-                                        );
-                                      },
-                                      child: Image.asset(
-                                        'assets/icons/chevron_light.png',
-                                        width: chevronSize,
-                                        height: chevronSize,
-                                        fit: BoxFit.contain,
-                                        filterQuality: FilterQuality.high,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                                // ✅ Buttons block: 이전처럼 "가로로 퍼지게"
-                                // - ConstrainedBox/MaxWidth 제거
-                                // - Column이 stretch로 가고, 각 버튼 width: double.infinity로 전체 폭 사용
-                                Align(
-                                  alignment: Alignment.bottomCenter,
-                                  child: Padding(
-                                    padding: EdgeInsets.only(bottom: bottomLift),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        _SocialLoginButton(
-                                          height: btnH,
-                                          radius: btnRadius,
-                                          iconBox: iconBox,
-                                          iconSize: iconSize,
-                                          labelFontSize: labelFontSize,
-                                          labelLetterSpacing: labelSpacing,
-                                          label: '카카오로 시작하기',
-                                          iconAsset: 'assets/icons/kakao_logo.png',
-                                          enabled: !_loading,
-                                          background: const Color(0xFFFEE500),
-                                          foreground: const Color(0xFF191600),
-                                          onTap: _loading ? null : _loginWithKakao,
-                                          badgeText: _recentProvider == ProviderKey.kakao ? '최근' : null,
-                                        ),
-                                        SizedBox(height: btnGap),
-                                        _SocialLoginButton(
-                                          height: btnH,
-                                          radius: btnRadius,
-                                          iconBox: iconBox,
-                                          iconSize: iconSize * 0.92,
-                                          labelFontSize: labelFontSize,
-                                          labelLetterSpacing: labelSpacing,
-                                          label: '네이버로 시작하기',
-                                          iconAsset: 'assets/icons/naver_logo.png',
-                                          enabled: !_loading,
-                                          background: const Color(0xFF03A94D),
-                                          foreground: Colors.white,
-                                          onTap: _loading ? null : _loginWithNaver,
-                                          badgeText: _recentProvider == ProviderKey.naver ? '최근' : null,
-                                        ),
-                                        SizedBox(height: btnGap),
-                                        _SocialLoginButton(
-                                          height: btnH,
-                                          radius: btnRadius,
-                                          iconBox: iconBox,
-                                          iconSize: iconSize,
-                                          labelFontSize: labelFontSize,
-                                          labelLetterSpacing: labelSpacing,
-                                          label: '구글로 시작하기',
-                                          iconAsset: 'assets/icons/google_logo.png',
-                                          enabled: !_loading,
-                                          background: Colors.white,
-                                          foreground: const Color(0xFF1A1A1A),
-                                          onTap: _loading ? null : _loginWithGoogle,
-                                          badgeText: _recentProvider == ProviderKey.google ? '최근' : null,
-                                          iconNudgeX: 0,
-                                        ),
-                                        if (_error != null) ...[
-                                          SizedBox(height: (shortest * 0.022).clamp(8.0, 14.0)),
-                                          Text(
-                                            _error!,
-                                            textAlign: TextAlign.center,
-                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                  color: Colors.redAccent.withOpacity(0.85),
-                                                  fontWeight: FontWeight.w600,
-                                                  height: 1.25,
-                                                ),
-                                          ),
                                         ],
-                                      ],
-                                    ),
+                                      );
+                                    },
                                   ),
                                 ),
                               ],
-                            );
-                          },
+                            ),
+                          ),
                         ),
-                      ),
 
-                      // Footer pinned
-                      Padding(
-                        padding: EdgeInsets.only(bottom: (shortest * 0.004).clamp(0.0, 6.0)),
-                        child: Text(
-                          '© ${DateTime.now().year} bluelog. All rights reserved.',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: stroke.withOpacity(0.7),
-                                fontWeight: FontWeight.w500,
-                                fontFamily: 'MontserratAlternates',
-                                fontSize: footerFontSize,
-                              ),
+                        // Middle area
+                        Expanded(
+                          child: LayoutBuilder(
+                            builder: (context, midCs) {
+                              final midH = midCs.maxHeight;
+
+                              // Buttons can sit a bit higher now (only 2 buttons).
+                              // Keep chevron gap above/below ALWAYS equal by ensuring
+                              // there is enough space for: [gap] + chevron + [gap].
+                              final minChevronGap = (shortest * 0.030).clamp(
+                                10.0,
+                                22.0,
+                              );
+
+                              // Target lift (10% version), but we will cap it to
+                              // preserve equal chevron gaps.
+                              double bottomLift = (midH * 0.10)
+                                  .clamp(12.0, 120.0)
+                                  .toDouble();
+
+                              // Ensure available space for chevron area.
+                              // availableForChevron = midH - bottomLift - buttonsH
+                              // Need: chevronH + 2*minChevronGap
+                              final requiredForChevron =
+                                  chevronH + 2.0 * minChevronGap;
+                              final maxBottomLiftToKeepChevron =
+                                  (midH - buttonsH - requiredForChevron)
+                                      .clamp(0.0, midH)
+                                      .toDouble();
+
+                              // If lift is too large (buttons too high), reduce it so chevron can be centered.
+                              bottomLift = math.min(
+                                bottomLift,
+                                maxBottomLiftToKeepChevron,
+                              );
+
+                              final buttonsTopY = (midH - bottomLift - buttonsH)
+                                  .clamp(0.0, midH);
+                              final availableForChevron = buttonsTopY;
+
+                              // Center chevron so gapTop == gapBottom
+                              final chevronTop =
+                                  ((availableForChevron - chevronH) / 2.0)
+                                      .clamp(
+                                        0.0,
+                                        math.max(
+                                          0.0,
+                                          availableForChevron - chevronH,
+                                        ),
+                                      )
+                                      .toDouble();
+
+                              return Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  // Chevron (independent)
+                                  Positioned(
+                                    top: chevronTop,
+                                    left: 0,
+                                    right: 0,
+                                    child: Center(
+                                      child: AnimatedBuilder(
+                                        animation: _arrowDy,
+                                        builder: (context, child) {
+                                          final floatAmp = (shortest * 0.016)
+                                              .clamp(6.0, 12.0);
+                                          final dy =
+                                              (_arrowDy.value / 10.0) *
+                                              floatAmp;
+                                          return Transform.translate(
+                                            offset: Offset(0, dy),
+                                            child: child,
+                                          );
+                                        },
+                                        child: Image.asset(
+                                          'assets/icons/chevron_light.png',
+                                          width: chevronSize,
+                                          height: chevronSize,
+                                          fit: BoxFit.contain,
+                                          filterQuality: FilterQuality.high,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  // ✅ Buttons block: 이전처럼 "가로로 퍼지게"
+                                  // - ConstrainedBox/MaxWidth 제거
+                                  // - Column이 stretch로 가고, 각 버튼 width: double.infinity로 전체 폭 사용
+                                  Align(
+                                    alignment: Alignment.bottomCenter,
+                                    child: Padding(
+                                      padding: EdgeInsets.only(
+                                        bottom: bottomLift,
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _SocialLoginButton(
+                                            height: btnH,
+                                            radius: btnRadius,
+                                            iconBox: iconBox,
+                                            iconSize: iconSize,
+                                            labelFontSize: labelFontSize,
+                                            labelLetterSpacing: labelSpacing,
+                                            label: '카카오로 시작하기',
+                                            iconAsset:
+                                                'assets/icons/kakao_logo.png',
+                                            enabled: !_loading,
+                                            background: const Color(0xFFFEE500),
+                                            foreground: const Color(0xFF191600),
+                                            onTap: _loading
+                                                ? null
+                                                : _loginWithKakao,
+                                            badgeText:
+                                                _recentProvider ==
+                                                    ProviderKey.kakao
+                                                ? '최근'
+                                                : null,
+                                          ),
+                                          SizedBox(height: btnGap),
+                                          _SocialLoginButton(
+                                            height: btnH,
+                                            radius: btnRadius,
+                                            iconBox: iconBox,
+                                            iconSize: iconSize * 0.92,
+                                            labelFontSize: labelFontSize,
+                                            labelLetterSpacing: labelSpacing,
+                                            label: '네이버로 시작하기',
+                                            iconAsset:
+                                                'assets/icons/naver_logo.png',
+                                            enabled: !_loading,
+                                            background: const Color(0xFF03A94D),
+                                            foreground: Colors.white,
+                                            onTap: _loading
+                                                ? null
+                                                : _loginWithNaver,
+                                            badgeText:
+                                                _recentProvider ==
+                                                    ProviderKey.naver
+                                                ? '최근'
+                                                : null,
+                                          ),
+                                          SizedBox(height: btnGap),
+                                          _SocialLoginButton(
+                                            height: btnH,
+                                            radius: btnRadius,
+                                            iconBox: iconBox,
+                                            iconSize: iconSize,
+                                            labelFontSize: labelFontSize,
+                                            labelLetterSpacing: labelSpacing,
+                                            label: 'Google로 시작하기',
+                                            iconAsset:
+                                                'assets/icons/google_logo.png',
+                                            enabled: !_loading,
+                                            background: Colors.white,
+                                            foreground: const Color(0xFF1A1A1A),
+                                            onTap: _loading
+                                                ? null
+                                                : _loginWithGoogle,
+                                            badgeText:
+                                                _recentProvider ==
+                                                    ProviderKey.google
+                                                ? '최근'
+                                                : null,
+                                            iconNudgeX: 0,
+                                          ),
+                                          SizedBox(height: btnGap),
+                                          _SocialLoginButton(
+                                            height: btnH,
+                                            radius: btnRadius,
+                                            iconBox: iconBox,
+                                            iconSize: iconSize,
+                                            labelFontSize: labelFontSize,
+                                            labelLetterSpacing: labelSpacing,
+                                            label: 'Apple로 시작하기',
+                                            iconAsset:
+                                                'assets/icons/apple_logo.png',
+                                            enabled: !_loading,
+                                            background: const Color(0xFF000000),
+                                            foreground: Colors.white,
+                                            onTap: _loading
+                                                ? null
+                                                : _loginWithApple,
+                                          ),
+
+                                          // if (_error != null) ...[
+                                          //   SizedBox(height: (shortest * 0.022).clamp(8.0, 14.0)),
+                                          //   Text(
+                                          //     _error!,
+                                          //     textAlign: TextAlign.center,
+                                          //     style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          //           color: Colors.redAccent.withOpacity(0.85),
+                                          //           fontWeight: FontWeight.w600,
+                                          //           height: 1.25,
+                                          //         ),
+                                          //   ),
+                                          // ],
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  );
-                },
+
+                        // Footer pinned
+                        Padding(
+                          padding: EdgeInsets.only(
+                            bottom: (shortest * 0.004).clamp(0.0, 6.0),
+                          ),
+                          child: Text(
+                            '© ${DateTime.now().year} bluelog. All rights reserved.',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: stroke.withOpacity(0.7),
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'MontserratAlternates',
+                                  fontSize: footerFontSize,
+                                ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 }
@@ -578,14 +729,11 @@ class _SocialLoginButton extends StatelessWidget {
             child: Ink(
               height: height,
               width: double.infinity, // ✅ 가로로 퍼짐
-              decoration: BoxDecoration(
-                color: background,
-                borderRadius: br,
-              ),
+              decoration: BoxDecoration(color: background, borderRadius: br),
               child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: (shortest * 0.040).clamp(14.0, 18.0),
-                  vertical: (shortest * 0.010).clamp(3.0, 6.0),
+                  vertical: (shortest * 0.020).clamp(7.0, 12.0),
                 ),
                 child: Stack(
                   alignment: Alignment.center,

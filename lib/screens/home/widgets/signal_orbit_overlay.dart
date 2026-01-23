@@ -111,7 +111,7 @@ class _SignalOrbitOverlayState extends State<SignalOrbitOverlay>
 
     final baseSize =
         ((30.0 + (index % 3) * 1.2) + (9.0 * lenFactor) + (3.2 * sizeJitter)) *
-            candyScale;
+        candyScale;
 
     final r = (baseSize * 0.5).clamp(_minBubbleR, _maxBubbleR);
     return r;
@@ -123,7 +123,8 @@ class _SignalOrbitOverlayState extends State<SignalOrbitOverlay>
     required List<String> keys,
     required List<int> candyCounts,
   }) {
-    final need = _lastBounds != bounds ||
+    final need =
+        _lastBounds != bounds ||
         !_sameList(_lastKeys, keys) ||
         !_sameList(_lastCandy, candyCounts);
 
@@ -195,10 +196,12 @@ class _SignalOrbitOverlayState extends State<SignalOrbitOverlay>
               final visible = widget.drops.take(6).toList(growable: false)
                 ..sort((a, b) => a.keywordKey.compareTo(b.keywordKey));
 
-              final keys =
-                  visible.map((e) => e.keywordKey).toList(growable: false);
-              final candyCounts =
-                  visible.map((e) => e.candyCount).toList(growable: false);
+              final keys = visible
+                  .map((e) => e.keywordKey)
+                  .toList(growable: false);
+              final candyCounts = visible
+                  .map((e) => e.candyCount)
+                  .toList(growable: false);
 
               // round bounds a bit to avoid re-layout flicker on fractional pixels
               final roundedW = (w * 2).round() / 2.0;
@@ -254,7 +257,8 @@ class _SignalOrbitOverlayState extends State<SignalOrbitOverlay>
     // assign left/right counts (max 3 each) - stable by hashed ranking
     int leftCount;
     if (count == 1) {
-      leftCount = 0; // single defaults to right for visual balance vs hamburger left
+      leftCount =
+          0; // single defaults to right for visual balance vs hamburger left
     } else if (count == 2) {
       leftCount = 1;
     } else if (count == 3) {
@@ -362,10 +366,7 @@ class _SignalOrbitOverlayState extends State<SignalOrbitOverlay>
         blobCenter.dy + 72.0,
       );
 
-      return Offset(
-        p.dx.clamp(cxMin, cxMax),
-        p.dy.clamp(cyMin, cyMax),
-      );
+      return Offset(p.dx.clamp(cxMin, cxMax), p.dy.clamp(cyMin, cyMax));
     }
 
     for (int iter = 0; iter < maxIter; iter++) {
@@ -390,8 +391,14 @@ class _SignalOrbitOverlayState extends State<SignalOrbitOverlay>
             final gain = 1.10 - 0.30 * (iter / maxIter);
             final push = 0.5 * overlap * gain;
 
-            pts[i] = clampCenter(Offset(pi.dx - nx * push, pi.dy - ny * push), i);
-            pts[j] = clampCenter(Offset(pj.dx + nx * push, pj.dy + ny * push), j);
+            pts[i] = clampCenter(
+              Offset(pi.dx - nx * push, pi.dy - ny * push),
+              i,
+            );
+            pts[j] = clampCenter(
+              Offset(pj.dx + nx * push, pj.dy + ny * push),
+              j,
+            );
           }
         }
       }
@@ -404,9 +411,7 @@ class _SignalOrbitOverlayState extends State<SignalOrbitOverlay>
       final isLeft = leftIdx.contains(i);
       final r = radii[i];
 
-      final wallX = isLeft
-          ? (_wallInset + r)
-          : (bounds.width - _wallInset - r);
+      final wallX = isLeft ? (_wallInset + r) : (bounds.width - _wallInset - r);
 
       final p = pts[i];
       final pulled = Offset(
@@ -497,12 +502,12 @@ class _SignalOrbitOverlayState extends State<SignalOrbitOverlay>
 
     final baseSize =
         ((30.0 + (index % 3) * 1.2) + (9.0 * lenFactor) + (3.2 * sizeJitter)) *
-            candyScale;
+        candyScale;
 
     final breath =
         1.0 +
-            (0.024 + 0.010 * lenFactor + 0.004 * keyJitter) *
-                math.sin(phase * 1.10 + index * 1.05);
+        (0.024 + 0.010 * lenFactor + 0.004 * keyJitter) *
+            math.sin(phase * 1.10 + index * 1.05);
 
     final size = (baseSize * breath).clamp(36.0, _maxBubbleR * 2);
 
@@ -545,35 +550,36 @@ class _SignalOrbitOverlayState extends State<SignalOrbitOverlay>
               ),
             ),
             // Clip the drifting glyphs to the exact mini-blob shape so they can
-// never escape the bubble boundary.
-Positioned.fill(
-  child: ClipPath(
-    clipper: _MiniBlobClipper(t: ((t + (index * 0.07)) % 1.0)),
-    child: Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: _buildFloatingKeywordLabel(
-          text: displayText,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: textTint,
-                fontWeight: FontWeight.w500,
-                fontSize: fontSize,
-                height: 1.0,
-                letterSpacing: -0.2,
-              ) ??
-              TextStyle(
-                color: textTint,
-                fontWeight: FontWeight.w500,
-                fontSize: fontSize,
-                height: 1.0,
-                letterSpacing: -0.2,
+            // never escape the bubble boundary.
+            Positioned.fill(
+              child: ClipPath(
+                clipper: _MiniBlobClipper(t: ((t + (index * 0.07)) % 1.0)),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: _buildFloatingKeywordLabel(
+                      text: displayText,
+                      style:
+                          Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: textTint,
+                            fontWeight: FontWeight.w500,
+                            fontSize: fontSize,
+                            height: 1.0,
+                            letterSpacing: -0.2,
+                          ) ??
+                          TextStyle(
+                            color: textTint,
+                            fontWeight: FontWeight.w500,
+                            fontSize: fontSize,
+                            height: 1.0,
+                            letterSpacing: -0.2,
+                          ),
+                      t: t,
+                    ),
+                  ),
+                ),
               ),
-          t: t,
-        ),
-      ),
-    ),
-  ),
-),
+            ),
           ],
         ),
       ),
@@ -747,8 +753,11 @@ class _MiniBlobPainter extends CustomPainter {
         transform: GradientRotation(rot),
         colors: <Color>[
           Colors.white.withOpacity(isDark ? 0.10 : 0.12),
-          mix(accent, const Color(0xFF79BDEB), 0.35)
-              .withOpacity(isDark ? 0.06 : 0.085),
+          mix(
+            accent,
+            const Color(0xFF79BDEB),
+            0.35,
+          ).withOpacity(isDark ? 0.06 : 0.085),
           Colors.transparent,
         ],
         stops: const <double>[0.0, 0.55, 1.0],

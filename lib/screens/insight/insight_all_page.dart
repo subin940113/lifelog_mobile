@@ -67,17 +67,22 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
     });
 
     try {
-      final page = await _insightApi.getInsightsPage(limit: 50, cursor: loadMore ? _cursor : null);
+      final page = await _insightApi.getInsightsPage(
+        limit: 50,
+        cursor: loadMore ? _cursor : null,
+      );
 
       // Map API model -> UI model (keep id)
       final nextItems = page.items
-          .map<InsightPreviewUi>((it) => InsightPreviewUi(
-                id: it.id,
-                kind: _kindFromServer(it.kind),
-                title: it.title,
-                body: it.body,
-                evidence: it.evidence,
-              ))
+          .map<InsightPreviewUi>(
+            (it) => InsightPreviewUi(
+              id: it.id,
+              kind: _kindFromServer(it.kind),
+              title: it.title,
+              body: it.body,
+              evidence: it.evidence,
+            ),
+          )
           .toList(growable: false);
 
       if (!mounted) return;
@@ -225,7 +230,8 @@ class _InsightsAllPageState extends State<InsightsAllPage> {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         child: Text(
                           '더 불러오기',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(
                                 color: p.muted,
                                 fontWeight: FontWeight.w500,
                               ),

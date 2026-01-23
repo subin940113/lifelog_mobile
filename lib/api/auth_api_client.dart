@@ -228,6 +228,32 @@ class AuthApiClient {
     );
   }
 
+  /// Apple 로그인: 앱에서 받은 authorizationCode(필수)와 identityToken(선택)을 서버로 전달.
+  ///
+  /// NOTE
+  /// - 사용자의 이름/이메일 등 PII는 앱에서 수집/전송하지 않음.
+  /// - identityToken은 Apple이 발급한 JWT로, 서버에서 검증/매핑에 도움이 될 수 있어
+  ///   제공 가능한 경우에만 함께 전송한다.
+  Future<AuthLoginResult> loginWithAppleAuthorizationCode({
+    required String authorizationCode,
+    String? identityToken,
+  }) async {
+    final code = authorizationCode.trim();
+    if (code.isEmpty) {
+      throw Exception('Apple authorizationCode가 비어있습니다.');
+    }
+
+    final body = <String, dynamic>{'authorizationCode': code};
+
+    final it = identityToken?.trim();
+    if (it != null && it.isNotEmpty) {
+      body['identityToken'] = it;
+    }
+
+    final map = await postJsonUnauthenticated('/api/auth/oauth/apple', body);
+    return _parseAuthLoginResult(map);
+  }
+
   AuthLoginResult _parseAuthLoginResult(Map<String, dynamic> map) {
     final accessToken = map['accessToken'] as String?;
     final refreshToken = map['refreshToken'] as String?;

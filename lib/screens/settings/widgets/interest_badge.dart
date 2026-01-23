@@ -42,7 +42,9 @@ class InterestBadge extends StatelessWidget {
     final bg = (active ? onBase : offBase).withOpacity(isDark ? 0.96 : 0.98);
 
     // 하이라이트도 다크모드에서는 더 약하게
-    final topHi = Colors.white.withOpacity(active ? (isDark ? 0.020 : 0.035) : (isDark ? 0.016 : 0.03));
+    final topHi = Colors.white.withOpacity(
+      active ? (isDark ? 0.020 : 0.035) : (isDark ? 0.016 : 0.03),
+    );
     final botHi = Colors.white.withOpacity(0.0);
 
     final shadow = BoxShadow(
@@ -53,7 +55,9 @@ class InterestBadge extends StatelessWidget {
 
     // 텍스트/아이콘 컬러: active는 화이트를 유지하되 다크에서는 눈부심을 살짝 완화
     final fg = active
-        ? (isDark ? Colors.white.withOpacity(0.92) : Colors.white.withOpacity(0.98))
+        ? (isDark
+              ? Colors.white.withOpacity(0.92)
+              : Colors.white.withOpacity(0.98))
         : p.ink.withOpacity(isDark ? 0.72 : 0.78);
 
     return ClipRRect(
@@ -103,11 +107,7 @@ class InterestBadge extends StatelessWidget {
                       onTap: onRemove,
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                        child: Icon(
-                          Icons.close_rounded,
-                          size: 16,
-                          color: fg,
-                        ),
+                        child: Icon(Icons.close_rounded, size: 16, color: fg),
                       ),
                     ),
                   ],

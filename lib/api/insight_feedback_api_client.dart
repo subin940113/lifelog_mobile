@@ -46,7 +46,8 @@ class InsightFeedbackApiClient {
     final body = <String, dynamic>{
       'vote': vote.toWire(),
       if (reason != null) 'reason': reason.toWire(),
-      if (comment != null && comment.trim().isNotEmpty) 'comment': comment.trim(),
+      if (comment != null && comment.trim().isNotEmpty)
+        'comment': comment.trim(),
     };
 
     // Some backends return {} or an ack payload.
@@ -134,7 +135,8 @@ class InsightFeedbackView {
   final InsightFeedbackVote vote;
   final InsightFeedbackReason? reason;
   final String? comment;
-  final String? updatedAt; // keep as string to avoid bringing in date parsing deps
+  final String?
+  updatedAt; // keep as string to avoid bringing in date parsing deps
 
   const InsightFeedbackView({
     required this.insightId,
@@ -146,17 +148,25 @@ class InsightFeedbackView {
 
   factory InsightFeedbackView.fromJson(Map<String, dynamic> m) {
     final idRaw = m['insightId'];
-    final insightId = (idRaw is num) ? idRaw.toInt() : int.tryParse('$idRaw') ?? 0;
+    final insightId = (idRaw is num)
+        ? idRaw.toInt()
+        : int.tryParse('$idRaw') ?? 0;
 
-    final vote = InsightFeedbackVote.fromWire(m['vote'] as String?) ?? InsightFeedbackVote.like;
+    final vote =
+        InsightFeedbackVote.fromWire(m['vote'] as String?) ??
+        InsightFeedbackVote.like;
 
     final reason = InsightFeedbackReason.fromWire(m['reason'] as String?);
 
     final commentRaw = m['comment'];
-    final comment = (commentRaw is String && commentRaw.trim().isNotEmpty) ? commentRaw.trim() : null;
+    final comment = (commentRaw is String && commentRaw.trim().isNotEmpty)
+        ? commentRaw.trim()
+        : null;
 
     final updatedRaw = m['updatedAt'];
-    final updatedAt = (updatedRaw is String && updatedRaw.trim().isNotEmpty) ? updatedRaw.trim() : null;
+    final updatedAt = (updatedRaw is String && updatedRaw.trim().isNotEmpty)
+        ? updatedRaw.trim()
+        : null;
 
     return InsightFeedbackView(
       insightId: insightId,
@@ -184,8 +194,11 @@ class InsightFeedbackAck {
     final v = m['ok'];
     final saved = m['saved'];
     // If server returns empty {}, treat as success because HTTP 2xx already means ok.
-    final resolved =
-        (v is bool) ? v : (saved is bool) ? saved : true;
+    final resolved = (v is bool)
+        ? v
+        : (saved is bool)
+        ? saved
+        : true;
     return InsightFeedbackAck(ok: resolved);
   }
 }

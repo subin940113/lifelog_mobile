@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class Palette {
-   static const Color strokeLight = Color(0xFF2B2F36);
-  static const Color strokeDark  = Color(0xFF8EC7FF);
+  static const Color strokeLight = Color(0xFF2B2F36);
+  static const Color strokeDark = Color(0xFF8EC7FF);
   final Color bg; // page background
   final Color surface; // subtle surface (sheet/pills)
   final Color ink; // primary text

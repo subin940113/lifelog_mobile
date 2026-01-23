@@ -53,7 +53,9 @@ class GlassSwitch extends StatelessWidget {
     final offOpacity = isDark ? 0.92 : 0.98;
 
     // ✅ 볼륨 줄이기: 하이라이트 강도/범위 축소 (다크모드에서 더 약하게)
-    final topHi = Colors.white.withOpacity(value ? (isDark ? 0.020 : 0.035) : (isDark ? 0.018 : 0.03));
+    final topHi = Colors.white.withOpacity(
+      value ? (isDark ? 0.020 : 0.035) : (isDark ? 0.018 : 0.03),
+    );
     final botHi = Colors.white.withOpacity(0.0);
 
     final radius = BorderRadius.circular(999);
@@ -108,7 +110,11 @@ class GlassSwitch extends StatelessWidget {
     );
 
     final thumbSize = height - 6;
-    final thumb = _GlassThumb(size: thumbSize, active: value, accent: adjustedColor);
+    final thumb = _GlassThumb(
+      size: thumbSize,
+      active: value,
+      accent: adjustedColor,
+    );
 
     return Padding(
       padding: outerPadding,
