@@ -346,7 +346,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                               const SizedBox(height: 10),
                               Text(
                                 '계정 정보를 불러오지 못했어요.',
-                                style: Theme.of(context).textTheme.bodySmall
+                                style: Theme.of(context).textTheme.bodyLarge
                                     ?.copyWith(
                                       color: p.muted,
                                       fontWeight: FontWeight.w700,
@@ -356,7 +356,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                               const SizedBox(height: 10),
                               Text(
                                 '불러오는 중…',
-                                style: Theme.of(context).textTheme.bodySmall
+                                style: Theme.of(context).textTheme.bodyLarge
                                     ?.copyWith(
                                       color: p.muted,
                                       fontWeight: FontWeight.w700,

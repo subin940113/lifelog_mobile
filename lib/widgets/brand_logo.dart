@@ -38,7 +38,7 @@ class BrandLogo extends StatelessWidget {
     this.style = BrandLogoStyle.wordmark,
     this.scale = 1.0,
     this.text = 'bluelog',
-    this.fontWeight = FontWeight.w600,
+    this.fontWeight = FontWeight.w500,
     this.letterSpacing = -0.8,
     this.subtleGradient = true, // ✅ 기본 ON
     this.showCaret = false, // ✅ iOS스럽게: 기본은 caret 없음
@@ -168,7 +168,7 @@ class _WordmarkLogo extends StatelessWidget {
     final base = Theme.of(context).textTheme.headlineMedium;
 
     final style = base?.copyWith(
-      fontFamily: 'CourierNew',
+      fontFamily: 'MontserratAlternates',
       fontWeight: fontWeight,
       letterSpacing: letterSpacing,
       fontSize: (base?.fontSize ?? 34) * (scale * 0.96),

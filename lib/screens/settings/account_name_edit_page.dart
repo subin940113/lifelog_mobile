@@ -183,7 +183,7 @@ class _AccountNameEditPageState extends State<AccountNameEditPage> {
 
     return Scaffold(
       backgroundColor: p.bg,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
       // ✅ Scaffold FAB 슬롯로 이동 + AnimatedSwitcher 유지
       floatingActionButton: AnimatedSwitcher(
@@ -202,26 +202,27 @@ class _AccountNameEditPageState extends State<AccountNameEditPage> {
         },
         child: _shouldShowSaveFab
             ? SizedBox(
-                key: _saveFabKey, // ✅ 토스트 위치 실측용
-                child: SafeArea(
-                  minimum: const EdgeInsets.only(bottom: 24),
-                  child: Transform.translate(
-                    offset: const Offset(0, -10),
-                    child: GlassFab(
-                      onPressed: _save,
-                      enabled: !_saving,
-                      color: p.accent,
-                      size: 72,
-                      iconWidget: SoftCheckIcon(
-                        size: 30,
-                        color: Colors.white.withOpacity(_saving ? 0.55 : 1.0),
-                        stroke: 4.6,
-                        rotate: -0.1,
+                key: _saveFabKey,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 24, bottom: 24),
+                  child: GlassFab(
+                    onPressed: _save,
+                    enabled: !_saving,
+                    color: p.accent,
+                    size: 72,
+                    iconWidget: Text(
+                      '확인',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.86)
+                            : Colors.white,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.2,
                       ),
-                      lighten: 0.06,
-                      pressedScale: 0.98,
-                      floatEnabled: false,
                     ),
+                    lighten: 0.06,
+                    pressedScale: 0.98,
+                    floatEnabled: false,
                   ),
                 ),
               )

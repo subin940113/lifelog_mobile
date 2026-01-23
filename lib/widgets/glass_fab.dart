@@ -119,7 +119,26 @@ class _GlassFabState extends State<GlassFab>
   @override
   Widget build(BuildContext context) {
     final opacity = widget.enabled ? 1.0 : 0.32;
-    final base = Color.lerp(widget.color, Colors.white, widget.lighten)!;
+
+    // ✅ 다크모드에서 "배경색"만 조금 더 진하게 (텍스트 색은 건드리지 않음)
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 다크모드에서 너무 밝아지는 문제는:
+    // - color 자체가 밝고
+    // - lighten으로 더 하얘지는 것
+    // 이 두 가지가 합쳐져 생김
+    //
+    // 해결:
+    // 1) 다크모드에선 color를 약간 더 딥한 블루로 당김
+    // 2) 다크모드에선 lighten 강도를 낮춤
+    final adjustedColor = isDark
+        // widget.color를 살짝 "딥 블루"로 끌어당김 (너무 네이비로 가면 튀어서 중간값)
+        ? Color.lerp(widget.color, const Color(0xFF2F7CC6), 0.40)!
+        : widget.color;
+
+    final adjustedLighten = isDark ? 0.02 : widget.lighten;
+
+    final base = Color.lerp(adjustedColor, Colors.white, adjustedLighten)!;
 
     // ✅ GestureDetector 대신 InkWell 사용 (탭 안정성↑)
     final body = Material(
@@ -137,7 +156,7 @@ class _GlassFabState extends State<GlassFab>
           child: _GlassFabBody(
             size: widget.size,
             baseColor: base,
-            accent: widget.color,
+            accent: adjustedColor, // ✅ 그림자/광도도 조정된 컬러 기준
             icon: widget.icon,
             iconColor: Colors.white.withOpacity(0.95),
             iconSize: widget.iconSize,
@@ -283,8 +302,7 @@ class _GlassFabBody extends StatelessWidget {
                   ),
                   Positioned.fill(child: _GlassRim(baseColor: baseColor)),
                   Center(
-                    child:
-                        iconWidget ??
+                    child: iconWidget ??
                         Icon(icon, color: iconColor, size: iconSize),
                   ),
                 ],
@@ -368,71 +386,6 @@ class _GlassRimPainter extends CustomPainter {
       oldDelegate.base != base;
 }
 
-/// 공통 체크 아이콘 (CustomPaint)
-class SoftCheckIcon extends StatelessWidget {
-  final double size;
-  final Color color;
-  final double stroke;
-  final double rotate;
-
-  const SoftCheckIcon({
-    super.key,
-    required this.size,
-    required this.color,
-    this.stroke = 4.4,
-    this.rotate = 0.0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size.square(size),
-      painter: _SoftCheckPainter(color: color, stroke: stroke, rotate: rotate),
-    );
-  }
-}
-
-class _SoftCheckPainter extends CustomPainter {
-  final Color color;
-  final double stroke;
-  final double rotate;
-
-  _SoftCheckPainter({
-    required this.color,
-    required this.stroke,
-    required this.rotate,
-  });
-
-  @override
-  void paint(Canvas canvas, Size s) {
-    canvas.save();
-    canvas.translate(s.width / 2, s.height / 2);
-    canvas.rotate(rotate);
-    canvas.translate(-s.width / 2, -s.height / 2);
-
-    final p = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..isAntiAlias = true;
-
-    final path = Path()
-      ..moveTo(s.width * 0.12, s.height * 0.50)
-      ..lineTo(s.width * 0.40, s.height * 0.82)
-      ..lineTo(s.width * 0.90, s.height * 0.40);
-
-    canvas.drawPath(path, p);
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _SoftCheckPainter old) {
-    return old.color != color || old.stroke != stroke || old.rotate != rotate;
-  }
-}
-
 class FabPosition extends StatelessWidget {
   final Widget child;
   const FabPosition({super.key, required this.child});
@@ -440,10 +393,14 @@ class FabPosition extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      minimum: const EdgeInsets.only(bottom: 0),
+      // Keep bottom lift but anchor to bottom-right.
+      minimum: const EdgeInsets.only(right: 16, bottom: 0),
       child: Transform.translate(
         offset: const Offset(0, -70),
-        child: Center(child: child),
+        child: Align(
+          alignment: Alignment.bottomRight,
+          child: child,
+        ),
       ),
     );
   }

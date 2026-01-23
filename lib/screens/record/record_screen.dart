@@ -16,6 +16,7 @@ import 'package:lifelog_mobile/widgets/app_toast.dart';
 import 'package:lifelog_mobile/widgets/app_page_header.dart';
 import 'package:lifelog_mobile/widgets/app_safe_area.dart';
 import 'package:lifelog_mobile/widgets/glass_dot.dart';
+import 'package:lifelog_mobile/widgets/glass_fab.dart';
 
 const String kSttLocaleStorageKey = 'sttLocaleId';
 
@@ -534,16 +535,6 @@ class _RecordScreenState extends State<RecordScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: SizedBox(
-        key: _doneFabKey,
-        child: DoneFab(
-          enabled: doneEnabled,
-          onPressed: _onDone,
-          p: p,
-          floatEnabled: false,
-        ),
-      ),
       appBar: AppBar(
         backgroundColor: p.bg,
         elevation: 0,
@@ -553,123 +544,158 @@ class _RecordScreenState extends State<RecordScreen> {
         title: AppPageHeader(title: '', titleColor: p.ink, iconColor: p.ink),
       ),
       body: AppSafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 2, 20, 18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(
-                height: 44,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: HoldToTalkPill(
-                        label: _isListening
-                            ? '말하는 중 • ${_formatElapsed(_elapsed)}'
-                            : '말하기',
-                        active: _isListening,
-                        enabled: _sttAvailable,
-                        onHoldStart: _startListening,
-                        onHoldEnd: _stopListening,
-                        onTapHint: () {}, // 의미 없음, 나중에 제거 가능
-                        p: p,
-                        showUnderline: _isListening,
-                      ),
-                    ),
-                    const SizedBox(width: 18),
-                    Expanded(
-                      child: ModePill(
-                        label: '직접 입력',
-                        active: _editorFocus.hasFocus,
-                        enabled: true,
-                        height: 40,
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        borderRadius: BorderRadius.zero,
-                        showUnderline: true,
-                        onTap: () {
-                          if (_isListening) _stopListening();
-                          _editorFocus.requestFocus();
-                        },
-                        p: p,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              if (_stickyNotice != null) ...[
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    _stickyNotice!,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: p.muted,
-                      fontWeight: FontWeight.w600,
-                      height: 1.25,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ] else
-                const SizedBox(height: 16),
-              Row(
-                mainAxisSize: MainAxisSize.min,
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 2, 20, 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    '오늘의 기록',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: p.ink,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 24,
-                      letterSpacing: -0.2,
+                  SizedBox(
+                    height: 44,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: HoldToTalkPill(
+                            label: _isListening
+                                ? '말하는 중 • ${_formatElapsed(_elapsed)}'
+                                : '말하기',
+                            active: _isListening,
+                            enabled: _sttAvailable,
+                            onHoldStart: _startListening,
+                            onHoldEnd: _stopListening,
+                            onTapHint: () {}, // 의미 없음, 나중에 제거 가능
+                            p: p,
+                            showUnderline: _isListening,
+                          ),
+                        ),
+                        const SizedBox(width: 18),
+                        Expanded(
+                          child: ModePill(
+                            label: '직접 입력',
+                            active: _editorFocus.hasFocus,
+                            enabled: true,
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            borderRadius: BorderRadius.zero,
+                            showUnderline: true,
+                            onTap: () {
+                              if (_isListening) _stopListening();
+                              _editorFocus.requestFocus();
+                            },
+                            p: p,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  if (_isListening) ...[
-                    const SizedBox(width: 8),
-                    GlassDot(size: 6, color: p.accent, active: true),
-                  ],
+                  const SizedBox(height: 6),
+                  if (_stickyNotice != null) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        _stickyNotice!,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: p.muted,
+                          fontWeight: FontWeight.w600,
+                          height: 1.25,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ] else
+                    const SizedBox(height: 16),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '오늘의 기록',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: p.ink,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 24,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      if (_isListening) ...[
+                        const SizedBox(width: 8),
+                        GlassDot(size: 6, color: p.accent, active: true),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _saving
+                        ? '저장 중…'
+                        : (_isListening
+                              ? '말하면 바로 여기에 적혀요'
+                              : '짧게라도 괜찮아요. 지금 떠오르는 걸 적어보세요.'),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: p.muted,
+                      height: 1.45,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: Theme(
+                      data: localTheme,
+                      child: TextField(
+                        focusNode: _editorFocus,
+                        controller: _controller,
+                        keyboardType: TextInputType.multiline,
+                        maxLines: null,
+                        expands: true,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: p.ink,
+                          height: 1.6,
+                          fontSize: 20,
+                        ),
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          hintText: '예) 아침에 일찍 일어나 산책을 했다. 커피를 마시며 하루를 정리했다…',
+                          hintStyle: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(color: p.muted, height: 1.6, fontSize: 20),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                _saving
-                    ? '저장 중…'
-                    : (_isListening
-                          ? '말하면 바로 여기에 적혀요'
-                          : '짧게라도 괜찮아요. 지금 떠오르는 걸 적어보세요.'),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: p.muted,
-                  height: 1.45,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: Theme(
-                  data: localTheme,
-                  child: TextField(
-                    focusNode: _editorFocus,
-                    controller: _controller,
-                    keyboardType: TextInputType.multiline,
-                    maxLines: null,
-                    expands: true,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: p.ink,
-                      height: 1.6,
-                      fontSize: 20,
-                    ),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: '예) 아침에 일찍 일어나 산책을 했다. 커피를 마시며 하루를 정리했다…',
-                      hintStyle: Theme.of(context).textTheme.bodyLarge
-                          ?.copyWith(color: p.muted, height: 1.6, fontSize: 20),
+            ),
+            // Confirm button INSIDE AppSafeArea (match content horizontal padding)
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 20, bottom: 24),
+                  child: SizedBox(
+                    key: _doneFabKey,
+                    child: GlassFab(
+                      onPressed: _onDone,
+                      enabled: doneEnabled,
+                      color: p.accent,
+                      size: 72,
+                      iconWidget: Text(
+                        '확인',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.86)
+                                  : Colors.white,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: -0.2,
+                            ),
+                      ),
+                      lighten: 0.06,
+                      pressedScale: 0.98,
+                      floatEnabled: false,
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -236,32 +236,30 @@ class _InterestSettingPageState extends State<InterestSettingPage> {
 
     return Scaffold(
       backgroundColor: p.bg,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-
-      // ✅ RecordScreen과 동일: Scaffold FAB 슬롯 사용
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: _fabVisible
-          ? SizedBox(
+          ? Padding(
               key: _fabKey,
-              child: SafeArea(
-                minimum: const EdgeInsets.only(bottom: 24),
-                child: Transform.translate(
-                  offset: const Offset(0, -10),
-                  child: GlassFab(
-                    onPressed: _addKeyword,
-                    enabled: _fabEnabled,
-                    color: p.accent,
-                    size: 72,
-                    iconWidget: SoftCheckIcon(
-                      size: 30,
-                      color: Colors.white.withOpacity(_saving ? 0.55 : 1.0),
-                      stroke: 3.5,
-                      rotate: -0.1,
-                    ),
-                    lighten: 0.06,
-                    pressedScale: 0.98,
-                    floatEnabled: false,
-                  ),
+              padding: const EdgeInsets.only(right: 24, bottom: 24),
+              child: GlassFab(
+                onPressed: _addKeyword,
+                enabled: _fabEnabled,
+                color: p.accent,
+                size: 72,
+                iconWidget: Text(
+                  '확인',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        // 라이트는 완전 흰색, 다크는 살짝 눌러서(너무 번쩍이지 않게)
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.86)
+                            : Colors.white,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.2,
+                      ),
                 ),
+                lighten: 0.06,
+                pressedScale: 0.98,
+                floatEnabled: false,
               ),
             )
           : null,

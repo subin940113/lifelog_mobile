@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class Palette {
+   static const Color strokeLight = Color(0xFF2B2F36);
+  static const Color strokeDark  = Color(0xFF8EC7FF);
   final Color bg; // page background
   final Color surface; // subtle surface (sheet/pills)
   final Color ink; // primary text
@@ -36,26 +38,22 @@ class Palette {
 
     if (isDark) {
       return const Palette(
-        // Base background: cool dark
+        // Base background
         bg: Color(0xFF212024),
-
-        // Surface lifted
         surface: Color(0xFF2A2930),
 
         // Text
         ink: Color(0xFFECECF0),
+        muted: Color(0xFFB2B1B8),
 
-        // ✅ muted: cooler gray (노란기 제거)
-        muted: Color(0xFFB6B9C2),
+        // Slightly bluish hairline to harmonize with sky strokes
+        outline: Color(0xFF2E3A4A),
 
-        // ✅ outline: cool hairline (과한 대비 없이 차갑게)
-        outline: Color(0xFF3B3E49),
+        // Match wave/object outline tone used across the app
+        accent: Color(0xFF8EC7FF),
 
-        // ✅ accent: cold sky / azure (포인트 강함)
-        accent: Color(0xFF5AAEFF),
-
-        // ✅ accentSoft: dark 배경에서 선택/배지 배경으로 확실히 보이게
-        accentSoft: Color(0xFF223B5A),
+        // Deep night-sky wash
+        accentSoft: Color(0xFF1A2A3D),
 
         // Danger
         danger: Color(0xFFD14A4A),
@@ -63,29 +61,24 @@ class Palette {
       );
     }
 
+    // ☀️ Light: Pointy Cute Sky Blue (화이트에서 확실히 보이게)
     return const Palette(
       bg: Color(0xFFFFFFFF),
       surface: Color(0xFFFFFFFF),
 
-      // Text
-      ink: Color(0xFF2B2B2B),
+      // Text (slightly cool to match the blue system)
+      ink: Color(0xFF22262C),
+      muted: Color(0xFF6E7A88),
 
-      // ✅ muted: warm gray → cool gray로 교체 (UI가 더 차분/차가워짐)
-      muted: Color(0xFF7F8796),
+      // Hairline border: very light sky tint (avoid beige)
+      outline: Color(0xFFDCEBFA),
 
-      // ✅ outline: 베이지톤 제거, 살짝 쿨한 회색으로
-      // 기존(E6E3DC)은 따뜻해서 하늘색과 충돌/탁해보일 수 있음
-      outline: Color(0xFFE3E8F0),
+      // Sky‑blue accent for interactions (light, airy)
+      accent: Color(0xFF3FA6F3),
 
-      // ✅ accent: 차가운 하늘색(아주르) + 충분히 진하게(포인트)
-      // white 배경에서 "버튼/링크 포인트"가 확실히 읽히는 값
-      accent: Color(0xFF3F96FF),
+      // Soft sky wash
+      accentSoft: Color(0xFFE1F1FF),
 
-      // ✅ accentSoft: accent hue 유지 + 선택/배경에서 티 나게
-      // 너무 하얗지 않게 해서 '존재감' 확보
-      accentSoft: Color(0xFFE6F1FF),
-
-      // Danger
       danger: Color(0xFFD64545),
       dangerSoft: Color(0xFFFFE9E9),
     );

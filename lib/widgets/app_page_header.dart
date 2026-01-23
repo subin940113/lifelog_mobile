@@ -32,6 +32,9 @@ class AppPageHeader extends StatelessWidget {
   /// 스와이프 뒤로가기 활성화 여부
   final bool enableBackSwipe;
 
+  /// 리딩 아이콘 표시 여부
+  final bool showLeading;
+
   const AppPageHeader({
     super.key,
     required this.title,
@@ -42,6 +45,7 @@ class AppPageHeader extends StatelessWidget {
     this.backSwipeTriggerDistance = 80,
     this.backSwipeTriggerVelocity = 900,
     this.enableBackSwipe = true,
+    this.showLeading = true,
   });
 
   @override
@@ -104,7 +108,7 @@ class AppPageHeader extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 35),
+                  padding: EdgeInsets.only(left: showLeading ? 35 : 0),
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -117,21 +121,22 @@ class AppPageHeader extends StatelessWidget {
               ),
 
               /// Leading icon (< or X)
-              Positioned(
-                left: -5,
-                child: leading == AppPageHeaderLeading.back
-                    ? GlassBackChevronButton(
-                        onTap: () => Navigator.of(context).maybePop(),
-                        baseColor: baseIconColor,
-                        depth: 0.55,
-                        iconSize: 38,
-                        hitSize: 44,
-                      )
-                    : _GlassCloseButton(
-                        color: baseIconColor,
-                        onTap: () => Navigator.of(context).maybePop(),
-                      ),
-              ),
+              if (showLeading)
+                Positioned(
+                  left: -5,
+                  child: leading == AppPageHeaderLeading.back
+                      ? GlassBackChevronButton(
+                          onTap: () => Navigator.of(context).maybePop(),
+                          baseColor: baseIconColor,
+                          depth: 0.55,
+                          iconSize: 38,
+                          hitSize: 44,
+                        )
+                      : _GlassCloseButton(
+                          color: baseIconColor,
+                          onTap: () => Navigator.of(context).maybePop(),
+                        ),
+                ),
             ],
           ),
         ),

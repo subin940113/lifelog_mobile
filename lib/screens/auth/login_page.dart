@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-// ✅ Kakao / Naver
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
 import 'package:flutter_naver_login/flutter_naver_login.dart';
 
 import 'package:lifelog_mobile/api/auth_api_client.dart';
 import 'package:lifelog_mobile/config/api_config.dart';
 import 'package:lifelog_mobile/theme/palette.dart';
-import 'package:lifelog_mobile/widgets/brand_logo.dart';
+import 'package:lifelog_mobile/widgets/main_signal_blob.dart';
 
 import 'models/provider_key.dart';
 import 'widgets/inline_bubble_label.dart';
@@ -27,13 +26,15 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   bool _loading = false;
   String? _error;
   ProviderKey? _recentProvider;
 
   late final AnimationController _arrowController;
   late final Animation<double> _arrowDy;
+
+  late final AnimationController _blobController;
 
   late final GoogleSignIn _googleSignIn;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
@@ -62,11 +63,17 @@ class _LoginPageState extends State<LoginPage>
     );
 
     _arrowController.repeat(reverse: true);
+
+    _blobController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 5200),
+    )..repeat(reverse: true);
   }
 
   @override
   void dispose() {
     _arrowController.dispose();
+    _blobController.dispose();
     super.dispose();
   }
 
@@ -263,6 +270,7 @@ class _LoginPageState extends State<LoginPage>
   Widget build(BuildContext context) {
     final p = widget.p ?? Palette.from(Theme.of(context).colorScheme);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final stroke =  Palette.strokeLight;
 
     final bg = Colors.white;
 
@@ -291,11 +299,20 @@ class _LoginPageState extends State<LoginPage>
                 builder: (context, constraints) {
                   final h = constraints.maxHeight;
 
-                  // ✅ 여기 값만 바꾸면 "아래에서 몇 % 올라오게" 조절 가능
-                  final ctaBottom = h * 0.10; // 소셜 로그인 블록: 아래에서 14% 위 (로고-화살표 간격 축소)
-                  final footerBottom = 0.0; // 맨 아래 문구: SafeArea 하단에 최대한 붙임
+                  // Social buttons block height estimate (kept in sync with _SocialLoginButton height)
+                  const double _btnH = 54;
+                  const double _btnGap = 10;
+                  const int _btnCount = 3;
 
-                  return Stack(
+                  // Chevron visual height
+                  const double _chevronH = 28;
+
+                  // Total fixed content height inside the middle area (chevron + buttons)
+                  final buttonsH = (_btnH * _btnCount) + (_btnGap * (_btnCount - 1));
+                  final midContentH = _chevronH + buttonsH;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // ✅ Brand block (top-center)
                       Align(
@@ -309,36 +326,31 @@ class _LoginPageState extends State<LoginPage>
                                 children: [
                                   const SizedBox(height: 40),
                                   SizedBox(
-                                    width: 240,
-                                    height: 240,
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        Image.asset(
-                                          'assets/icons/brand_logo_stroke.png',
-                                          width: 240,
-                                          height: 240,
-                                          fit: BoxFit.contain,
-                                          filterQuality: FilterQuality.high,
-                                        ),
-                                        // ✅ 우하단 가장자리 느낌: 연결된 단일 텍스트 + 살짝 기울임
-                                        Positioned(
-                                          right: 55,
-                                          bottom: 23,
-                                          child: Transform.rotate(
-                                            angle: -0.46, // 살짝 기울임 (원하면 -0.45 ~ -0.70 사이 조정)
-                                            child: Text(
-                                              'bluelog',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w500,
-                                                letterSpacing: 0.8,
-                                                color: const Color(0xFF224D86).withOpacity(0.8),
+                                    width: 252,
+                                    height: 252,
+                                    child: AnimatedBuilder(
+                                      animation: _blobController,
+                                      builder: (context, _) {
+                                        return Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            MainSignalBlob(
+                                              t: _blobController.value,
+                                              size: 252,
+                                              hasSignal: false,
+                                            ),
+                                            Positioned.fill(
+                                              child: IgnorePointer(
+                                                child: FloatingWordInBlob(
+                                                  t: _blobController.value,
+                                                  word: 'bluegol',
+                                                  color: stroke,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ),
-                                      ],
+                                          ],
+                                        );
+                                      },
                                     ),
                                   ),
                                 ],
@@ -348,86 +360,123 @@ class _LoginPageState extends State<LoginPage>
                         ),
                       ),
 
-                      // ✅ Social login CTA block (positioned by % from bottom)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: ctaBottom,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const SizedBox(height: 15),
-                            AnimatedBuilder(
-                              animation: _arrowDy,
-                              builder: (context, child) {
-                                return Transform.translate(
-                                  offset: Offset(0, _arrowDy.value),
-                                  child: child,
-                                );
-                              },
-                              child: Image.asset(
-                                'assets/icons/chevron.png',
-                                width: 28,
-                                height: 28,
-                                fit: BoxFit.contain,
-                                filterQuality: FilterQuality.high,
-                              ),
-                            ),
-                            const SizedBox(height: 50),
+                      // ✅ Middle area: pin social buttons near bottom (lifted by ~10% of remaining height)
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, midCs) {
+                            final midH = midCs.maxHeight;
 
-                            _SocialLoginButton(
-                              label: '카카오로 시작하기',
-                              iconAsset: 'assets/icons/kakao_logo.png',
-                              enabled: !_loading,
-                              background: const Color(0xFFFEE500),
-                              foreground: const Color(0xFF191600),
-                              onTap: _loading ? null : _loginWithKakao,
-                              badgeText: _recentProvider == ProviderKey.kakao
-                                  ? '최근'
-                                  : null,
-                            ),
-                            const SizedBox(height: 10),
+                            // The buttons block should sit slightly above the bottom.
+                            // Use a percentage so it scales across devices.
+                            final bottomLift = (midH * 0.10).clamp(12.0, 84.0);
 
-                            _SocialLoginButton(
-                              label: '네이버로 시작하기',
-                              iconAsset: 'assets/icons/naver_logo.png',
-                              enabled: !_loading,
-                              background: const Color(0xFF03A94D),
-                              foreground: Colors.white,
-                              onTap: _loading ? null : _loginWithNaver,
-                              badgeText: _recentProvider == ProviderKey.naver
-                                  ? '최근'
-                                  : null,
-                            ),
-                            const SizedBox(height: 10),
+                            // Buttons block is pinned near the bottom.
+                            // Chevron is positioned independently so the gap above and below it
+                            // (within the space between the top of this middle area and the buttons block)
+                            // stays equal.
 
-                            _SocialLoginButton(
-                              label: '구글로 시작하기',
-                              iconAsset: 'assets/icons/google_logo.png',
-                              enabled: !_loading,
-                              background: Colors.white,
-                              foreground: const Color(0xFF1A1A1A),
-                              onTap: _loading ? null : _loginWithGoogle,
-                              badgeText: _recentProvider == ProviderKey.google
-                                  ? '최근'
-                                  : null,
-                            ),
-                          ],
+                            // Y position where the buttons block starts (from top of middle area)
+                            final buttonsTopY = (midH - bottomLift - buttonsH).clamp(0.0, midH);
+
+                            // Available vertical space between top of middle area and the top of the buttons block
+                            final availableForChevron = buttonsTopY;
+
+                            // Place chevron so that: gapTop == gapBottom
+                            // gapTop = chevronTop
+                            // gapBottom = buttonsTopY - (chevronTop + _chevronH)
+                            // => chevronTop = (buttonsTopY - _chevronH) / 2
+                            final chevronTop = ((availableForChevron - _chevronH) / 2)
+                                .clamp(0.0, math.max(0.0, availableForChevron - _chevronH))
+                                .toDouble();
+
+                            return Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                // Chevron: independent positioning (NOT tied to buttons)
+                                Positioned(
+                                  top: chevronTop,
+                                  left: 0,
+                                  right: 0,
+                                  child: Center(
+                                    child: AnimatedBuilder(
+                                      animation: _arrowDy,
+                                      builder: (context, child) {
+                                        return Transform.translate(
+                                          offset: Offset(0, _arrowDy.value),
+                                          child: child,
+                                        );
+                                      },
+                                      child: Image.asset(
+                                        'assets/icons/chevron_light.png',
+                                        width: 28,
+                                        height: 28,
+                                        fit: BoxFit.contain,
+                                        filterQuality: FilterQuality.high,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                // Buttons block: pinned from bottom by 10% (bottomLift)
+                                Align(
+                                  alignment: Alignment.bottomCenter,
+                                  child: Padding(
+                                    padding: EdgeInsets.only(bottom: bottomLift),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        _SocialLoginButton(
+                                          label: '카카오로 시작하기',
+                                          iconAsset: 'assets/icons/kakao_logo.png',
+                                          enabled: !_loading,
+                                          background: const Color(0xFFFEE500),
+                                          foreground: const Color(0xFF191600),
+                                          onTap: _loading ? null : _loginWithKakao,
+                                          badgeText: _recentProvider == ProviderKey.kakao ? '최근' : null,
+                                        ),
+                                        const SizedBox(height: 10),
+
+                                        _SocialLoginButton(
+                                          label: '네이버로 시작하기',
+                                          iconAsset: 'assets/icons/naver_logo.png',
+                                          enabled: !_loading,
+                                          background: const Color(0xFF03A94D),
+                                          foreground: Colors.white,
+                                          onTap: _loading ? null : _loginWithNaver,
+                                          badgeText: _recentProvider == ProviderKey.naver ? '최근' : null,
+                                        ),
+                                        const SizedBox(height: 10),
+
+                                        _SocialLoginButton(
+                                          label: '구글로 시작하기',
+                                          iconAsset: 'assets/icons/google_logo.png',
+                                          enabled: !_loading,
+                                          background: Colors.white,
+                                          foreground: const Color(0xFF1A1A1A),
+                                          onTap: _loading ? null : _loginWithGoogle,
+                                          badgeText: _recentProvider == ProviderKey.google ? '최근' : null,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
 
-                      // ✅ Footer (positioned by % from bottom)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: footerBottom,
+                      // ✅ Footer (always pinned to bottom of the SafeArea)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 0),
                         child: Text(
                           '© ${DateTime.now().year} bluelog. All rights reserved.',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: const Color(0xFF224D86).withOpacity(0.8),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: stroke.withOpacity(0.7),
                                 fontWeight: FontWeight.w500,
+                                fontFamily: 'MontserratAlternates',
+                                fontSize: 11,
                               ),
                         ),
                       ),
@@ -482,13 +531,13 @@ class _SocialLoginButton extends StatelessWidget {
           boxShadow: [
             // 메인 소프트 그림자 (강도 감소)
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.14 : 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 14,
               offset: const Offset(0, 6),
             ),
             // 하단 퍼짐 그림자 (존재감만 유지)
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.08 : 0.03),
+              color: Colors.black.withOpacity(0.03),
               blurRadius: 22,
               offset: const Offset(0, 12),
             ),
@@ -556,18 +605,14 @@ class _SocialLoginButton extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(
-                              isDark ? 0.20 : 0.06,
-                            ),
+                            color: Colors.black.withOpacity(0.06),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             badgeText!,
                             style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
-                                  color: foreground.withOpacity(
-                                    isDark ? 0.92 : 0.78,
-                                  ),
+                                  color: foreground.withOpacity(0.78),
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: -0.1,
                                 ),
@@ -697,3 +742,4 @@ class _ArcTextPainter extends CustomPainter {
         oldDelegate.centerXOffset != centerXOffset;
   }
 }
+

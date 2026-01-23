@@ -11,6 +11,8 @@ import 'package:lifelog_mobile/config/api_config.dart';
 import 'package:lifelog_mobile/api/auth_api_client.dart';
 import 'package:lifelog_mobile/api/home_api_client.dart';
 import 'package:lifelog_mobile/api/insight_feedback_api_client.dart';
+import 'package:lifelog_mobile/api/insight_api_client.dart';
+import 'package:lifelog_mobile/api/signal_api_client.dart';
 
 import '../record/record_screen.dart';
 import '../settings/settings_home_page.dart';
@@ -21,14 +23,17 @@ import 'log_models.dart';
 
 import 'package:lifelog_mobile/screens/insight/insight_all_page.dart';
 import 'package:lifelog_mobile/screens/insight/widgets/insight_detail_sheet.dart';
-import 'package:lifelog_mobile/widgets/app_safe_area.dart';
 
-import 'package:lifelog_mobile/widgets/glass_fab.dart';
 import 'package:lifelog_mobile/widgets/glass_dot.dart';
-import 'package:lifelog_mobile/widgets/glass_chevron_button.dart';
 import 'package:lifelog_mobile/widgets/glass_menu_button.dart';
 
+import 'widgets/signal_object_card.dart';
+import 'widgets/signal_object_section.dart';
+import 'widgets/hand_drawn_wave_divider.dart';
+
 String _formatKoreanDate(DateTime dt) => '${dt.month}월 ${dt.day}일';
+
+enum _MainTab { log, insight }
 
 class MainPage extends StatefulWidget {
   final Color bg;
@@ -46,45 +51,119 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
-  // API
+class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
+  _MainTab _currentTab = _MainTab.log;
+
+  // Storage
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+  // API
   late final AuthApiClient _authApi;
   late final HomeApiClient _homeApi;
+
   InsightFeedbackApiClient? _insightFeedbackApi;
 
   InsightFeedbackApiClient get _feedbackApi {
     return _insightFeedbackApi ??= InsightFeedbackApiClient(_authApi);
   }
 
+  // ✅ Signal API (SignalObjectSection에서만 사용)
+  // SignalApiClient는 AuthApiClient를 래핑하며, Authorization/refresh는 AuthApiClient가 처리함
+  late final SignalApiClient _signalClient;
+
+  // Insight API (인사이트 설정 상태 확인용)
+  late final InsightApiClient _insightApi;
+
+  // Home state
   bool _loadingHome = false;
   String? _homeError;
   _HomeVm? _home;
 
+  // Insight settings state
+  bool? _insightEnabled; // null = 로딩 중, true/false = 로드 완료
+
+  bool _wasInBackground = false;
+  bool _isFirstBuild = true;
+
+  // SignalObjectSection 재생성을 위한 Key
+  // 다른 페이지에서 돌아올 때마다 변경하여 위젯을 재생성하고 API를 다시 호출
+  int _signalSectionKey = 0;
+
   @override
   void initState() {
     super.initState();
+
     _authApi = AuthApiClient(
       baseUrl: ApiConfig.baseUrl,
       storage: _secureStorage,
       onUnauthorized: widget.onLogout,
     );
     _homeApi = HomeApiClient(_authApi);
+
+    WidgetsBinding.instance.addObserver(this);
+
+    _signalClient = SignalApiClient(_authApi);
+    _insightApi = InsightApiClient(_authApi);
+
     _loadHome();
+    _loadInsightSettings();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _wasInBackground = true;
+    } else if (state == AppLifecycleState.resumed && _wasInBackground) {
+      _wasInBackground = false;
+      _loadHome();
+      // SignalObjectSection 재생성을 위해 Key 변경
+      setState(() {
+        _signalSectionKey++;
+      });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_isFirstBuild) {
+      final route = ModalRoute.of(context);
+      if (route != null && route.isCurrent) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _loadHome();
+            // 설정 페이지에서 돌아올 때 인사이트 설정 상태도 다시 로드 (캐시 방지)
+            _loadInsightSettings();
+            // 모달 닫힘 등으로 인한 didChangeDependencies에서는 SignalObjectSection 재생성하지 않음
+            // 실제 페이지 이동 후 돌아올 때는 _openRecord 등에서 직접 처리
+          }
+        });
+      }
+    } else {
+      _isFirstBuild = false;
+    }
   }
 
   Future<void> _loadHome() async {
     if (_loadingHome) return;
+
     setState(() {
       _loadingHome = true;
       _homeError = null;
     });
 
     try {
-      final map = await _homeApi.getHome(limitLogs: 4, limitInsights: 2);
-
+      final map = await _homeApi.getHome(limitLogs: 5, limitInsights: 3);
       final vm = _HomeVm.fromJson(map);
       if (!mounted) return;
+
       setState(() {
         _home = vm;
         _loadingHome = false;
@@ -98,24 +177,44 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
-  void _openAllLogs() {
+  Future<void> _loadInsightSettings() async {
+    try {
+      final settings = await _insightApi.getSettings();
+      if (!mounted) return;
+      setState(() {
+        _insightEnabled = settings.enabled;
+      });
+    } catch (_) {
+      // 실패 시 무시 (기본값 null 유지)
+    }
+  }
+
+  Future<void> _openAllLogs() async {
     final p = widget.p;
     final bg = widget.bg;
 
-    pushSettingsPage<void>(
+    await pushSettingsPage<void>(
       context,
       AllLogsPage(p: p, bg: bg, onLogout: widget.onLogout),
     );
+    // 페이지에서 돌아올 때 인사이트 설정 상태 다시 로드 (설정 변경 가능성)
+    if (mounted) {
+      await _loadInsightSettings();
+    }
   }
 
-  void _openAllInsights() {
+  Future<void> _openAllInsights() async {
     final p = widget.p;
     final bg = widget.bg;
 
-    pushSettingsPage<void>(
+    await pushSettingsPage<void>(
       context,
       InsightsAllPage(p: p, bg: bg, onLogout: widget.onLogout),
     );
+    // 페이지에서 돌아올 때 인사이트 설정 상태 다시 로드 (설정 변경 가능성)
+    if (mounted) {
+      await _loadInsightSettings();
+    }
   }
 
   Future<void> _openInsightDetail(InsightPreviewUi item) async {
@@ -129,12 +228,16 @@ class _MainPageState extends State<MainPage> {
 
   Future<void> _openRecord() async {
     final onLogout = widget.onLogout;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => RecordScreen(onLogout: onLogout)),
+    );
 
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => RecordScreen(onLogout: onLogout)));
     if (!mounted) return;
     _loadHome();
+    // SignalObjectSection 재생성을 위해 Key 변경
+    setState(() {
+      _signalSectionKey++;
+    });
   }
 
   @override
@@ -149,60 +252,23 @@ class _MainPageState extends State<MainPage> {
 
     final topInsight =
         vm?.topInsight ??
-        _TopInsightPreview(
+        TopInsightPreview(
           date: DateTime.now(),
           headline: showInitialLoading
               ? '불러오는 중…'
-              : (_homeError ?? '아직 해석할 신호가 충분하지 않아요'),
+              : (_homeError ?? '아직 해석할 기록이 충분하지 않아요'),
           signalCount: 0,
           axes: const [],
           lastTimeLabel: '—',
         );
 
-    final rawHeadline = topInsight.headline.trim();
-    final isDefaultHeadline =
-        rawHeadline.isEmpty ||
-        rawHeadline == '아직 해석할 신호가 충분하지 않아요' ||
-        rawHeadline == '아직 해석할 신호가 충분하지 않아요.';
-
-    final effectiveHeadline = isDefaultHeadline
-        ? (topInsight.signalCount == 0
-              ? '아직 해석할 신호가 충분하지 않아요'
-              : (topInsight.signalCount <= 2
-                    ? '작은 신호가 관측되고 있어요'
-                    : '특정 패턴이 감지되고 있어요'))
-        : rawHeadline;
-
     final insights = vm?.insights ?? const <InsightPreviewUi>[];
-    final visibleInsights = insights.take(2).toList();
+    final visibleInsights = insights.take(3).toList();
     final logs = vm?.recentLogs ?? const <LogPreview>[];
-
-    // 헤더 점은 “활성 상태일 때만” 은은하게
-    final headerDotActive = !showInitialLoading && !showError;
 
     return Scaffold(
       backgroundColor: bg,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: AppSafeArea(
-        //minimum: const EdgeInsets.only(bottom: 0),
-        child: Transform.translate(
-          offset: const Offset(0, 351),
-          child: Center(
-            child: GlassFab(
-              onPressed: _openRecord,
-              enabled: true,
-              color: p.accent,
-
-              // ✅ checksoft 감각 통일
-              size: 72,
-              lighten: 0.06,
-              pressedScale: 0.98,
-              floatEnabled: false,
-            ),
-          ),
-        ),
-      ),
-
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
@@ -213,19 +279,21 @@ class _MainPageState extends State<MainPage> {
           child: Tooltip(
             message: '설정',
             child: GlassMenuButton(
-              onTap: () {
-                pushSettingsPage<void>(
+              onTap: () async {
+                await pushSettingsPage<void>(
                   context,
                   SettingsHomePage(
-                    onChangeTheme: (m) =>
-                        context.read<ThemeProvider>().setMode(m),
+                    onChangeTheme: (m) => context.read<ThemeProvider>().setMode(m),
                     onLogout: onLogout,
                   ),
                   fromLeft: true,
                 );
+                // 설정 페이지에서 돌아올 때 인사이트 설정 상태 다시 로드
+                if (mounted) {
+                  await _loadInsightSettings();
+                }
               },
               icon: Icons.menu_rounded,
-              // ✅ 베이스는 연하게, depth는 살아있게
               accent: p.ink.withOpacity(0.55),
               iconSize: 30,
               depth: 0.55,
@@ -234,355 +302,220 @@ class _MainPageState extends State<MainPage> {
           ),
         ),
       ),
-
-      body: AppSafeArea(
+      body: SafeArea(
         top: false,
-        child: _PalettePullToRefresh(
-          p: p,
-          onRefresh: _loadHome,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 120),
-            children: [
-              _SectionHeader(
-                title: _formatKoreanDate(topInsight.date),
-                subtitle: effectiveHeadline,
-                p: p,
-                dotActive: headerDotActive,
-              ),
-              const SizedBox(height: 14),
-              _TopInsightCard(p: p, items: topInsight),
-              const SizedBox(height: 18),
-
-              // ---- Insights header (우측: glass chevron) ----
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: _openAllInsights,
-                      borderRadius: BorderRadius.circular(12),
-                      splashColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '인사이트',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: p.ink,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 20,
-                                    letterSpacing: -0.1,
-                                  ),
+        bottom: false,
+        child: Column(
+          children: [
+            // 1) 상단 고정 헤더
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Container(
+                color: bg,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 0, bottom: 2),
+                            child: Center(
+                              child: AnimatedSize(
+                                duration: const Duration(milliseconds: 220),
+                                curve: Curves.easeOutCubic,
+                                alignment: Alignment.topCenter,
+                                child: SignalObjectSection(
+                                  key: ValueKey(_signalSectionKey),
+                                  p: p,
+                                  api: _signalClient,
+                                  top: topInsight,
+                                  onTapObject: _openRecord, // ✅ 중앙 시그널 오브젝트 탭만 기록하기로
+                                ),
+                              ),
                             ),
-                            const SizedBox(width: 6),
+                          ),
+                          const SizedBox(height: 20),
+                          const HandDrawnWaveDivider(waveSeed: 0),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+            ),
+
+            // 2) 메인 콘텐츠
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+                      child: _MainTabSwitch(
+                        p: p,
+                        tab: _currentTab,
+                        onChanged: (t) => setState(() => _currentTab = t),
+                        onMore: (t) {
+                          if (t == _MainTab.log) {
+                            _openAllLogs();
+                          } else {
+                            _openAllInsights();
+                          }
+                        },
+                      ),
+                    ),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          if (_currentTab == _MainTab.log) ...[
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 2),
+                              padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
+                              child: Builder(
+                                builder: (context) {
+                                  if (showInitialLoading) {
+                                    return Text(
+                                      '불러오는 중…',
+                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                            color: p.muted,
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.4,
+                                          ),
+                                    );
+                                  }
+                                  if (showError) {
+                                    return Text(
+                                      '연결이 원활하지 않아요.',
+                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                            color: p.muted,
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.4,
+                                          ),
+                                    );
+                                  }
+                                  if (logs.isEmpty) {
+                                    return Text(
+                                      '아직 기록이 없어요',
+                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                            color: p.muted.withOpacity(0.7),
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.4,
+                                          ),
+                                    );
+                                  }
+                                  return _RecentLogsCard(
+                                    p: p,
+                                    logs: logs,
+                                    onTapLog: null,
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                          if (_currentTab == _MainTab.insight) ...[
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
+                              child: Builder(
+                                builder: (context) {
+                                  if (showInitialLoading) {
+                                    return Text(
+                                      '불러오는 중…',
+                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                            color: p.muted,
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.4,
+                                          ),
+                                    );
+                                  }
+                                  if (showError) {
+                                    return Text(
+                                      '연결이 원활하지 않아요.',
+                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                            color: p.muted,
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.4,
+                                          ),
+                                    );
+                                  }
+                                  if (insights.isEmpty) {
+                                    String message;
+                                    if (_insightEnabled != true) {
+                                      message = '인사이트가 비활성화되어 있어요';
+                                    } else {
+                                      message = (topInsight.signalCount == 0)
+                                          ? '아직은 기록이 부족해요'
+                                          : '조금 더 기록하면, 흐름이 보여요';
+                                    }
+
+                                    return Text(
+                                      message,
+                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                            color: p.muted.withOpacity(0.7),
+                                            fontWeight: FontWeight.w500,
+                                            height: 1.4,
+                                          ),
+                                    );
+                                  }
+
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      for (int i = 0; i < visibleInsights.length; i++) ...[
+                                        _AiInsightRow(
+                                          p: p,
+                                          item: visibleInsights[i],
+                                          onTap: () => _openInsightDetail(visibleInsights[i]),
+                                        ),
+                                        if (i != visibleInsights.length - 1)
+                                          const SizedBox(height: 10),
+                                      ],
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 18),
+                          Center(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                if (_currentTab == _MainTab.log) {
+                                  _openAllLogs();
+                                } else {
+                                  _openAllInsights();
+                                }
+                              },
                               child: Text(
-                                'AI',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: p.muted.withOpacity(0.6),
-                                      fontWeight: FontWeight.w500,
+                                '전체보기',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      color: (Theme.of(context).brightness == Brightness.dark
+                                              ? Palette.strokeDark
+                                              : Palette.strokeLight),
+                                      fontWeight: FontWeight.w600,
                                       letterSpacing: -0.1,
                                     ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 32),
+                        ],
                       ),
                     ),
-                  ),
-                  GlassChevronButton(accent: p.accent, onTap: _openAllInsights),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Keep the vertical rhythm consistent even when insights are empty.
-              // This reserves roughly the same height as 2 insight rows (+ spacing).
-              ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 180.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (showInitialLoading)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          '불러오는 중…',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: p.muted,
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
-                          ),
-                        ),
-                      )
-                    else if (showError)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          '연결이 원활하지 않아요.',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: p.muted,
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
-                          ),
-                        ),
-                      )
-                    else if (insights.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          (topInsight.signalCount == 0)
-                              ? '인사이트를 생성 중이에요'
-                              : '신호를 연결하고 있어요',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: p.muted.withOpacity(0.7),
-                            fontWeight: FontWeight.w500,
-                            height: 1.4,
-                          ),
-                        ),
-                      )
-                    else
-                      for (int i = 0; i < visibleInsights.length; i++) ...[
-                        _AiInsightRow(
-                          p: p,
-                          item: visibleInsights[i],
-                          onTap: () =>
-                              _openInsightDetail(visibleInsights[i]),
-                        ),
-                        if (i != visibleInsights.length - 1)
-                          const SizedBox(height: 10),
-                      ],
                   ],
                 ),
               ),
-
-              const SizedBox(height: 20),
-
-              // ---- Logs header (우측: glass chevron) ----
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: _openAllLogs,
-                      borderRadius: BorderRadius.circular(12),
-                      splashColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Text(
-                          '기록',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: p.ink,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 20,
-                                letterSpacing: -0.1,
-                              ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  GlassChevronButton(accent: p.accent, onTap: _openAllLogs),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (showInitialLoading)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        '불러오는 중…',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: p.muted,
-                          fontWeight: FontWeight.w500,
-                          height: 1.4,
-                        ),
-                      ),
-                    )
-                  else if (showError)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        '연결이 원활하지 않아요.',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: p.muted,
-                          fontWeight: FontWeight.w500,
-                          height: 1.4,
-                        ),
-                      ),
-                    )
-                  else if (logs.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        '아직 기록이 없어요',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: p.muted.withOpacity(0.7),
-                          fontWeight: FontWeight.w500,
-                          height: 1.4,
-                        ),
-                      ),
-                    )
-                  else
-                    _RecentLogsCard(p: p, logs: logs, onTapLog: null),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-}
-
-class _PalettePullToRefresh extends StatefulWidget {
-  final Palette p;
-  final Future<void> Function() onRefresh;
-  final Widget child;
-
-  const _PalettePullToRefresh({
-    required this.p,
-    required this.onRefresh,
-    required this.child,
-  });
-
-  @override
-  State<_PalettePullToRefresh> createState() => _PalettePullToRefreshState();
-}
-
-class _PalettePullToRefreshState extends State<_PalettePullToRefresh>
-    with SingleTickerProviderStateMixin {
-  static const double _trigger = 84.0;
-  static const double _maxPull = 120.0;
-
-  double _pull = 0.0;
-  bool _refreshing = false;
-
-  late final AnimationController _spin = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  );
-
-  @override
-  void dispose() {
-    _spin.dispose();
-    super.dispose();
-  }
-
-  Future<void> _runRefresh() async {
-    if (_refreshing) return;
-    setState(() => _refreshing = true);
-    _spin.repeat();
-
-    try {
-      await widget.onRefresh();
-    } finally {
-      if (!mounted) return;
-      _spin.stop();
-      _spin.reset();
-      setState(() {
-        _refreshing = false;
-        _pull = 0.0;
-      });
-    }
-  }
-
-  bool _handleScrollNotification(ScrollNotification n) {
-    // Only react to the primary vertical scroll (top list).
-    if (n.metrics.axis != Axis.vertical) return false;
-
-    // Track pull extent only when we're at/above the top.
-    final atTop = n.metrics.pixels <= n.metrics.minScrollExtent;
-
-    if (n is OverscrollNotification && atTop && !_refreshing) {
-      // Overscroll is negative when pulling down at the top.
-      final next = (_pull + (-n.overscroll)).clamp(0.0, _maxPull);
-      if (next != _pull) setState(() => _pull = next);
-      return false;
-    }
-
-    if (n is ScrollUpdateNotification && atTop && !_refreshing) {
-      // When user scrolls back up (reducing pull), follow it.
-      if (n.scrollDelta != null && n.scrollDelta! > 0 && _pull > 0) {
-        final next = (_pull - n.scrollDelta!).clamp(0.0, _maxPull);
-        if (next != _pull) setState(() => _pull = next);
-      }
-      return false;
-    }
-
-    if (n is ScrollEndNotification && !_refreshing) {
-      if (_pull >= _trigger) {
-        _runRefresh();
-      } else if (_pull != 0) {
-        setState(() => _pull = 0.0);
-      }
-      return false;
-    }
-
-    return false;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final p = widget.p;
-
-    final progress = (_pull / _trigger).clamp(0.0, 1.0);
-    final show = _refreshing || _pull > 0;
-
-    // Minimal: no background pill, just an icon in palette accent.
-    final icon = _refreshing
-        ? RotationTransition(
-            turns: _spin,
-            child: Icon(
-              Icons.refresh_rounded,
-              size: 22,
-              color: p.accent,
-            ),
-          )
-        : Transform.rotate(
-            angle: (progress * 3.1415926),
-            child: Icon(
-              Icons.arrow_downward_rounded,
-              size: 22,
-              color: p.accent.withOpacity(0.85),
-            ),
-          );
-
-    // Slide the icon down as the user pulls.
-    final y = (_refreshing ? _trigger : _pull).clamp(0.0, _trigger);
-
-    return NotificationListener<ScrollNotification>(
-      onNotification: _handleScrollNotification,
-      child: Stack(
-        children: [
-          widget.child,
-          IgnorePointer(
-            child: AnimatedOpacity(
-              opacity: show ? (0.25 + 0.75 * progress) : 0.0,
-              duration: const Duration(milliseconds: 120),
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Padding(
-                  // Keep it visually aligned with the app safe area.
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Transform.translate(
-                    offset: Offset(0, y - 28),
-                    child: icon,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -618,11 +551,9 @@ class _AiInsightRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = _labelFor(item.kind);
 
-    return InkWell(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0, 2, 0, 0),
         child: Row(
@@ -643,8 +574,7 @@ class _AiInsightRow extends StatelessWidget {
                       children: [
                         Text(
                           label,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: p.accent.withOpacity(0.9),
                                 fontWeight: FontWeight.w500,
                                 letterSpacing: -0.1,
@@ -656,8 +586,7 @@ class _AiInsightRow extends StatelessWidget {
                             item.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   color: p.ink,
                                   fontWeight: FontWeight.w500,
                                   height: 1.25,
@@ -672,11 +601,11 @@ class _AiInsightRow extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: p.muted,
-                        fontWeight: FontWeight.w500,
-                        height: 1.55,
-                        fontSize: 16,
-                      ),
+                            color: p.muted,
+                            fontWeight: FontWeight.w500,
+                            height: 1.55,
+                            fontSize: 16,
+                          ),
                     ),
                   ],
                 ),
@@ -684,133 +613,6 @@ class _AiInsightRow extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final Palette p;
-  final bool dotActive;
-
-  const _SectionHeader({
-    required this.title,
-    required this.subtitle,
-    required this.p,
-    required this.dotActive,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: p.ink,
-                fontWeight: FontWeight.w600,
-                fontSize: 22,
-                letterSpacing: -0.2,
-              ),
-            ),
-            const SizedBox(width: 8),
-            GlassDot(size: 8, color: p.accent, active: dotActive),
-          ],
-        ),
-        if (subtitle.isNotEmpty) ...[
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: p.muted.withOpacity(0.9),
-              fontWeight: FontWeight.w500,
-              height: 1.45,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _TopInsightPreview {
-  final DateTime date;
-  final String headline;
-  final int signalCount;
-  final List<String> axes;
-  final String lastTimeLabel;
-
-  const _TopInsightPreview({
-    required this.date,
-    required this.headline,
-    required this.signalCount,
-    required this.axes,
-    required this.lastTimeLabel,
-  });
-}
-
-class _TopInsightCard extends StatelessWidget {
-  final Palette p;
-  final _TopInsightPreview items;
-
-  const _TopInsightCard({required this.p, required this.items});
-
-  @override
-  Widget build(BuildContext context) {
-    final keywordLine = items.axes.isEmpty
-        ? null
-        : items.axes.take(4).join(' · ');
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${items.signalCount}',
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  color: p.ink,
-                  fontWeight: FontWeight.w600,
-                  height: 0.95,
-                  fontSize: 42,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  '관측된 신호',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: p.muted,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (keywordLine != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              keywordLine,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: p.muted,
-                fontWeight: FontWeight.w500,
-                height: 1.35,
-              ),
-            ),
-          ],
-          const SizedBox(height: 10),
-        ],
       ),
     );
   }
@@ -860,11 +662,9 @@ class _RecentLogRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
       child: Container(
         padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
         child: Row(
@@ -875,9 +675,9 @@ class _RecentLogRow extends StatelessWidget {
               child: Text(
                 item.timeLabel,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: p.muted,
-                  fontWeight: FontWeight.w500,
-                ),
+                      color: p.muted,
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
             ),
             const SizedBox(width: 10),
@@ -887,11 +687,11 @@ class _RecentLogRow extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: p.ink,
-                  fontWeight: FontWeight.w500,
-                  height: 1.45,
-                  fontSize: 18,
-                ),
+                      color: p.ink,
+                      fontWeight: FontWeight.w500,
+                      height: 1.45,
+                      fontSize: 18,
+                    ),
               ),
             ),
           ],
@@ -903,7 +703,7 @@ class _RecentLogRow extends StatelessWidget {
 
 // --- API View-models ---
 class _HomeVm {
-  final _TopInsightPreview topInsight;
+  final TopInsightPreview topInsight;
   final List<InsightPreviewUi> insights;
   final List<LogPreview> recentLogs;
 
@@ -916,7 +716,7 @@ class _HomeVm {
   static _HomeVm fromJson(Map<String, dynamic> map) {
     final top =
         (map['topInsight'] as Map?)?.cast<String, dynamic>() ??
-        const <String, dynamic>{};
+            const <String, dynamic>{};
 
     final topDateStr = (top['date'] as String?) ?? '';
     DateTime date;
@@ -926,15 +726,14 @@ class _HomeVm {
       date = DateTime.now();
     }
 
-    final topInsight = _TopInsightPreview(
+    final topInsight = TopInsightPreview(
       date: date,
       headline: (top['headline'] as String?)?.trim().isNotEmpty == true
           ? (top['headline'] as String).trim()
-          : '아직 해석할 신호가 충분하지 않아요',
+          : '아직 해석할 기록이 충분하지 않아요',
       signalCount: (top['signalCount'] as num?)?.toInt() ?? 0,
       axes: ((top['axes'] as List?) ?? const []).whereType<String>().toList(),
-      lastTimeLabel:
-          (top['lastTimeLabel'] as String?)?.trim().isNotEmpty == true
+      lastTimeLabel: (top['lastTimeLabel'] as String?)?.trim().isNotEmpty == true
           ? (top['lastTimeLabel'] as String).trim()
           : '—',
     );
@@ -955,6 +754,66 @@ class _HomeVm {
       topInsight: topInsight,
       insights: insights,
       recentLogs: recentLogs,
+    );
+  }
+}
+
+class _MainTabSwitch extends StatelessWidget {
+  final Palette p;
+  final _MainTab tab;
+  final ValueChanged<_MainTab> onChanged;
+  final void Function(_MainTab tab) onMore;
+
+  const _MainTabSwitch({
+    required this.p,
+    required this.tab,
+    required this.onChanged,
+    required this.onMore,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final activeStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: (Theme.of(context).brightness == Brightness.dark
+                  ? Palette.strokeDark
+                  : Palette.strokeLight)
+              .withOpacity(0.92),
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.2,
+        );
+
+    final inactiveStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: p.muted.withOpacity(0.75),
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.2,
+        );
+
+    Widget tabItem(String label, _MainTab value) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onChanged(value),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+          child: Text(
+            label,
+            style: tab == value ? activeStyle : inactiveStyle,
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            tabItem('기록', _MainTab.log),
+            const SizedBox(width: 100),
+            tabItem('인사이트', _MainTab.insight),
+          ],
+        ),
+      ],
     );
   }
 }

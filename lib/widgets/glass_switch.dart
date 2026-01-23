@@ -32,15 +32,28 @@ class GlassSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final opacity = enabled ? 1.0 : 0.45;
 
-    // ✅ 색은 유지 + 살짝만 밝게(이전 유지)
-    final onBase = Color.lerp(color, Colors.white, 0.10)!;
-    final offBase = const Color(0xFFE3E7EC);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // ✅ 다크모드에서 트랙이 "너무 밝게" 보이지 않도록 조정
+    // - ON: color 자체를 살짝 딥하게 당기고
+    // - ON: white로 섞는 비율(=밝아짐)을 줄임
+    // - OFF: 라이트 그레이 대신 다크 트랙 톤 사용
+    final adjustedColor = isDark
+        ? Color.lerp(color, const Color(0xFF2F7CC6), 0.40)!
+        : color;
+
+    final onLift = isDark ? 0.04 : 0.10;
+    final onBase = Color.lerp(adjustedColor, Colors.white, onLift)!;
+
+    final offBase = isDark
+        ? const Color(0xFF2C2B31) // dark track base
+        : const Color(0xFFE3E7EC);
 
     final onOpacity = 0.98;
-    final offOpacity = 0.98;
+    final offOpacity = isDark ? 0.92 : 0.98;
 
-    // ✅ 볼륨 줄이기: 하이라이트 강도/범위 축소
-    final topHi = Colors.white.withOpacity(value ? 0.035 : 0.03);
+    // ✅ 볼륨 줄이기: 하이라이트 강도/범위 축소 (다크모드에서 더 약하게)
+    final topHi = Colors.white.withOpacity(value ? (isDark ? 0.020 : 0.035) : (isDark ? 0.018 : 0.03));
     final botHi = Colors.white.withOpacity(0.0);
 
     final radius = BorderRadius.circular(999);
@@ -95,7 +108,7 @@ class GlassSwitch extends StatelessWidget {
     );
 
     final thumbSize = height - 6;
-    final thumb = _GlassThumb(size: thumbSize, active: value, accent: color);
+    final thumb = _GlassThumb(size: thumbSize, active: value, accent: adjustedColor);
 
     return Padding(
       padding: outerPadding,

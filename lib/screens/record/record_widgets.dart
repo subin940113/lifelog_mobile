@@ -154,14 +154,17 @@ class _HoldToTalkPillState extends State<HoldToTalkPill> {
             fit: StackFit.expand,
             children: [
               Center(
-                child: Text(
-                  widget.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: fg,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 18,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    widget.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: fg,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
               ),
@@ -209,54 +212,6 @@ class RecordingDot extends StatelessWidget {
         width: 7,
         height: 7,
         decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      ),
-    );
-  }
-}
-
-class DoneFab extends StatelessWidget {
-  final bool enabled;
-  final VoidCallback onPressed;
-  final Palette p;
-
-  final bool floatEnabled;
-
-  const DoneFab({
-    super.key,
-    required this.enabled,
-    required this.onPressed,
-    required this.p,
-    this.floatEnabled = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      minimum: const EdgeInsets.only(bottom: 24),
-      child: Transform.translate(
-        offset: const Offset(0, -10),
-        child: GlassFab(
-          onPressed: onPressed,
-          enabled: enabled,
-          color: p.accent,
-
-          // ✅ check soft 적용: icon 대신 iconWidget 사용
-          iconWidget: SoftCheckIcon(
-            size: 30,
-            color: Colors.white.withOpacity(enabled ? 1.0 : 0.55),
-            stroke: 4.6,
-            rotate: -0.1,
-          ),
-
-          size: 72,
-
-          // iconSize / icon 은 iconWidget 쓰면 무시되므로 제거해도 됨
-          // icon: Icons.check_rounded,
-          // iconSize: 32,
-          lighten: 0.06,
-          pressedScale: 0.98,
-          floatEnabled: floatEnabled,
-        ),
       ),
     );
   }
